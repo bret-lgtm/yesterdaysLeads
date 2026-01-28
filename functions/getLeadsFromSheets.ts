@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
       
       const range = `'${sheetName}'!A:M`;
       const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
-      console.log(`Fetching URL: ${url}`);
+      console.log(`Fetching URL for ${leadType}: ${url}`);
       
       const response = await fetch(
         url,
