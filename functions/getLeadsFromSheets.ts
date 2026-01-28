@@ -119,6 +119,10 @@ Deno.serve(async (req) => {
         return lead;
       });
 
+      if (leads.length > 0) {
+        console.log(`Sample lead from ${leadType}:`, JSON.stringify(leads[0], null, 2));
+      }
+
       allLeads = allLeads.concat(leads);
     }
 
