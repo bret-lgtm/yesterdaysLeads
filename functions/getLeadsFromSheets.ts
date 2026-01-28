@@ -100,10 +100,16 @@ Deno.serve(async (req) => {
 
     if (filters.age_range && filters.age_range !== 'all') {
       filteredLeads = filteredLeads.filter(lead => {
-        if (!lead.upload_date) return false;
+        if (!lead.external_id) return false;
         
-        // Parse MM/DD/YY HH:MM format
-        const uploadDate = new Date(lead.upload_date);
+        // Parse date from external_id format: YYYYMMDD-TYPE-###
+        const dateStr = lead.external_id.split('-')[0];
+        if (dateStr.length !== 8) return false;
+        
+        const year = parseInt(dateStr.substring(0, 4));
+        const month = parseInt(dateStr.substring(4, 6)) - 1;
+        const day = parseInt(dateStr.substring(6, 8));
+        const uploadDate = new Date(year, month, day);
         
         // Validate the date
         if (isNaN(uploadDate.getTime())) return false;

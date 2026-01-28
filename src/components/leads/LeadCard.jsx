@@ -25,7 +25,12 @@ const typeLabels = {
 };
 
 export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, onAddToCart }) {
-  const ageInDays = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
+  const dateStr = lead.external_id.split('-')[0];
+  const year = parseInt(dateStr.substring(0, 4));
+  const month = parseInt(dateStr.substring(4, 6)) - 1;
+  const day = parseInt(dateStr.substring(6, 8));
+  const uploadDate = new Date(year, month, day);
+  const ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
   
   return (
     <motion.div
