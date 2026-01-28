@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
     const sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
       ? [filters.lead_type]
       : Object.keys(sheetIds);
+    console.log('Sheets to query:', sheetsToQuery);
 
     // First, get sheet names from metadata
     const sheetMetaResponse = await fetch(
