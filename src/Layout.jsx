@@ -65,7 +65,7 @@ export default function Layout({ children }) {
               <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center">
                 <Package className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-slate-900 text-lg hidden sm:block">LeadVault</span>
+              <span className="font-bold text-slate-900 text-lg hidden sm:block">Yesterday's Leads</span>
             </Link>
 
             {/* Desktop Nav */}
@@ -208,10 +208,10 @@ export default function Layout({ children }) {
               <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
                 <Package className="w-4 h-4 text-white" />
               </div>
-              <span className="font-semibold text-slate-900">LeadVault</span>
+              <span className="font-semibold text-slate-900">Yesterday's Leads</span>
             </div>
             <p className="text-sm text-slate-500">
-              © {new Date().getFullYear()} LeadVault. All rights reserved.
+              © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
             </p>
           </div>
         </div>
