@@ -75,18 +75,15 @@ export default function BrowseLeads() {
     if (filters.zip_code && !lead.zip_code?.startsWith(filters.zip_code)) return false;
 
     if (filters.age_range && filters.age_range !== 'all') {
-      const ageInDays = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
-      
-      // Handle "yesterday" option (last 24 hours)
-      if (filters.age_range === 'yesterday') {
-        const hoursSinceUpload = (new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60);
-        if (hoursSinceUpload > 24) return false;
-      } else {
-        const [min, max] = filters.age_range.includes('+') 
-          ? [parseInt(filters.age_range), Infinity]
-          : filters.age_range.split('-').map(Number);
-        if (ageInDays < min || ageInDays > max) return false;
-      }
+      const uploadDate = new Date(lead.upload_date);
+      const hoursSinceUpload = (new Date() - uploadDate) / (1000 * 60 * 60);
+      const ageInDays = Math.floor(hoursSinceUpload / 24);
+
+      if (filters.age_range === 'yesterday' && hoursSinceUpload > 24) return false;
+      if (filters.age_range === '1-7' && (ageInDays < 1 || ageInDays > 7)) return false;
+      if (filters.age_range === '8-30' && (ageInDays < 8 || ageInDays > 30)) return false;
+      if (filters.age_range === '31-90' && (ageInDays < 31 || ageInDays > 90)) return false;
+      if (filters.age_range === '90+' && ageInDays < 90) return false;
     }
 
     return true;
