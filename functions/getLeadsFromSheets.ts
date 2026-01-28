@@ -102,7 +102,12 @@ Deno.serve(async (req) => {
       filteredLeads = filteredLeads.filter(lead => {
         if (!lead.upload_date) return false;
         
+        // Parse MM/DD/YY HH:MM format
         const uploadDate = new Date(lead.upload_date);
+        
+        // Validate the date
+        if (isNaN(uploadDate.getTime())) return false;
+        
         const now = new Date();
         const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
         const ageInDays = Math.floor(hoursSinceUpload / 24);
