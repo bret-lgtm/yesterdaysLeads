@@ -14,7 +14,7 @@ const ITEMS_PER_PAGE = 20;
 
 export default function BrowseLeads() {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState({ age_range: 'yesterday' });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -167,7 +167,7 @@ export default function BrowseLeads() {
           filters={filters}
           onChange={setFilters}
           onSearch={() => setCurrentPage(1)}
-          onReset={() => { setFilters({}); setCurrentPage(1); }}
+          onReset={() => { setFilters({ age_range: 'yesterday' }); setCurrentPage(1); }}
         />
 
         {/* Results Header */}
