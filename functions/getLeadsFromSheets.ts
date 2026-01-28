@@ -2,10 +2,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
-    console.error('DEBUG: Starting getLeadsFromSheets');
+    console.log('Starting getLeadsFromSheets function');
     const base44 = createClientFromRequest(req);
     const { filters = {} } = await req.json();
-    console.error('DEBUG: Filters:', JSON.stringify(filters));
+    console.log('Filters received:', filters);
 
     // Get access token for Google Sheets
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
