@@ -1,12 +1,19 @@
 /**
  * Sync leads from Zapier Tables to your Lead database
  * 
- * Setup Instructions:
- * 1. Get your Zapier API Key from: https://zapier.com/app/profile/api-management
- * 2. Get your Table ID from your Zapier Tables URL
- * 3. Set secrets in Dashboard → Settings → Secrets:
- *    - ZAPIER_API_KEY
- *    - ZAPIER_TABLE_ID
+ * Setup Instructions for Zapier Private Integration:
+ * 1. Go to https://developer.zapier.com/
+ * 2. Click "Start a Zapier Integration" → Create private integration
+ * 3. Add authentication (API Key in header)
+ * 4. Create a "List Records" action for your table
+ * 5. Test and get your integration credentials
+ * 6. Set secrets in Dashboard → Settings → Secrets:
+ *    - ZAPIER_API_KEY (your integration's API key)
+ *    - ZAPIER_TABLE_ID (your table ID from URL)
+ * 
+ * Alternative: Use Zapier Tables REST API directly
+ * - Table ID is in your Zapier Tables URL: tables.zapier.com/app/tables/[TABLE_ID]
+ * - API Key from account settings
  * 
  * Usage:
  * - Call manually from admin dashboard

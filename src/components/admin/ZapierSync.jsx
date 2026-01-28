@@ -92,12 +92,15 @@ export default function ZapierSync({ onSyncComplete }) {
       </Button>
 
       <div className="mt-4 p-3 bg-slate-50 rounded-xl text-xs text-slate-600">
-        <p className="font-medium mb-1">⚙️ Setup Required:</p>
-        <ol className="list-decimal list-inside space-y-1">
-          <li>Get API key from zapier.com/app/profile/api-management</li>
-          <li>Set ZAPIER_API_KEY and ZAPIER_TABLE_ID in app secrets</li>
-          <li>Adjust field mapping in backend function if needed</li>
+        <p className="font-medium mb-2">⚙️ Setup Required:</p>
+        <ol className="list-decimal list-inside space-y-1.5">
+          <li>Create private integration at developer.zapier.com</li>
+          <li>Get Table ID from your Zapier Tables URL</li>
+          <li>Go to Dashboard → Settings → Secrets</li>
+          <li>Add ZAPIER_API_KEY and ZAPIER_TABLE_ID</li>
+          <li>Adjust field mapping in syncLeadsFromZapier function</li>
         </ol>
+        <p className="mt-2 text-slate-500">💡 Need help? Check the function comments for detailed steps</p>
       </div>
     </Card>
   );
