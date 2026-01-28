@@ -74,11 +74,6 @@ Deno.serve(async (req) => {
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
         
-        // Parse numeric fields
-        if (lead.utility_bill_amount) {
-          lead.utility_bill_amount = parseFloat(lead.utility_bill_amount);
-        }
-        
         return lead;
       });
 
