@@ -38,25 +38,11 @@ Deno.serve(async (req) => {
     for (const leadType of sheetsToQuery) {
       const sheetId = sheetIds[leadType];
       
-      // Use the sheet metadata endpoint to get the sheet title, then query by range
-      const sheetMetaResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
-      const sheetMeta = await sheetMetaResponse.json();
-      const sheet = sheetMeta.sheets?.find(s => s.properties.sheetId.toString() === sheetId);
-      const sheetName = sheet?.properties?.title || leadType;
-      
-      const range = `'${sheetName}'!A:M`;
+      // Use sheet ID directly in the range notation
+      const range = `'${sheetId}'!A:M`;
       
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values?range=${encodeURIComponent(range)}&valueRenderOption=UNFORMATTED_VALUE`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -66,7 +52,7 @@ Deno.serve(async (req) => {
       );
 
       if (!response.ok) {
-        console.error(`Failed to fetch sheet ${leadType} (${sheetName}):`, await response.text());
+        console.error(`Failed to fetch sheet ${leadType}:`, await response.text());
         continue;
       }
 
