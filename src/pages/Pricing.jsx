@@ -170,7 +170,7 @@ export default function Pricing() {
         {/* CTA */}
         <div className="text-center">
           <Link to={createPageUrl('BrowseLeads')}>
-            <Button size="lg" className="h-14 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-base">
+            <Button size="lg" className="h-14 px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-base shadow-lg shadow-emerald-500/30">
               Start Browsing Leads
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

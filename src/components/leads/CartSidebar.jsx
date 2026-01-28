@@ -15,7 +15,7 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
       {/* Toggle Button */}
       <Button
         onClick={onToggle}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-2xl bg-slate-900 hover:bg-slate-800 shadow-lg z-40"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-xl shadow-emerald-500/30 z-40"
       >
         <ShoppingCart className="w-5 h-5" />
         {items.length > 0 && (
@@ -127,7 +127,7 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
                   </div>
                   <Button
                     onClick={onCheckout}
-                    className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800 text-base"
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-base shadow-lg shadow-emerald-500/20"
                   >
                     <CreditCard className="w-5 h-5 mr-2" />
                     Proceed to Checkout

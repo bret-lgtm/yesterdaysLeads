@@ -40,7 +40,7 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
       transition={{ duration: 0.2 }}
     >
       <Card className={`p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${
-        isSelected ? 'border-slate-900 bg-slate-50/50' : 'border-slate-200/60 bg-white'
+        isSelected ? 'border-emerald-600 bg-emerald-50/30 shadow-md shadow-emerald-500/10' : 'border-slate-200/60 bg-white'
       }`}>
         <div className="flex items-start gap-4">
           <Checkbox
@@ -104,7 +104,7 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
               className={`rounded-xl ${
                 isInCart 
                   ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' 
-                  : 'bg-slate-900 hover:bg-slate-800'
+                  : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20'
               }`}
             >
               {isInCart ? (

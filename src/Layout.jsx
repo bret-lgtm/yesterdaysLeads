@@ -62,7 +62,7 @@ export default function Layout({ children }) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl('Home')} className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-slate-900 flex items-center justify-center">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                 <Package className="w-5 h-5 text-white" />
               </div>
               <span className="font-bold text-slate-900 text-lg hidden sm:block">Yesterday's Leads</span>
@@ -96,7 +96,7 @@ export default function Layout({ children }) {
                 <Button variant="ghost" size="icon" className="rounded-xl">
                   <ShoppingCart className="w-5 h-5 text-slate-600" />
                   {cartItems.length > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-slate-900 p-0 flex items-center justify-center text-xs">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-emerald-600 p-0 flex items-center justify-center text-xs">
                       {cartItems.length}
                     </Badge>
                   )}
@@ -146,7 +146,7 @@ export default function Layout({ children }) {
               ) : (
                 <Button 
                   onClick={() => base44.auth.redirectToLogin()}
-                  className="rounded-xl bg-slate-900 hover:bg-slate-800"
+                  className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
                 >
                   Sign In
                 </Button>

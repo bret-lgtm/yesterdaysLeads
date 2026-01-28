@@ -81,7 +81,7 @@ export default function MyOrders() {
             <h3 className="text-lg font-semibold text-slate-900 mb-2">No orders yet</h3>
             <p className="text-slate-500 mb-6">Start browsing our lead inventory to make your first purchase</p>
             <Link to={createPageUrl('BrowseLeads')}>
-              <Button className="rounded-xl bg-slate-900 hover:bg-slate-800">
+              <Button className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20">
                 Browse Leads
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -136,7 +136,7 @@ export default function MyOrders() {
                       </div>
                       <Button
                         onClick={() => downloadCSV(order)}
-                        className="rounded-xl bg-slate-900 hover:bg-slate-800"
+                        className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         CSV

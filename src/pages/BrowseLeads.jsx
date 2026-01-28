@@ -183,7 +183,7 @@ export default function BrowseLeads() {
           {selectedLeads.length > 0 && (
             <Button
               onClick={handleBulkAddToCart}
-              className="rounded-xl bg-slate-900 hover:bg-slate-800"
+              className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
             >
               Add {selectedLeads.length} Selected to Cart
             </Button>

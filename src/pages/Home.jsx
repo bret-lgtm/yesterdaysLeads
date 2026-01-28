@@ -75,7 +75,7 @@ export default function Home() {
             </Badge>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight mb-6">
               Quality Leads at
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-slate-700 to-slate-500">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
                 Unbeatable Prices
               </span>
             </h1>
@@ -85,7 +85,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to={createPageUrl('BrowseLeads')}>
-                <Button size="lg" className="h-14 px-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-base">
+                <Button size="lg" className="h-14 px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-base shadow-lg shadow-emerald-500/30">
                   Browse Leads
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
@@ -133,8 +133,8 @@ export default function Home() {
               viewport={{ once: true }}
             >
               <Card className="p-6 rounded-2xl border-slate-200/60 h-full hover:shadow-lg transition-shadow">
-                <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-slate-700" />
+                <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                  <feature.icon className="w-6 h-6 text-emerald-700" />
                 </div>
                 <h3 className="font-semibold text-slate-900 text-lg mb-2">{feature.title}</h3>
                 <p className="text-slate-600">{feature.description}</p>
@@ -146,13 +146,13 @@ export default function Home() {
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
-        <Card className="p-12 rounded-3xl bg-slate-900 text-center">
+        <Card className="p-12 rounded-3xl bg-gradient-to-br from-emerald-700 to-emerald-800 text-center shadow-xl">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Grow Your Business?</h2>
-          <p className="text-slate-300 max-w-xl mx-auto mb-8">
+          <p className="text-emerald-50 max-w-xl mx-auto mb-8">
             Start browsing our lead inventory today. No minimum purchases, no contracts.
           </p>
           <Link to={createPageUrl('BrowseLeads')}>
-            <Button size="lg" className="h-14 px-8 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-base">
+            <Button size="lg" className="h-14 px-8 rounded-xl bg-amber-500 text-white hover:bg-amber-600 text-base shadow-lg shadow-amber-500/30">
               Get Started Now
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

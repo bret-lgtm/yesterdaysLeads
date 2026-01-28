@@ -94,7 +94,7 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
         </div>
 
         <div className="flex items-end gap-2">
-          <Button onClick={onSearch} className="h-11 flex-1 rounded-xl bg-slate-900 hover:bg-slate-800">
+          <Button onClick={onSearch} className="h-11 flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20">
             <Search className="w-4 h-4 mr-2" />
             Search
           </Button>
