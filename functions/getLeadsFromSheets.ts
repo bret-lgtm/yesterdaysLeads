@@ -2,17 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
-    const start = Date.now();
-    console.log('===== getLeadsFromSheets called =====');
     const base44 = createClientFromRequest(req);
-    console.log('Base44 client created');
     const { filters = {} } = await req.json();
-    console.log('Filters received:', filters);
 
     // Get access token for Google Sheets
-    console.log('Getting access token...');
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
-    console.log('Access token received, length:', accessToken?.length || 0);
     
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
     if (!spreadsheetId) {
@@ -39,7 +33,6 @@ Deno.serve(async (req) => {
     const sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
       ? [filters.lead_type]
       : Object.keys(sheetIds);
-    console.log('Sheets to query:', sheetsToQuery);
 
     // First, get sheet names from metadata
     const sheetMetaResponse = await fetch(
@@ -58,33 +51,26 @@ Deno.serve(async (req) => {
     }
     
     const sheetMeta = await sheetMetaResponse.json();
-    console.log('Sheet metadata:', JSON.stringify(sheetMeta, null, 2));
     
     const sheetMap = {};
     sheetMeta.sheets?.forEach(sheet => {
       const id = sheet.properties.sheetId.toString();
       sheetMap[id] = sheet.properties.title;
-      console.log(`Mapped ID ${id} to sheet: ${sheet.properties.title}`);
     });
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
-      try {
-        const sheetId = sheetIds[leadType];
-        const sheetName = sheetMap[sheetId];
-        console.log(`Fetching ${leadType}: sheet ID ${sheetId}, name: ${sheetName}`);
+      const sheetId = sheetIds[leadType];
+      const sheetName = sheetMap[sheetId];
       
       if (!sheetName) {
-        console.error(`Sheet name not found for ID ${sheetId}`);
         continue;
       }
       
       const range = `'${sheetName}'!A:M`;
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
-      console.log(`Fetching URL for ${leadType}: ${url}`);
       
       const response = await fetch(
-        url,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -100,18 +86,14 @@ Deno.serve(async (req) => {
 
       const data = await response.json();
       const rows = data.values || [];
-      console.log(`${leadType}: Got ${rows.length} rows`);
 
       if (rows.length < 2) {
-        console.log(`No data in sheet: ${leadType}`);
         continue; // Skip if no data rows
       }
 
       // First row is headers
       const headers = rows[0];
       const dataRows = rows.slice(1);
-      console.log(`Processing ${leadType}: ${dataRows.length} rows`);
-      console.log(`First 3 headers for ${leadType}:`, headers.slice(0, 3));
 
       // Convert rows to objects
       const leads = dataRows.map((row, index) => {
@@ -129,26 +111,14 @@ Deno.serve(async (req) => {
         return lead;
       });
 
-      if (leads.length > 0) {
-        console.log(`Sample lead from ${leadType}:`, JSON.stringify(leads[0], null, 2));
-      }
-
       allLeads = allLeads.concat(leads);
-      } catch (sheetError) {
-        console.error(`Error processing sheet ${leadType}:`, sheetError.message);
-      }
     }
 
     // Apply filters - only show leads with exact status "Available"
-    console.log(`Total leads before filtering: ${allLeads.length}`);
-    console.log(`Sample lead statuses:`, allLeads.slice(0, 3).map(l => `"${l.status}"`));
-    
     let filteredLeads = allLeads.filter(lead => {
       const statusMatch = lead.status && lead.status.trim().toLowerCase() === 'available';
       return statusMatch;
     });
-    
-    console.log(`Leads after status filter: ${filteredLeads.length}`);
 
     if (filters.state && filters.state !== 'all') {
       filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
