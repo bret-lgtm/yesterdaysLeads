@@ -1,10 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-console.log('===== Function Deno.serve handler starting =====');
-
 Deno.serve(async (req) => {
   try {
-    console.log('===== Inside try block of getLeadsFromSheets =====');
+    const start = Date.now();
+    console.log('===== getLeadsFromSheets called =====');
     const base44 = createClientFromRequest(req);
     console.log('Base44 client created');
     const { filters = {} } = await req.json();
