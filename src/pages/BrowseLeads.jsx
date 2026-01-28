@@ -39,7 +39,10 @@ export default function BrowseLeads() {
   // Fetch all available leads from Google Sheets
   const { data: sheetsResponse = { leads: [] }, isLoading: leadsLoading } = useQuery({
     queryKey: ['leads', filters],
-    queryFn: () => base44.functions.getLeadsFromSheets({ filters }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getLeadsFromSheets', { filters });
+      return response.data;
+    },
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
