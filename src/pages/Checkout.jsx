@@ -77,39 +77,9 @@ export default function Checkout() {
         });
       }
 
-      // Separate Zapier and local leads
-      const zapierItems = cartItems.filter(item => item.lead_id.startsWith('zapier_'));
-      const localItems = cartItems.filter(item => !item.lead_id.startsWith('zapier_'));
-
-      // Build lead data snapshot from cart items (already has all needed data)
-      const leadDataSnapshot = cartItems.map(item => ({
-        external_id: item.lead_id,
-        first_name: item.lead_name.split(' ')[0],
-        last_name: item.lead_name.split(' ').slice(1).join(' '),
-        phone: '',
-        email: '',
-        state: item.state,
-        zip_code: '',
-        lead_type: item.lead_type,
-        utility_bill_amount: 0
-      }));
-
-      // Mark Zapier leads as sold
-      for (const item of zapierItems) {
-        const zapierRecordId = item.lead_id.replace('zapier_', '');
-        await fetch('/api/functions/searchZapierLeads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            markAsSold: { zapier_record_id: zapierRecordId }
-          })
-        });
-      }
-
-      // Update local leads to sold
-      for (const item of localItems) {
-        await base44.entities.Lead.update(item.lead_id, { status: 'sold' });
-      }
+      // Get lead data for snapshot
+      const leadIds = cartItems.map(item => item.lead_id);
+      const purchasedLeads = leads.filter(l => leadIds.includes(l.id));
 
       // Create order
       const order = await base44.entities.Order.create({
@@ -118,14 +88,28 @@ export default function Checkout() {
         total_price: total,
         lead_count: cartItems.length,
         stripe_transaction_id: `sim_${Date.now()}`,
-        leads_purchased: cartItems.map(item => item.lead_id),
-        lead_data_snapshot: leadDataSnapshot,
+        leads_purchased: leadIds,
+        lead_data_snapshot: purchasedLeads.map(l => ({
+          external_id: l.external_id,
+          first_name: l.first_name,
+          last_name: l.last_name,
+          phone: l.phone,
+          email: l.email,
+          state: l.state,
+          zip_code: l.zip_code,
+          lead_type: l.lead_type,
+          utility_bill_amount: l.utility_bill_amount
+        })),
         status: 'completed'
       });
 
+      // Update leads to sold
+      for (const leadId of leadIds) {
+        await base44.entities.Lead.update(leadId, { status: 'sold' });
+      }
+
       // Update suppression list
-      const allLeadIds = cartItems.map(item => item.lead_id);
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...allLeadIds];
+      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIds];
       await base44.entities.Customer.update(customer.id, {
         suppression_list: updatedSuppressionList
       });

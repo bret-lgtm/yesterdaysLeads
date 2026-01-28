@@ -36,27 +36,11 @@ export default function BrowseLeads() {
     enabled: !!user?.email
   });
 
-  // Fetch local leads
-  const { data: localLeads = [], isLoading: leadsLoading } = useQuery({
+  // Fetch all available leads
+  const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
     queryKey: ['leads'],
     queryFn: () => base44.entities.Lead.filter({ status: 'available' }, '-upload_date')
   });
-
-  // Fetch Zapier leads
-  const { data: zapierResult, isLoading: zapierLoading } = useQuery({
-    queryKey: ['zapierLeads', filters],
-    queryFn: async () => {
-      const response = await fetch('/api/functions/searchZapierLeads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filters })
-      });
-      return response.json();
-    }
-  });
-
-  const zapierLeads = zapierResult?.leads || [];
-  const allLeads = [...localLeads, ...zapierLeads];
 
   // Fetch cart items
   const { data: cartItems = [], isLoading: cartLoading } = useQuery({
@@ -199,7 +183,7 @@ export default function BrowseLeads() {
         </div>
 
         {/* Leads Grid */}
-        {(leadsLoading || zapierLoading) ? (
+        {leadsLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-32 rounded-2xl" />
