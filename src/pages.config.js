@@ -47,21 +47,21 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
+import AdminDashboard from './pages/AdminDashboard';
 import BrowseLeads from './pages/BrowseLeads';
 import Checkout from './pages/Checkout';
-import MyOrders from './pages/MyOrders';
-import AdminDashboard from './pages/AdminDashboard';
 import Home from './pages/Home';
+import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
+    "AdminDashboard": AdminDashboard,
     "BrowseLeads": BrowseLeads,
     "Checkout": Checkout,
-    "MyOrders": MyOrders,
-    "AdminDashboard": AdminDashboard,
     "Home": Home,
+    "MyOrders": MyOrders,
     "Pricing": Pricing,
 }
 
