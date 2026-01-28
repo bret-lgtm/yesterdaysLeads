@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       try {
         const sheetId = sheetIds[leadType];
         const sheetName = sheetMap[sheetId];
-        console.error(`DEBUG: Fetching ${leadType}: sheet ID ${sheetId}, name: ${sheetName}`);
+        console.log(`Fetching ${leadType}: sheet ID ${sheetId}, name: ${sheetName}`);
       
       if (!sheetName) {
         console.error(`Sheet name not found for ID ${sheetId}`);
