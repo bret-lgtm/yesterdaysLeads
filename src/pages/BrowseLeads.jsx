@@ -73,10 +73,17 @@ export default function BrowseLeads() {
 
     if (filters.age_range && filters.age_range !== 'all') {
       const ageInDays = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
-      const [min, max] = filters.age_range.includes('+') 
-        ? [parseInt(filters.age_range), Infinity]
-        : filters.age_range.split('-').map(Number);
-      if (ageInDays < min || ageInDays > max) return false;
+      
+      // Handle "yesterday" option (last 24 hours)
+      if (filters.age_range === 'yesterday') {
+        const hoursSinceUpload = (new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60);
+        if (hoursSinceUpload > 24) return false;
+      } else {
+        const [min, max] = filters.age_range.includes('+') 
+          ? [parseInt(filters.age_range), Infinity]
+          : filters.age_range.split('-').map(Number);
+        if (ageInDays < min || ageInDays > max) return false;
+      }
     }
 
     return true;

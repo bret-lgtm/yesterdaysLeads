@@ -53,6 +53,7 @@ import MyOrders from './pages/MyOrders';
 import AdminDashboard from './pages/AdminDashboard';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -67,4 +68,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "BrowseLeads",
     Pages: PAGES,
+    Layout: __Layout,
 };

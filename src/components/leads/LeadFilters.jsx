@@ -23,6 +23,7 @@ const LEAD_TYPES = [
 ];
 
 const AGE_RANGES = [
+  { value: "yesterday", label: "Yesterday (Last 24hrs)" },
   { value: "0-30", label: "0-30 days" },
   { value: "31-60", label: "31-60 days" },
   { value: "61-90", label: "61-90 days" },
