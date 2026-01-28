@@ -57,11 +57,15 @@ Deno.serve(async (req) => {
       const data = await response.json();
       const rows = data.values || [];
 
-      if (rows.length < 2) continue; // Skip if no data rows
+      if (rows.length < 2) {
+        console.log(`No data in sheet: ${sheetName}`);
+        continue; // Skip if no data rows
+      }
 
       // First row is headers
       const headers = rows[0];
       const dataRows = rows.slice(1);
+      console.log(`Processing ${sheetName}: ${dataRows.length} rows`);
 
       // Convert rows to objects
       const leads = dataRows.map((row, index) => {
@@ -81,7 +85,15 @@ Deno.serve(async (req) => {
     }
 
     // Apply filters - only show leads with exact status "Available"
-    let filteredLeads = allLeads.filter(lead => lead.status === 'Available');
+    console.log(`Total leads before filtering: ${allLeads.length}`);
+    console.log(`Sample lead statuses:`, allLeads.slice(0, 3).map(l => `"${l.status}"`));
+    
+    let filteredLeads = allLeads.filter(lead => {
+      const statusMatch = lead.status && lead.status.trim().toLowerCase() === 'available';
+      return statusMatch;
+    });
+    
+    console.log(`Leads after status filter: ${filteredLeads.length}`);
 
     if (filters.state && filters.state !== 'all') {
       filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
