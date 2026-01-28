@@ -101,6 +101,7 @@ Deno.serve(async (req) => {
       const headers = rows[0];
       const dataRows = rows.slice(1);
       console.log(`Processing ${leadType}: ${dataRows.length} rows`);
+      console.log(`Headers for ${leadType}:`, headers);
 
       // Convert rows to objects
       const leads = dataRows.map((row, index) => {
