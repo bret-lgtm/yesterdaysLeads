@@ -119,15 +119,15 @@ Deno.serve(async (req) => {
         const ageInDays = Math.floor(hoursSinceUpload / 24);
         
         if (filters.age_range === 'yesterday') {
-          return hoursSinceUpload <= 24;
-        } else if (filters.age_range === '1-7') {
-          return ageInDays >= 1 && ageInDays <= 7;
-        } else if (filters.age_range === '8-30') {
-          return ageInDays >= 8 && ageInDays <= 30;
+          return hoursSinceUpload <= 72;
+        } else if (filters.age_range === '4-14') {
+          return ageInDays >= 4 && ageInDays <= 14;
+        } else if (filters.age_range === '15-30') {
+          return ageInDays >= 15 && ageInDays <= 30;
         } else if (filters.age_range === '31-90') {
           return ageInDays >= 31 && ageInDays <= 90;
-        } else if (filters.age_range === '90+') {
-          return ageInDays >= 90;
+        } else if (filters.age_range === '91+') {
+          return ageInDays >= 91;
         }
         
         return true;

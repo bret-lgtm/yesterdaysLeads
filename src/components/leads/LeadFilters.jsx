@@ -23,11 +23,11 @@ const LEAD_TYPES = [
 ];
 
 const AGE_RANGES = [
-  { value: "yesterday", label: "Yesterday (Last 24hrs)" },
-  { value: "1-7", label: "1-7 Days" },
-  { value: "8-30", label: "8-30 Days" },
+  { value: "yesterday", label: "Yesterday (Last 72hrs)" },
+  { value: "4-14", label: "4-14 Days" },
+  { value: "15-30", label: "15-30 Days" },
   { value: "31-90", label: "31-90 Days" },
-  { value: "90+", label: "90+ Days" }
+  { value: "91+", label: "91+ Days" }
 ];
 
 export default function LeadFilters({ filters, onChange, onSearch, onReset }) {

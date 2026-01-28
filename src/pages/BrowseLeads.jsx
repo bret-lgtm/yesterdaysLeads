@@ -82,11 +82,11 @@ export default function BrowseLeads() {
       const hoursSinceUpload = (new Date() - uploadDate) / (1000 * 60 * 60);
       const ageInDays = Math.floor(hoursSinceUpload / 24);
 
-      if (filters.age_range === 'yesterday' && hoursSinceUpload > 24) return false;
-      if (filters.age_range === '1-7' && (ageInDays < 1 || ageInDays > 7)) return false;
-      if (filters.age_range === '8-30' && (ageInDays < 8 || ageInDays > 30)) return false;
+      if (filters.age_range === 'yesterday' && hoursSinceUpload > 72) return false;
+      if (filters.age_range === '4-14' && (ageInDays < 4 || ageInDays > 14)) return false;
+      if (filters.age_range === '15-30' && (ageInDays < 15 || ageInDays > 30)) return false;
       if (filters.age_range === '31-90' && (ageInDays < 31 || ageInDays > 90)) return false;
-      if (filters.age_range === '90+' && ageInDays < 90) return false;
+      if (filters.age_range === '91+' && ageInDays < 91) return false;
     }
 
     return true;
