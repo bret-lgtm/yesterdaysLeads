@@ -97,7 +97,7 @@ export default function CSVUploader({ onUploadComplete }) {
     e.preventDefault();
     setIsDragging(false);
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'text/csv') {
+    if (droppedFile && (droppedFile.type === 'text/csv' || droppedFile.name.endsWith('.csv'))) {
       setFile(droppedFile);
       processCSV(droppedFile);
     }
@@ -105,7 +105,7 @@ export default function CSVUploader({ onUploadComplete }) {
 
   const handleFileSelect = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
+    if (selectedFile && (selectedFile.type === 'text/csv' || selectedFile.name.endsWith('.csv'))) {
       setFile(selectedFile);
       processCSV(selectedFile);
     }
