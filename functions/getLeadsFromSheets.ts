@@ -34,16 +34,39 @@ Deno.serve(async (req) => {
       ? [filters.lead_type]
       : Object.keys(sheetIds);
 
+    // First, get sheet names from metadata
+    const sheetMetaResponse = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    const sheetMeta = await sheetMetaResponse.json();
+    const sheetMap = {};
+    sheetMeta.sheets?.forEach(sheet => {
+      const id = sheet.properties.sheetId.toString();
+      sheetMap[id] = sheet.properties.title;
+    });
+
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
       const sheetId = sheetIds[leadType];
-      console.log(`Fetching ${leadType} with sheet ID: ${sheetId}`);
+      const sheetName = sheetMap[sheetId];
+      console.log(`Fetching ${leadType}: sheet ID ${sheetId}, name: ${sheetName}`);
       
-      // Use sheet ID directly in the range notation
-      const range = `'${sheetId}'!A:M`;
+      if (!sheetName) {
+        console.error(`Sheet name not found for ID ${sheetId}`);
+        continue;
+      }
+      
+      const range = `'${sheetName}'!A:M`;
       
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values?range=${encodeURIComponent(range)}&valueRenderOption=UNFORMATTED_VALUE`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -53,7 +76,7 @@ Deno.serve(async (req) => {
       );
 
       if (!response.ok) {
-        console.error(`Failed to fetch sheet ${leadType}:`, await response.text());
+        console.error(`Failed to fetch ${leadType} (${sheetName}):`, await response.text());
         continue;
       }
 
