@@ -64,12 +64,6 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 {ageInDays} days old
               </div>
-              {lead.phone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
-                  {lead.phone}
-                </div>
-              )}
               {lead.utility_bill_amount && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-3.5 h-3.5 text-slate-400" />
