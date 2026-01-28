@@ -71,7 +71,9 @@ Deno.serve(async (req) => {
       const leads = dataRows.map((row, index) => {
         const lead = {};
         headers.forEach((header, i) => {
-          lead[header.toLowerCase().replace(/\s+/g, '_')] = row[i] || '';
+          // Clean header: trim, lowercase, replace spaces with underscores
+          const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
+          lead[cleanHeader] = row[i] || '';
         });
         
         // Add required fields
