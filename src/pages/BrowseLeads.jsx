@@ -36,11 +36,14 @@ export default function BrowseLeads() {
     enabled: !!user?.email
   });
 
-  // Fetch all available leads
-  const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
-    queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.filter({ status: 'available' }, '-upload_date')
+  // Fetch all available leads from Google Sheets
+  const { data: sheetsResponse = { leads: [] }, isLoading: leadsLoading } = useQuery({
+    queryKey: ['leads', filters],
+    queryFn: () => base44.functions.getLeadsFromSheets({ filters }),
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
+
+  const allLeads = sheetsResponse.leads || [];
 
   // Fetch cart items
   const { data: cartItems = [], isLoading: cartLoading } = useQuery({
