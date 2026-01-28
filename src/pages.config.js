@@ -53,6 +53,7 @@ import Checkout from './pages/Checkout';
 import Home from './pages/Home';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -63,6 +64,7 @@ export const PAGES = {
     "Home": Home,
     "MyOrders": MyOrders,
     "Pricing": Pricing,
+    "CheckoutSuccess": CheckoutSuccess,
 }
 
 export const pagesConfig = {

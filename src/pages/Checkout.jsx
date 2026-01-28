@@ -63,72 +63,27 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
 
+    // Check if running in iframe (preview mode)
+    if (window.self !== window.top) {
+      toast.error('Checkout only works in published apps. Please publish your app to test payments.');
+      return;
+    }
+
     setProcessing(true);
 
     try {
-      // Get or create customer
-      let customer = (await base44.entities.Customer.filter({ email: user.email }))[0];
-      if (!customer) {
-        customer = await base44.entities.Customer.create({
-          user_id: user.id,
-          email: user.email,
-          full_name: user.full_name,
-          suppression_list: []
-        });
-      }
-
-      // Get lead data for snapshot
-      const leadIds = cartItems.map(item => item.lead_id);
-      const purchasedLeads = leads.filter(l => leadIds.includes(l.id));
-
-      // Create order
-      const order = await base44.entities.Order.create({
-        customer_id: customer.id,
-        customer_email: user.email,
-        total_price: total,
-        lead_count: cartItems.length,
-        stripe_transaction_id: `sim_${Date.now()}`,
-        leads_purchased: leadIds,
-        lead_data_snapshot: purchasedLeads.map(l => ({
-          external_id: l.external_id,
-          first_name: l.first_name,
-          last_name: l.last_name,
-          phone: l.phone,
-          email: l.email,
-          state: l.state,
-          zip_code: l.zip_code,
-          lead_type: l.lead_type,
-          utility_bill_amount: l.utility_bill_amount
-        })),
-        status: 'completed'
+      const response = await base44.functions.invoke('createCheckoutSession', {
+        cartItems
       });
 
-      // Update leads to sold
-      for (const leadId of leadIds) {
-        await base44.entities.Lead.update(leadId, { status: 'sold' });
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
       }
-
-      // Update suppression list
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIds];
-      await base44.entities.Customer.update(customer.id, {
-        suppression_list: updatedSuppressionList
-      });
-
-      // Clear cart
-      for (const item of cartItems) {
-        await base44.entities.CartItem.delete(item.id);
-      }
-
-      setCompletedOrder(order);
-      setOrderComplete(true);
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      queryClient.invalidateQueries({ queryKey: ['customer'] });
-
     } catch (error) {
-      toast.error('Checkout failed. Please try again.');
+      toast.error('Failed to start checkout. Please try again.');
       console.error(error);
-    } finally {
       setProcessing(false);
     }
   };

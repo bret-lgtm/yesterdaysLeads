@@ -1,0 +1,110 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import Stripe from 'npm:stripe';
+
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"));
+
+Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+  
+  try {
+    const body = await req.text();
+    const signature = req.headers.get('stripe-signature');
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+
+    if (!webhookSecret) {
+      console.error('STRIPE_WEBHOOK_SECRET not set');
+      return Response.json({ error: 'Webhook secret not configured' }, { status: 500 });
+    }
+
+    // Verify webhook signature
+    const event = await stripe.webhooks.constructEventAsync(
+      body,
+      signature,
+      webhookSecret
+    );
+
+    console.log('Webhook event received:', event.type);
+
+    // Handle checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      const metadata = session.metadata;
+
+      console.log('Processing completed checkout:', session.id);
+
+      // Extract data from metadata
+      const userEmail = metadata.user_email;
+      const leadIds = metadata.lead_ids.split(',');
+      const cartItemIds = metadata.cart_item_ids.split(',');
+
+      // Get or create customer record
+      let customer = (await base44.asServiceRole.entities.Customer.filter({ email: userEmail }))[0];
+      if (!customer) {
+        const users = await base44.asServiceRole.entities.User.filter({ email: userEmail });
+        const user = users[0];
+        
+        customer = await base44.asServiceRole.entities.Customer.create({
+          user_id: user?.id,
+          email: userEmail,
+          full_name: session.customer_details?.name || userEmail,
+          suppression_list: []
+        });
+      }
+
+      // Get lead data for snapshot
+      const purchasedLeads = await Promise.all(
+        leadIds.map(id => base44.asServiceRole.entities.Lead.get(id))
+      );
+
+      // Create order
+      const order = await base44.asServiceRole.entities.Order.create({
+        customer_id: customer.id,
+        customer_email: userEmail,
+        total_price: session.amount_total / 100, // Convert from cents
+        lead_count: leadIds.length,
+        stripe_transaction_id: session.payment_intent,
+        leads_purchased: leadIds,
+        lead_data_snapshot: purchasedLeads.map(l => ({
+          external_id: l.external_id,
+          first_name: l.first_name,
+          last_name: l.last_name,
+          phone: l.phone,
+          email: l.email,
+          state: l.state,
+          zip_code: l.zip_code,
+          lead_type: l.lead_type,
+          utility_bill_amount: l.utility_bill_amount
+        })),
+        status: 'completed'
+      });
+
+      console.log('Order created:', order.id);
+
+      // Update leads to sold
+      for (const leadId of leadIds) {
+        await base44.asServiceRole.entities.Lead.update(leadId, { status: 'sold' });
+      }
+
+      // Update suppression list
+      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIds];
+      await base44.asServiceRole.entities.Customer.update(customer.id, {
+        suppression_list: updatedSuppressionList
+      });
+
+      // Clear cart items
+      for (const cartItemId of cartItemIds) {
+        await base44.asServiceRole.entities.CartItem.delete(cartItemId);
+      }
+
+      console.log('Checkout processing complete');
+    }
+
+    return Response.json({ received: true });
+
+  } catch (error) {
+    console.error('Webhook error:', error);
+    return Response.json({ 
+      error: error.message 
+    }, { status: 400 });
+  }
+});
