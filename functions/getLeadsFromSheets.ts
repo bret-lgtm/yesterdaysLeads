@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
       const sheetId = sheetIds[leadType];
+      console.log(`Fetching ${leadType} with sheet ID: ${sheetId}`);
       
       // Use sheet ID directly in the range notation
       const range = `'${sheetId}'!A:M`;
@@ -58,16 +59,17 @@ Deno.serve(async (req) => {
 
       const data = await response.json();
       const rows = data.values || [];
+      console.log(`${leadType}: Got ${rows.length} rows`);
 
       if (rows.length < 2) {
-        console.log(`No data in sheet: ${sheetName}`);
+        console.log(`No data in sheet: ${leadType}`);
         continue; // Skip if no data rows
       }
 
       // First row is headers
       const headers = rows[0];
       const dataRows = rows.slice(1);
-      console.log(`Processing ${sheetName}: ${dataRows.length} rows`);
+      console.log(`Processing ${leadType}: ${dataRows.length} rows`);
 
       // Convert rows to objects
       const leads = dataRows.map((row, index) => {
