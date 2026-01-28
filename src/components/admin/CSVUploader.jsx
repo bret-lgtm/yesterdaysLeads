@@ -18,8 +18,12 @@ export default function CSVUploader({ onUploadComplete }) {
     setProgress(10);
 
     try {
+      // Read file content
+      const fileContent = await csvFile.text();
+      const blob = new Blob([fileContent], { type: 'text/csv' });
+      
       // Upload file
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: csvFile });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: blob });
       setProgress(30);
 
       // Extract data
