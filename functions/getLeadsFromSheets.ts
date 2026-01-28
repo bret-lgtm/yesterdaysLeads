@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
       const sheetName = sheetNames[leadType];
-      const range = `${sheetName}!A:M`; // Extended to accommodate all columns
+      const range = `'${sheetName}'!A:M`; // Quote sheet name to handle spaces
 
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
