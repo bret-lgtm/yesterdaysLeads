@@ -1,11 +1,20 @@
-export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+Deno.serve(async (req) => {
   try {
+    const base44 = createClientFromRequest(req);
+    const { filters = {} } = await req.json();
+
     // Get access token for Google Sheets
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
     
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
     if (!spreadsheetId) {
-      throw new Error('GOOGLE_SHEET_ID environment variable not set');
+      return Response.json({ 
+        success: false, 
+        error: 'GOOGLE_SHEET_ID not configured',
+        leads: [] 
+      });
     }
 
     // Map lead types to sheet names
@@ -28,7 +37,7 @@ export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
       const sheetName = sheetNames[leadType];
-      const range = `${sheetName}!A:K`; // Adjust columns as needed
+      const range = `${sheetName}!A:M`; // Extended to accommodate all columns
 
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
@@ -93,13 +102,15 @@ export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
       filteredLeads = filteredLeads.filter(lead => {
         if (!lead.upload_date) return false;
         
-        const ageInDays = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
+        const uploadDate = new Date(lead.upload_date);
+        const now = new Date();
         
         if (filters.age_range === 'yesterday') {
-          const hoursSinceUpload = (new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60);
+          const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
           return hoursSinceUpload <= 24;
         }
         
+        const ageInDays = Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
         const [min, max] = filters.age_range.includes('+')
           ? [parseInt(filters.age_range), Infinity]
           : filters.age_range.split('-').map(Number);
@@ -108,18 +119,18 @@ export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
       });
     }
 
-    return {
+    return Response.json({
       success: true,
       leads: filteredLeads,
       total: filteredLeads.length
-    };
+    });
 
   } catch (error) {
     console.error('Error fetching leads from sheets:', error);
-    return {
+    return Response.json({
       success: false,
       error: error.message,
       leads: []
-    };
+    }, { status: 500 });
   }
-}
+});
