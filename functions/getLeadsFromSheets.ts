@@ -72,9 +72,11 @@ Deno.serve(async (req) => {
       }
       
       const range = `'${sheetName}'!A:M`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`;
+      console.log(`Fetching URL: ${url}`);
       
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+        url,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
