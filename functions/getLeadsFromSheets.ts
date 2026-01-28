@@ -17,14 +17,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Map lead types to sheet names
-    const sheetNames = {
-      auto: 'Auto Leads',
-      home: 'Home Leads',
-      health: 'Health Leads',
-      life: 'Life Leads',
-      medicare: 'Medicare Leads',
-      final_expense: 'Final Expense Leads'
+    // Map lead types to sheet IDs (gid)
+    const sheetIds = {
+      auto: '0',
+      home: '1234567890',
+      health: '987654321',
+      life: '113648240',
+      medicare: '1111111111',
+      final_expense: '2222222222'
     };
 
     let allLeads = [];
@@ -32,13 +32,29 @@ Deno.serve(async (req) => {
     // Determine which sheets to query
     const sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
       ? [filters.lead_type]
-      : Object.keys(sheetNames);
+      : Object.keys(sheetIds);
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
-      const sheetName = sheetNames[leadType];
-      const range = `'${sheetName}'!A:M`; // Quote sheet name to handle spaces
-
+      const sheetId = sheetIds[leadType];
+      
+      // Use the sheet metadata endpoint to get the sheet title, then query by range
+      const sheetMetaResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      const sheetMeta = await sheetMetaResponse.json();
+      const sheet = sheetMeta.sheets?.find(s => s.properties.sheetId.toString() === sheetId);
+      const sheetName = sheet?.properties?.title || leadType;
+      
+      const range = `'${sheetName}'!A:M`;
+      
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
         {
@@ -50,7 +66,7 @@ Deno.serve(async (req) => {
       );
 
       if (!response.ok) {
-        console.error(`Failed to fetch ${sheetName}:`, await response.text());
+        console.error(`Failed to fetch sheet ${leadType} (${sheetName}):`, await response.text());
         continue;
       }
 
