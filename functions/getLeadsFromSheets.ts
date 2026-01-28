@@ -64,7 +64,6 @@ export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
         // Add required fields
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
-        lead.status = lead.status || 'available';
         
         // Parse numeric fields
         if (lead.utility_bill_amount) {
@@ -77,8 +76,8 @@ export default async function getLeadsFromSheets({ filters = {} }, { base44 }) {
       allLeads = allLeads.concat(leads);
     }
 
-    // Apply filters
-    let filteredLeads = allLeads.filter(lead => lead.status === 'available');
+    // Apply filters - only show leads with exact status "Available"
+    let filteredLeads = allLeads.filter(lead => lead.status === 'Available');
 
     if (filters.state && filters.state !== 'all') {
       filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
