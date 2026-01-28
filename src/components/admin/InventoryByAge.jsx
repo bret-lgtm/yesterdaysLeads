@@ -1,0 +1,61 @@
+import React from 'react';
+import { Card } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+
+const ageRanges = [
+  { min: 0, max: 30, label: '0-30 days', color: '#10b981' },
+  { min: 31, max: 60, label: '31-60 days', color: '#3b82f6' },
+  { min: 61, max: 90, label: '61-90 days', color: '#f59e0b' },
+  { min: 91, max: 180, label: '91-180 days', color: '#f43f5e' },
+  { min: 181, max: Infinity, label: '180+ days', color: '#64748b' }
+];
+
+export default function InventoryByAge({ leads }) {
+  const availableLeads = leads.filter(l => l.status === 'available');
+  
+  const data = ageRanges.map(range => {
+    const count = availableLeads.filter(lead => {
+      const age = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
+      return age >= range.min && age <= range.max;
+    }).length;
+    return { name: range.label, value: count, color: range.color };
+  }).filter(d => d.value > 0);
+
+  return (
+    <Card className="p-6 rounded-2xl border-slate-200/60">
+      <h3 className="font-semibold text-slate-900 mb-4">Inventory by Age</h3>
+      <div className="h-64">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={80}
+              paddingAngle={4}
+              dataKey="value"
+            >
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+              }}
+            />
+            <Legend
+              verticalAlign="bottom"
+              iconType="circle"
+              formatter={(value) => <span className="text-slate-600 text-sm">{value}</span>}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </Card>
+  );
+}
