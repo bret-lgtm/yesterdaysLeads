@@ -45,11 +45,19 @@ Deno.serve(async (req) => {
       }
     );
     
+    if (!sheetMetaResponse.ok) {
+      console.error('Failed to fetch sheet metadata:', await sheetMetaResponse.text());
+      return Response.json({ success: false, error: 'Failed to fetch sheet metadata', leads: [] });
+    }
+    
     const sheetMeta = await sheetMetaResponse.json();
+    console.log('Sheet metadata:', JSON.stringify(sheetMeta, null, 2));
+    
     const sheetMap = {};
     sheetMeta.sheets?.forEach(sheet => {
       const id = sheet.properties.sheetId.toString();
       sheetMap[id] = sheet.properties.title;
+      console.log(`Mapped ID ${id} to sheet: ${sheet.properties.title}`);
     });
 
     // Fetch data from each sheet
