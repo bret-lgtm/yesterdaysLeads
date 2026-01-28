@@ -19,12 +19,12 @@ Deno.serve(async (req) => {
 
     // Map lead types to sheet IDs (gid)
     const sheetIds = {
-      auto: '0',
-      home: '1234567890',
-      health: '987654321',
+      auto: '44023422',
+      home: '1745292620',
+      health: '1305861843',
       life: '113648240',
-      medicare: '1111111111',
-      final_expense: '2222222222'
+      medicare: '757044649',
+      final_expense: '0'
     };
 
     let allLeads = [];
