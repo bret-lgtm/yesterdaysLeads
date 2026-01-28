@@ -127,6 +127,9 @@ Deno.serve(async (req) => {
       }
 
       allLeads = allLeads.concat(leads);
+      } catch (sheetError) {
+        console.error(`Error processing sheet ${leadType}:`, sheetError.message);
+      }
     }
 
     // Apply filters - only show leads with exact status "Available"
