@@ -14,7 +14,7 @@ const ITEMS_PER_PAGE = 20;
 
 export default function BrowseLeads() {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({ age_range: 'yesterday' });
+  const [filters, setFilters] = useState({ age_range: 'all' });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
