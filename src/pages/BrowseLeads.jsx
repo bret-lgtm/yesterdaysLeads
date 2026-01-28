@@ -14,7 +14,12 @@ const ITEMS_PER_PAGE = 20;
 
 export default function BrowseLeads() {
   const queryClient = useQueryClient();
-  const [filters, setFilters] = useState({ age_range: 'all' });
+  
+  // Get lead_type from URL params if present
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLeadType = urlParams.get('lead_type');
+  
+  const [filters, setFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);

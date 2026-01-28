@@ -49,12 +49,12 @@ const features = [
 ];
 
 const leadTypes = [
-  { name: "Auto Insurance", color: "bg-blue-100 text-blue-700" },
-  { name: "Home Insurance", color: "bg-emerald-100 text-emerald-700" },
-  { name: "Health Insurance", color: "bg-rose-100 text-rose-700" },
-  { name: "Life Insurance", color: "bg-violet-100 text-violet-700" },
-  { name: "Medicare", color: "bg-amber-100 text-amber-700" },
-  { name: "Final Expense", color: "bg-slate-100 text-slate-700" }
+  { name: "Auto Insurance", value: "auto", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
+  { name: "Home Insurance", value: "home", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },
+  { name: "Health Insurance", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" },
+  { name: "Life Insurance", value: "life", color: "bg-violet-100 text-violet-700 hover:bg-violet-200" },
+  { name: "Medicare", value: "medicare", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
+  { name: "Final Expense", value: "final_expense", color: "bg-slate-100 text-slate-700 hover:bg-slate-200" }
 ];
 
 export default function Home() {
@@ -106,9 +106,11 @@ export default function Home() {
             className="flex flex-wrap justify-center gap-2 mt-12"
           >
             {leadTypes.map((type, i) => (
-              <Badge key={i} className={`${type.color} border-0 px-4 py-2 text-sm font-medium`}>
-                {type.name}
-              </Badge>
+              <Link key={i} to={createPageUrl('BrowseLeads') + `?lead_type=${type.value}`}>
+                <Badge className={`${type.color} border-0 px-4 py-2 text-sm font-medium cursor-pointer transition-colors`}>
+                  {type.name}
+                </Badge>
+              </Link>
             ))}
           </motion.div>
         </div>
