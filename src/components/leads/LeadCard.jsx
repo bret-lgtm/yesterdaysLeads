@@ -71,7 +71,7 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
             </div>
             
             <h3 className="font-semibold text-slate-900 text-lg mb-2">
-              {lead.first_name} {lead.last_name}
+              {lead.first_name} <span className="blur-sm select-none">{lead.last_name}</span>
             </h3>
             
             <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
