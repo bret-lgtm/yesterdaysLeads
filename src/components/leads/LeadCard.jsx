@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MapPin, Calendar, Phone, Mail, DollarSign, ShoppingCart, Check } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { MapPin, Calendar, Phone, Mail, DollarSign, ShoppingCart, Check, Info } from "lucide-react";
 import { motion } from "framer-motion";
 
 const typeColors = {
@@ -53,7 +54,20 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
               <Badge className={`${typeColors[lead.lead_type]} border font-medium px-2.5 py-0.5`}>
                 {typeLabels[lead.lead_type]}
               </Badge>
-              <span className="text-xs text-slate-400 font-mono">#{lead.external_id}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-slate-400 font-mono">#{lead.external_id}</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="w-3 h-3 text-slate-400" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Format: YYYYMMDD-TYPE-###</p>
+                      <p className="text-xs text-slate-400 mt-1">Date uploaded - Lead type - Sequence</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
             
             <h3 className="font-semibold text-slate-900 text-lg mb-2">
