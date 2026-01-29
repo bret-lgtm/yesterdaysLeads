@@ -162,14 +162,6 @@ Deno.serve(async (req) => {
           delete lead.last_name;
         }
 
-        // Remove fields not needed in snapshot
-        delete lead.external_id;
-        delete lead.tier_1;
-        delete lead.tier_2;
-        delete lead.tier_3;
-        delete lead.tier_4;
-        delete lead.tier_5;
-
         return lead;
       });
       
