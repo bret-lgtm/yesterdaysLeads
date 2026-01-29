@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       health: '1305861843',
       life: '113648240',
       medicare: '757044649',
-      final_expense: '0',
+      final_expense: '387991684',
       veteran_life: '1234567890'
     };
 
