@@ -38,7 +38,9 @@ Deno.serve(async (req) => {
       // Extract data from metadata
       const userEmail = metadata.user_email;
       const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
-      const cartItems = JSON.parse(metadata.cart_items_json || '[]');
+
+      // Fetch cart items from database
+      const cartItems = await base44.asServiceRole.entities.CartItem.filter({ user_email: userEmail });
 
       console.log('Cart items count:', cartItems.length);
       console.log('Cart items:', cartItems);
