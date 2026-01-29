@@ -70,13 +70,19 @@ Deno.serve(async (req) => {
       
       const fullLeadsMap = {};
       fullLeadsResponse.data.leads.forEach(lead => {
-        fullLeadsMap[lead.external_id] = lead;
+        if (!fullLeadsMap[lead.external_id]) {
+          fullLeadsMap[lead.external_id] = [];
+        }
+        fullLeadsMap[lead.external_id].push(lead);
       });
       
-      // Match purchased leads with full data
+      // Match purchased leads with full data, maintaining order
       const completeLeadData = purchasedLeads.map(lead => {
-        const fullLead = fullLeadsMap[lead.external_id];
-        return fullLead || lead;
+        const matches = fullLeadsMap[lead.external_id];
+        if (matches && matches.length > 0) {
+          return matches.shift(); // Take first match, remove from array
+        }
+        return lead;
       });
 
       // Create order
