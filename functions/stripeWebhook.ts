@@ -90,7 +90,7 @@ Deno.serve(async (req) => {
         customer_id: customer.id,
         customer_email: userEmail,
         total_price: session.amount_total / 100, // Convert from cents
-        lead_count: leadIds.length,
+        lead_count: completeLeadData.length,
         stripe_transaction_id: session.payment_intent,
         leads_purchased: leadIds,
         lead_data_snapshot: completeLeadData,
