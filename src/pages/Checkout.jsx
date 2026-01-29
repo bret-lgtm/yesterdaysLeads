@@ -91,68 +91,31 @@ export default function Checkout() {
     }
   };
 
-  const downloadCSV = () => {
+  const downloadCSV = async () => {
     if (!completedOrder?.lead_data_snapshot || completedOrder.lead_data_snapshot.length === 0) return;
 
-    // Columns to exclude
-    const excludeColumns = new Set(['id', 'created_date', 'updated_date', 'created_by', 'external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'last_name_initial', 'user_email', 'price', 'lead_type', 'lead_name', 'lead_id', 'status']);
-
-    // Preferred column order
-    const preferredOrder = [
-      'age_in_days',
-      'first_name',
-      'last_name',
-      'email',
-      'phone',
-      'date_of_birth',
-      'address',
-      'city',
-      'state',
-      'zip_code',
-      'current_coverage',
-      'coverage_amount',
-      'favorite_hobby',
-      'beneficiary'
-    ];
-
-    // Get all unique column names from the data
-    const allColumns = new Set();
-    completedOrder.lead_data_snapshot.forEach(lead => {
-      Object.keys(lead).forEach(key => {
-        if (!excludeColumns.has(key)) {
-          allColumns.add(key);
-        }
+    try {
+      const response = await base44.functions.invoke('filterLeadsForCSV', {
+        leads: completedOrder.lead_data_snapshot
       });
-    });
 
-    // Build headers: preferred columns first (if they exist), then remaining columns
-    const headers = [];
-    preferredOrder.forEach(col => {
-      if (allColumns.has(col)) {
-        headers.push(col);
+      if (!response.data.success) {
+        toast.error('Failed to generate CSV');
+        return;
       }
-    });
 
-    // Add any remaining columns not in preferred order
-    allColumns.forEach(col => {
-      if (!headers.includes(col)) {
-        headers.push(col);
-      }
-    });
-
-    // Build rows using determined headers
-    const rows = completedOrder.lead_data_snapshot.map(lead =>
-      headers.map(header => lead[header] || '')
-    );
-
-    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `leads-order-${completedOrder.id}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const csvContent = response.data.csvContent;
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leads-order-${completedOrder.id}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error('Failed to download CSV');
+      console.error(error);
+    }
   };
 
   // Show loading while checking authentication
