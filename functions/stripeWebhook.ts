@@ -38,23 +38,22 @@ Deno.serve(async (req) => {
       // Extract data from metadata
       const userEmail = metadata.user_email;
       const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
-      const leadIds = metadata.lead_ids.split(',').filter(id => id.trim());
 
-      // Fetch lead entities directly (bypasses CartItem RLS issues)
-      const leads = [];
-      for (const leadId of leadIds) {
+      // Fetch cart items - they contain all the lead data we need
+      const cartItems = [];
+      for (const id of cartItemIds) {
         try {
-          const lead = await base44.asServiceRole.entities.Lead.get(leadId);
-          if (lead) {
-            leads.push(lead);
+          const item = await base44.asServiceRole.entities.CartItem.get(id);
+          if (item) {
+            cartItems.push(item);
           }
         } catch (err) {
-          console.warn(`Could not fetch lead ${leadId}:`, err.message);
+          console.warn(`Could not fetch cart item ${id}:`, err.message);
         }
       }
 
-      console.log('Leads count:', leads.length);
-      console.log('Leads:', leads);
+      console.log('Cart items count:', cartItems.length);
+      console.log('Cart items:', cartItems);
 
       // Get or create customer record
       let customer = (await base44.asServiceRole.entities.Customer.filter({ email: userEmail }))[0];
@@ -70,8 +69,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Use leads as the lead data snapshot
-      const completeLeadData = leads;
+      // Use cart items as the lead data snapshot
+      const completeLeadData = cartItems;
 
       console.log('Complete lead data count:', completeLeadData.length);
       console.log('Session total:', session.amount_total / 100);
@@ -83,7 +82,7 @@ Deno.serve(async (req) => {
         total_price: session.amount_total / 100, // Convert from cents
         lead_count: completeLeadData.length,
         stripe_transaction_id: session.payment_intent,
-        leads_purchased: leadIds,
+        leads_purchased: cartItems.map(item => item.lead_id),
         lead_data_snapshot: completeLeadData,
         status: 'completed'
       });
@@ -91,7 +90,8 @@ Deno.serve(async (req) => {
       console.log('Order created:', order.id);
 
       // Update suppression list with lead IDs
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIds];
+      const leadIdsToSuppress = cartItems.map(item => item.lead_id).filter(Boolean);
+      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIdsToSuppress];
       await base44.asServiceRole.entities.Customer.update(customer.id, {
         suppression_list: updatedSuppressionList
       });
