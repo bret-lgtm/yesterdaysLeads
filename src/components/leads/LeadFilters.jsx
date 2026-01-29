@@ -14,12 +14,13 @@ const US_STATES = [
 ];
 
 const LEAD_TYPES = [
-  { value: "auto", label: "Auto Insurance" },
-  { value: "home", label: "Home Insurance" },
-  { value: "health", label: "Health Insurance" },
-  { value: "life", label: "Life Insurance" },
+  { value: "final_expense", label: "Final Expense" },
+  { value: "life", label: "Life" },
+  { value: "veteran_life", label: "Veteran Life" },
+  { value: "home", label: "Home" },
+  { value: "auto", label: "Auto" },
   { value: "medicare", label: "Medicare" },
-  { value: "final_expense", label: "Final Expense" }
+  { value: "health", label: "Health" }
 ];
 
 const AGE_RANGES = [
