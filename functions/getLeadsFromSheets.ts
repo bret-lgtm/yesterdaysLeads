@@ -64,12 +64,16 @@ Deno.serve(async (req) => {
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
-      const sheetId = sheetIds[leadType];
-      const sheetName = sheetMap[sheetId];
-      
-      if (!sheetName) {
-        continue;
-      }
+      try {
+        const sheetId = sheetIds[leadType];
+        const sheetName = sheetMap[sheetId];
+        
+        console.log(`Processing ${leadType}: sheetId=${sheetId}, sheetName=${sheetName}`);
+        
+        if (!sheetName) {
+          console.log(`❌ No sheet name found for ${leadType}`);
+          continue;
+        }
       
       const range = `'${sheetName}'!A:M`;
       
@@ -128,6 +132,9 @@ Deno.serve(async (req) => {
       }
 
       allLeads = allLeads.concat(leads);
+      } catch (error) {
+        console.error(`❌ Error processing ${leadType}:`, error.message);
+      }
     }
 
     // Apply filters - only show leads with exact status "Available"
