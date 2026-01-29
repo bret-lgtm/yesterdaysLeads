@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
-import { DEFAULT_PRICING, BULK_DISCOUNTS } from '../components/pricing/PricingCalculator';
+import { BULK_DISCOUNTS } from '../components/pricing/PricingCalculator';
 import { ArrowRight, Check, Tag, Sparkles } from "lucide-react";
+import { base44 } from '@/api/base44Client';
+import { useQuery } from '@tanstack/react-query';
 
 const typeLabels = {
   auto: "Auto Insurance",
@@ -20,6 +22,34 @@ const typeLabels = {
 };
 
 export default function Pricing() {
+  const { data: pricingTiers = [], isLoading } = useQuery({
+    queryKey: ['pricingTiers'],
+    queryFn: () => base44.entities.PricingTier.list()
+  });
+
+  // Group pricing tiers by lead type and age range
+  const pricingByType = React.useMemo(() => {
+    const grouped = {};
+    
+    pricingTiers.forEach(tier => {
+      if (!grouped[tier.lead_type]) {
+        grouped[tier.lead_type] = { fresh: null, standard: null, aged: null };
+      }
+      
+      if (tier.age_range_min <= 14 && tier.age_range_max <= 30) {
+        grouped[tier.lead_type].fresh = tier.base_price;
+      } else if (tier.age_range_min <= 31 && tier.age_range_max <= 90) {
+        grouped[tier.lead_type].standard = tier.base_price;
+      } else if (tier.age_range_min >= 91) {
+        grouped[tier.lead_type].aged = tier.base_price;
+      }
+    });
+    
+    return grouped;
+  }, [pricingTiers]);
+
+  const leadTypesWithPricing = Object.keys(pricingByType).filter(type => typeLabels[type]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
@@ -47,47 +77,59 @@ export default function Pricing() {
             <div className="p-6 border-b border-slate-100">
               <h2 className="text-xl font-semibold text-slate-900">Price Per Lead by Type & Age</h2>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="font-semibold">Lead Type</TableHead>
-                  <TableHead className="text-center font-semibold">
-                    <div className="flex flex-col items-center">
-                      <span>Fresh</span>
-                      <span className="text-xs font-normal text-slate-500">0-30 days</span>
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center font-semibold">
-                    <div className="flex flex-col items-center">
-                      <span>Standard</span>
-                      <span className="text-xs font-normal text-slate-500">31-90 days</span>
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-center font-semibold">
-                    <div className="flex flex-col items-center">
-                      <span>Aged</span>
-                      <span className="text-xs font-normal text-slate-500">90+ days</span>
-                    </div>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(DEFAULT_PRICING).map(([type, prices]) => (
-                  <TableRow key={type}>
-                    <TableCell className="font-medium">{typeLabels[type]}</TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-lg font-semibold text-slate-900">${prices.fresh.toFixed(2)}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-lg font-semibold text-slate-900">${prices.base.toFixed(2)}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-lg font-semibold text-emerald-600">${prices.aged.toFixed(2)}</span>
-                    </TableCell>
+            {isLoading ? (
+              <div className="p-8 text-center text-slate-500">Loading pricing...</div>
+            ) : leadTypesWithPricing.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="font-semibold">Lead Type</TableHead>
+                    <TableHead className="text-center font-semibold">
+                      <div className="flex flex-col items-center">
+                        <span>Fresh</span>
+                        <span className="text-xs font-normal text-slate-500">1-14 days</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold">
+                      <div className="flex flex-col items-center">
+                        <span>Standard</span>
+                        <span className="text-xs font-normal text-slate-500">31-90 days</span>
+                      </div>
+                    </TableHead>
+                    <TableHead className="text-center font-semibold">
+                      <div className="flex flex-col items-center">
+                        <span>Aged</span>
+                        <span className="text-xs font-normal text-slate-500">91+ days</span>
+                      </div>
+                    </TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {leadTypesWithPricing.map((type) => (
+                    <TableRow key={type}>
+                      <TableCell className="font-medium">{typeLabels[type]}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-lg font-semibold text-slate-900">
+                          {pricingByType[type].fresh ? `$${pricingByType[type].fresh.toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-lg font-semibold text-slate-900">
+                          {pricingByType[type].standard ? `$${pricingByType[type].standard.toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-lg font-semibold text-emerald-600">
+                          {pricingByType[type].aged ? `$${pricingByType[type].aged.toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="p-8 text-center text-slate-500">No pricing tiers configured yet.</div>
+            )}
           </Card>
         </motion.div>
 
