@@ -70,23 +70,27 @@ Deno.serve(async (req) => {
         total_price: session.amount_total / 100, // Convert from cents
         lead_count: completeLeadData.length,
         stripe_transaction_id: session.payment_intent,
-        leads_purchased: leadIds,
+        leads_purchased: cartItems.map(item => item.lead_id),
         lead_data_snapshot: completeLeadData,
         status: 'completed'
       });
 
       console.log('Order created:', order.id);
 
-      // Update suppression list with external IDs from lead snapshot
-      const externalIds = completeLeadData.map(lead => lead.external_id).filter(Boolean);
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...externalIds];
+      // Update suppression list with lead IDs from cart
+      const leadIdsToSuppress = cartItems.map(item => item.lead_id).filter(Boolean);
+      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIdsToSuppress];
       await base44.asServiceRole.entities.Customer.update(customer.id, {
         suppression_list: updatedSuppressionList
       });
 
       // Clear cart items
       for (const cartItemId of cartItemIds) {
-        await base44.asServiceRole.entities.CartItem.delete(cartItemId);
+        try {
+          await base44.asServiceRole.entities.CartItem.delete(cartItemId);
+        } catch (err) {
+          console.warn(`Could not delete cart item ${cartItemId}:`, err.message);
+        }
       }
 
       console.log('Checkout processing complete');
