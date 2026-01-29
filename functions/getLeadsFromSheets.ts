@@ -42,6 +42,7 @@ Deno.serve(async (req) => {
       : Object.keys(sheetIds);
 
     // First, get sheet names from metadata
+    console.log('🌐 Fetching sheet metadata...');
     const sheetMetaResponse = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
       {
@@ -52,8 +53,11 @@ Deno.serve(async (req) => {
       }
     );
     
+    console.log('📡 Sheet metadata response status:', sheetMetaResponse.status);
+    
     if (!sheetMetaResponse.ok) {
-      console.error('Failed to fetch sheet metadata:', await sheetMetaResponse.text());
+      const errorText = await sheetMetaResponse.text();
+      console.error('❌ Failed to fetch sheet metadata:', errorText);
       return Response.json({ success: false, error: 'Failed to fetch sheet metadata', leads: [] });
     }
     
