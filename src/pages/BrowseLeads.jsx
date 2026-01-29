@@ -74,11 +74,9 @@ export default function BrowseLeads() {
     if (filters.zip_code && !lead.zip_code?.startsWith(filters.zip_code)) return false;
 
     if (filters.age_range && filters.age_range !== 'all') {
-      const uploadDate = new Date(lead.upload_date);
-      const hoursSinceUpload = (new Date() - uploadDate) / (1000 * 60 * 60);
-      const ageInDays = Math.floor(hoursSinceUpload / 24);
+      const ageInDays = lead.age_in_days || 0;
 
-      if (filters.age_range === 'yesterday' && hoursSinceUpload > 72) return false;
+      if (filters.age_range === 'yesterday' && ageInDays > 3) return false;
       if (filters.age_range === '4-14' && (ageInDays < 4 || ageInDays > 14)) return false;
       if (filters.age_range === '15-30' && (ageInDays < 15 || ageInDays > 30)) return false;
       if (filters.age_range === '31-90' && (ageInDays < 31 || ageInDays > 90)) return false;
