@@ -39,21 +39,29 @@ Deno.serve(async (req) => {
       const userEmail = metadata.user_email;
       const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
 
+      console.log('User email from metadata:', userEmail);
+      console.log('Cart item IDs to fetch:', cartItemIds);
+
       // Fetch cart items - they contain all the lead data we need
       const cartItems = [];
       for (const id of cartItemIds) {
         try {
+          console.log(`Attempting to fetch cart item with ID: ${id}`);
           const item = await base44.asServiceRole.entities.CartItem.get(id);
           if (item) {
+            console.log(`Successfully fetched cart item ${id}`);
             cartItems.push(item);
+          } else {
+            console.log(`Cart item ${id} returned null`);
           }
         } catch (err) {
+          console.error(`Error fetching cart item ${id}:`, err);
           console.warn(`Could not fetch cart item ${id}:`, err.message);
         }
       }
 
       console.log('Cart items count:', cartItems.length);
-      console.log('Cart items:', cartItems);
+      console.log('Cart items fetched:', cartItems.map(c => ({id: c.id, lead_id: c.lead_id})));
 
       // Get or create customer record
       let customer = (await base44.asServiceRole.entities.Customer.filter({ email: userEmail }))[0];
