@@ -57,37 +57,8 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch all leads from sheets with full data
-      const response = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', {
-        filters: {},
-        include_last_names: true
-      });
-      
-      const allLeads = response.data?.leads || response.leads || [];
-      
-      // Create a map of leads by their ID (as they appear in cart)
-      const leadsById = {};
-      allLeads.forEach((lead, idx) => {
-        const leadType = lead.lead_type;
-        if (!leadsById[leadType]) {
-          leadsById[leadType] = {};
-        }
-        leadsById[leadType][idx] = lead;
-      });
-      
-      // Match purchased lead IDs to actual lead data
-      const completeLeadData = leadIds.map(leadId => {
-        // leadId format: "type_index" (e.g., "medicare_1", "life_0")
-        const [type, index] = leadId.split('_');
-        const idx = parseInt(index);
-        
-        if (leadsById[type] && leadsById[type][idx]) {
-          return leadsById[type][idx];
-        }
-        
-        console.warn(`Lead not found: ${leadId}`);
-        return null;
-      }).filter(lead => lead !== null);
+      // Use cart items as the lead data snapshot
+      const completeLeadData = cartItems;
 
       console.log('Complete lead data count:', completeLeadData.length);
       console.log('Session total:', session.amount_total / 100);
