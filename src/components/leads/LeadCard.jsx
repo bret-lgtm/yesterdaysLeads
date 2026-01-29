@@ -14,7 +14,7 @@ const typeColors = {
   life: "bg-violet-50 text-violet-700 border-violet-200",
   medicare: "bg-amber-50 text-amber-700 border-amber-200",
   final_expense: "bg-slate-100 text-slate-700 border-slate-200",
-  veteran_life: "bg-indigo-50 text-indigo-700 border-indigo-200"
+  veteran_life: "bg-orange-50 text-orange-700 border-orange-200"
 };
 
 const typeLabels = {
