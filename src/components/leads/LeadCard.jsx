@@ -83,7 +83,7 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 {ageInDays} days old
               </div>
-              {lead.coverage_amount && (
+              {lead.coverage_amount && !isNaN(parseFloat(lead.coverage_amount)) && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                   ${parseFloat(lead.coverage_amount).toLocaleString()} coverage
