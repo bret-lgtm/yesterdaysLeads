@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       console.log('User email from metadata:', userEmail);
       console.log('Cart item IDs to fetch:', cartItemIds);
 
-      // Fetch cart items - they contain all the lead data we need
+      // Fetch cart items
       const cartItems = [];
       for (const id of cartItemIds) {
         try {
@@ -77,8 +77,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Use cart items as the lead data snapshot
-      const completeLeadData = cartItems;
+      // Fetch complete lead data from Google Sheets
+      const leadIds = cartItems.map(item => item.lead_id);
+      const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', { 
+        lead_ids: leadIds 
+      });
+      const completeLeadData = sheetsResponse.data.leads || [];
 
       console.log('Complete lead data count:', completeLeadData.length);
       console.log('Session total:', session.amount_total / 100);
