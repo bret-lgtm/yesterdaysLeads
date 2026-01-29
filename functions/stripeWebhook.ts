@@ -39,8 +39,18 @@ Deno.serve(async (req) => {
       const userEmail = metadata.user_email;
       const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
 
-      // Fetch cart items from database
-      const cartItems = await base44.asServiceRole.entities.CartItem.filter({ user_email: userEmail });
+      // Fetch specific cart items from database using IDs
+      const cartItems = [];
+      for (const id of cartItemIds) {
+        try {
+          const item = await base44.asServiceRole.entities.CartItem.get(id);
+          if (item) {
+            cartItems.push(item);
+          }
+        } catch (err) {
+          console.warn(`Could not fetch cart item ${id}:`, err.message);
+        }
+      }
 
       console.log('Cart items count:', cartItems.length);
       console.log('Cart items:', cartItems);
