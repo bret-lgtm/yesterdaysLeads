@@ -5,7 +5,7 @@ import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
 import CartSidebar from '../components/leads/CartSidebar';
 import { calculateLeadPrice, calculateBulkDiscount } from '../components/pricing/PricingCalculator';
-import { useCart } from '../hooks/useCart';
+import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Package, ChevronLeft, ChevronRight } from "lucide-react";

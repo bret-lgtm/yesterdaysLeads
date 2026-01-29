@@ -24,7 +24,7 @@ import {
   Home,
   DollarSign
 } from "lucide-react";
-import { migrateLocalCartToDatabase } from '@/utils/cartMigration';
+import { migrateLocalCartToDatabase } from '../components/cartMigration';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
