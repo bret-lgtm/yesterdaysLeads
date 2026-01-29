@@ -134,17 +134,42 @@ Deno.serve(async (req) => {
           const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
           lead[cleanHeader] = row[i] || '';
         });
-        
+
         // Add required fields
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
-        
+
+        // Calculate age_in_days from external_id
+        if (lead.external_id) {
+          const dateStr = lead.external_id.split('-')[0];
+          if (dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const uploadDate = new Date(year, month, day);
+
+            if (!isNaN(uploadDate.getTime())) {
+              const now = new Date();
+              const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
+              lead.age_in_days = Math.floor(hoursSinceUpload / 24);
+            }
+          }
+        }
+
         // Remove last name for security unless explicitly requested
         if (!include_last_names && lead.last_name) {
           lead.last_name_initial = lead.last_name.charAt(0).toUpperCase();
           delete lead.last_name;
         }
-        
+
+        // Remove fields not needed in snapshot
+        delete lead.external_id;
+        delete lead.tier_1;
+        delete lead.tier_2;
+        delete lead.tier_3;
+        delete lead.tier_4;
+        delete lead.tier_5;
+
         return lead;
       });
       
