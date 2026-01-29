@@ -16,8 +16,40 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
+    const userEmail = user?.email || customerEmail;
+
+    // Ensure cart items exist in database - create them if they don't
+    const savedCartItems = [];
+    for (const item of cartItems) {
+      try {
+        // Try to get existing cart item
+        let savedItem = item.id ? await base44.asServiceRole.entities.CartItem.get(item.id) : null;
+        
+        // If it doesn't exist or no ID, create it
+        if (!savedItem) {
+          savedItem = await base44.asServiceRole.entities.CartItem.create({
+            user_email: userEmail,
+            lead_id: item.lead_id,
+            lead_type: item.lead_type,
+            lead_name: item.lead_name,
+            state: item.state,
+            zip_code: item.zip_code,
+            age_in_days: item.age_in_days,
+            price: item.price
+          });
+        }
+        savedCartItems.push(savedItem);
+      } catch (err) {
+        console.warn(`Could not save cart item:`, err.message);
+        // Continue with the item as-is if save fails
+        savedCartItems.push(item);
+      }
+    }
+
+    console.log('Saved cart items to database:', savedCartItems.length);
+
     // Create line items for Stripe
-    const lineItems = cartItems.map(item => ({
+    const lineItems = savedCartItems.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -44,8 +76,8 @@ Deno.serve(async (req) => {
       customer_email: user?.email || customerEmail,
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
-        user_email: user?.email || customerEmail,
-        cart_item_ids: cartItems.map(item => item.id).join(',')
+        user_email: userEmail,
+        cart_item_ids: savedCartItems.map(item => item.id).join(',')
       }
     });
 
