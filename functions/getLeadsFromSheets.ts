@@ -213,7 +213,9 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error fetching leads from sheets:', error);
+    console.error('❌❌❌ CAUGHT ERROR:', error);
+    console.error('❌❌❌ Error message:', error.message);
+    console.error('❌❌❌ Error stack:', error.stack);
     return Response.json({
       success: false,
       error: error.message,
