@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
 import CartSidebar from '../components/leads/CartSidebar';
 import { calculateLeadPrice, calculateBulkDiscount } from '../components/pricing/PricingCalculator';
+import { useCart } from '../hooks/useCart';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import { Package, ChevronLeft, ChevronRight } from "lucide-react";
 
 const ITEMS_PER_PAGE = 20;
 
 export default function BrowseLeads() {
-  const queryClient = useQueryClient();
-  
   // Get lead_type from URL params if present
   const urlParams = new URLSearchParams(window.location.search);
   const urlLeadType = urlParams.get('lead_type');
@@ -29,6 +27,9 @@ export default function BrowseLeads() {
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
+
+  // Use cart hook
+  const { cartItems, addToCart, removeFromCart } = useCart(user);
 
   // Fetch customer data for suppression list
   const { data: customer } = useQuery({
@@ -53,16 +54,6 @@ export default function BrowseLeads() {
 
   const allLeads = sheetsResponse.leads || [];
 
-  // Fetch cart items
-  const { data: cartItems = [], isLoading: cartLoading } = useQuery({
-    queryKey: ['cart', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.CartItem.filter({ user_email: user.email });
-    },
-    enabled: !!user?.email
-  });
-
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
     queryKey: ['pricingTiers'],
@@ -74,8 +65,8 @@ export default function BrowseLeads() {
   const cartLeadIds = cartItems.map(item => item.lead_id);
 
   const filteredLeads = allLeads.filter(lead => {
-    // Exclude suppressed leads
-    if (suppressionList.includes(lead.id)) return false;
+    // Exclude suppressed leads (only for authenticated users)
+    if (user && suppressionList.includes(lead.id)) return false;
 
     // Apply filters
     if (filters.lead_type && filters.lead_type !== 'all' && lead.lead_type !== filters.lead_type) return false;
@@ -104,47 +95,27 @@ export default function BrowseLeads() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // Add to cart mutation
-  const addToCartMutation = useMutation({
-    mutationFn: async ({ lead, price }) => {
-      const dateStr = lead.external_id.split('-')[0];
-      const year = parseInt(dateStr.substring(0, 4));
-      const month = parseInt(dateStr.substring(4, 6)) - 1;
-      const day = parseInt(dateStr.substring(6, 8));
-      const uploadDate = new Date(year, month, day);
-      const ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
-      return base44.entities.CartItem.create({
-        user_email: user.email,
-        lead_id: lead.id,
-        lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name_initial}.`,
-        state: lead.state,
-        zip_code: lead.zip_code,
-        age_in_days: ageInDays,
-        price
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Lead added to cart');
-    }
-  });
-
-  // Remove from cart mutation
-  const removeFromCartMutation = useMutation({
-    mutationFn: (itemId) => base44.entities.CartItem.delete(itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success('Lead removed from cart');
-    }
-  });
-
   // Bulk add to cart
   const handleBulkAddToCart = async () => {
     for (const lead of selectedLeads) {
       if (!cartLeadIds.includes(lead.id)) {
         const price = calculateLeadPrice(lead, pricingTiers);
-        await addToCartMutation.mutateAsync({ lead, price });
+        const dateStr = lead.external_id.split('-')[0];
+        const year = parseInt(dateStr.substring(0, 4));
+        const month = parseInt(dateStr.substring(4, 6)) - 1;
+        const day = parseInt(dateStr.substring(6, 8));
+        const uploadDate = new Date(year, month, day);
+        const ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+        
+        await addToCart({
+          lead_id: lead.id,
+          lead_type: lead.lead_type,
+          lead_name: `${lead.first_name} ${lead.last_name_initial}.`,
+          state: lead.state,
+          zip_code: lead.zip_code,
+          age_in_days: ageInDays,
+          price
+        });
       }
     }
     setSelectedLeads([]);
@@ -226,7 +197,24 @@ export default function BrowseLeads() {
                   isSelected={!!isSelected}
                   onSelect={handleSelectLead}
                   isInCart={isInCart}
-                  onAddToCart={(lead, price) => addToCartMutation.mutate({ lead, price })}
+                  onAddToCart={async (lead, price) => {
+                    const dateStr = lead.external_id.split('-')[0];
+                    const year = parseInt(dateStr.substring(0, 4));
+                    const month = parseInt(dateStr.substring(4, 6)) - 1;
+                    const day = parseInt(dateStr.substring(6, 8));
+                    const uploadDate = new Date(year, month, day);
+                    const ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+
+                    await addToCart({
+                      lead_id: lead.id,
+                      lead_type: lead.lead_type,
+                      lead_name: `${lead.first_name} ${lead.last_name_initial}.`,
+                      state: lead.state,
+                      zip_code: lead.zip_code,
+                      age_in_days: ageInDays,
+                      price
+                    });
+                  }}
                 />
               );
             })}
@@ -264,7 +252,7 @@ export default function BrowseLeads() {
       {/* Cart Sidebar */}
       <CartSidebar
         items={cartItems}
-        onRemove={(id) => removeFromCartMutation.mutate(id)}
+        onRemove={removeFromCart}
         onCheckout={handleCheckout}
         isOpen={cartOpen}
         onToggle={() => setCartOpen(!cartOpen)}

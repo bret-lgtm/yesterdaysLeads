@@ -24,10 +24,12 @@ import {
   Home,
   DollarSign
 } from "lucide-react";
+import { migrateLocalCartToDatabase } from '@/utils/cartMigration';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [localCartCount, setLocalCartCount] = React.useState(0);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -42,6 +44,45 @@ export default function Layout({ children }) {
     },
     enabled: !!user?.email
   });
+
+  // Migrate cart on sign-in
+  React.useEffect(() => {
+    if (user?.email) {
+      migrateLocalCartToDatabase(user.email).then(() => {
+        setLocalCartCount(0);
+      });
+    }
+  }, [user?.email]);
+
+  // Track localStorage cart count for anonymous users
+  React.useEffect(() => {
+    if (!user) {
+      const updateLocalCount = () => {
+        const stored = localStorage.getItem('anonymous_cart');
+        if (stored) {
+          try {
+            const cart = JSON.parse(stored);
+            setLocalCartCount(cart.length);
+          } catch {
+            setLocalCartCount(0);
+          }
+        } else {
+          setLocalCartCount(0);
+        }
+      };
+
+      updateLocalCount();
+      window.addEventListener('storage', updateLocalCount);
+      
+      // Custom event for same-tab updates
+      window.addEventListener('cartUpdated', updateLocalCount);
+
+      return () => {
+        window.removeEventListener('storage', updateLocalCount);
+        window.removeEventListener('cartUpdated', updateLocalCount);
+      };
+    }
+  }, [user]);
 
   const handleLogout = () => {
     base44.auth.logout();
@@ -95,9 +136,9 @@ export default function Layout({ children }) {
               <Link to={createPageUrl('Checkout')} className="relative">
                 <Button variant="ghost" size="icon" className="rounded-xl">
                   <ShoppingCart className="w-5 h-5 text-slate-600" />
-                  {cartItems.length > 0 && (
+                  {((user ? cartItems.length : localCartCount) > 0) && (
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-emerald-600 p-0 flex items-center justify-center text-xs">
-                      {cartItems.length}
+                      {user ? cartItems.length : localCartCount}
                     </Badge>
                   )}
                 </Button>
@@ -145,7 +186,7 @@ export default function Layout({ children }) {
                 </DropdownMenu>
               ) : (
                 <Button 
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => base44.auth.redirectToLogin(createPageUrl('BrowseLeads'))}
                   className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
                 >
                   Sign In
