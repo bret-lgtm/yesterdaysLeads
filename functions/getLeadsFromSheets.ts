@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     console.log('🟢 Inside try block');
     const base44 = createClientFromRequest(req);
     console.log('🟡 Base44 client created');
-    const { filters = {}, include_last_names = false } = await req.json();
+    const { filters = {}, include_last_names = false, lead_ids = [] } = await req.json();
     console.log('🟣 Filters:', JSON.stringify(filters));
     console.log('🔐 Include last names:', include_last_names);
 
@@ -39,9 +39,15 @@ Deno.serve(async (req) => {
     let allLeads = [];
 
     // Determine which sheets to query
-    const sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
-      ? [filters.lead_type]
-      : Object.keys(sheetIds);
+    let sheetsToQuery;
+    if (lead_ids && lead_ids.length > 0) {
+      // If looking for specific lead IDs, extract lead types from IDs
+      sheetsToQuery = [...new Set(lead_ids.map(id => id.split('_')[0]))];
+    } else {
+      sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
+        ? [filters.lead_type]
+        : Object.keys(sheetIds);
+    }
 
     // First, get sheet names from metadata
     console.log('🌐 Fetching sheet metadata...');
@@ -170,60 +176,68 @@ Deno.serve(async (req) => {
       console.log('📋 All unique statuses:', [...new Set(allLeads.map(l => `"${l.status}"`))].join(', '));
     }
 
-    let filteredLeads = allLeads.filter(lead => {
-      // If status is undefined or empty, treat as available
-      if (!lead.status || lead.status === 'undefined') return true;
-      // Otherwise, check if status is "Available"
-      const statusMatch = lead.status.trim().toLowerCase() === 'available';
-      return statusMatch;
-    });
+    let filteredLeads = allLeads;
 
-    console.log('✅ Leads after status filter:', filteredLeads.length);
-
-    if (filters.state && filters.state !== 'all') {
-      filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
-    }
-
-    if (filters.zip_code) {
-      filteredLeads = filteredLeads.filter(lead => 
-        lead.zip_code && lead.zip_code.startsWith(filters.zip_code)
-      );
-    }
-
-    if (filters.age_range && filters.age_range !== 'all') {
-      filteredLeads = filteredLeads.filter(lead => {
-        if (!lead.external_id) return false;
-        
-        // Parse date from external_id format: YYYYMMDD-TYPE-###
-        const dateStr = lead.external_id.split('-')[0];
-        if (dateStr.length !== 8) return false;
-        
-        const year = parseInt(dateStr.substring(0, 4));
-        const month = parseInt(dateStr.substring(4, 6)) - 1;
-        const day = parseInt(dateStr.substring(6, 8));
-        const uploadDate = new Date(year, month, day);
-        
-        // Validate the date
-        if (isNaN(uploadDate.getTime())) return false;
-        
-        const now = new Date();
-        const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
-        const ageInDays = Math.floor(hoursSinceUpload / 24);
-        
-        if (filters.age_range === 'yesterday') {
-          return hoursSinceUpload <= 72;
-        } else if (filters.age_range === '4-14') {
-          return ageInDays >= 4 && ageInDays <= 14;
-        } else if (filters.age_range === '15-30') {
-          return ageInDays >= 15 && ageInDays <= 30;
-        } else if (filters.age_range === '31-90') {
-          return ageInDays >= 31 && ageInDays <= 90;
-        } else if (filters.age_range === '91+') {
-          return ageInDays >= 91;
-        }
-        
-        return true;
+    // If specific lead IDs were requested, filter to only those
+    if (lead_ids && lead_ids.length > 0) {
+      filteredLeads = allLeads.filter(lead => lead_ids.includes(lead.id));
+    } else {
+      // Otherwise apply normal filters
+      filteredLeads = allLeads.filter(lead => {
+        // If status is undefined or empty, treat as available
+        if (!lead.status || lead.status === 'undefined') return true;
+        // Otherwise, check if status is "Available"
+        const statusMatch = lead.status.trim().toLowerCase() === 'available';
+        return statusMatch;
       });
+
+      console.log('✅ Leads after status filter:', filteredLeads.length);
+
+      if (filters.state && filters.state !== 'all') {
+        filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
+      }
+
+      if (filters.zip_code) {
+        filteredLeads = filteredLeads.filter(lead => 
+          lead.zip_code && lead.zip_code.startsWith(filters.zip_code)
+        );
+      }
+
+      if (filters.age_range && filters.age_range !== 'all') {
+        filteredLeads = filteredLeads.filter(lead => {
+          if (!lead.external_id) return false;
+          
+          // Parse date from external_id format: YYYYMMDD-TYPE-###
+          const dateStr = lead.external_id.split('-')[0];
+          if (dateStr.length !== 8) return false;
+          
+          const year = parseInt(dateStr.substring(0, 4));
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
+          const day = parseInt(dateStr.substring(6, 8));
+          const uploadDate = new Date(year, month, day);
+          
+          // Validate the date
+          if (isNaN(uploadDate.getTime())) return false;
+          
+          const now = new Date();
+          const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
+          const ageInDays = Math.floor(hoursSinceUpload / 24);
+          
+          if (filters.age_range === 'yesterday') {
+            return hoursSinceUpload <= 72;
+          } else if (filters.age_range === '4-14') {
+            return ageInDays >= 4 && ageInDays <= 14;
+          } else if (filters.age_range === '15-30') {
+            return ageInDays >= 15 && ageInDays <= 30;
+          } else if (filters.age_range === '31-90') {
+            return ageInDays >= 31 && ageInDays <= 90;
+          } else if (filters.age_range === '91+') {
+            return ageInDays >= 91;
+          }
+          
+          return true;
+        });
+      }
     }
 
     return Response.json({
