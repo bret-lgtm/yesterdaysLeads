@@ -6,7 +6,8 @@ const DEFAULT_PRICING = {
   health: { base: 3.50, fresh: 6.00, aged: 2.50 },
   life: { base: 4.00, fresh: 7.00, aged: 3.00 },
   medicare: { base: 5.00, fresh: 8.00, aged: 3.50 },
-  final_expense: { base: 4.50, fresh: 7.50, aged: 3.00 }
+  final_expense: { base: 4.50, fresh: 7.50, aged: 3.00 },
+  veteran_life: { base: 4.50, fresh: 7.50, aged: 3.00 }
 };
 
 const BULK_DISCOUNTS = [

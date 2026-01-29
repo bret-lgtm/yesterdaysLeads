@@ -15,7 +15,8 @@ const typeLabels = {
   health: "Health Insurance",
   life: "Life Insurance",
   medicare: "Medicare",
-  final_expense: "Final Expense"
+  final_expense: "Final Expense",
+  veteran_life: "Veteran Life"
 };
 
 export default function Pricing() {

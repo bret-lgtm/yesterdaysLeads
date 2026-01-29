@@ -54,7 +54,8 @@ const leadTypes = [
   { name: "Health Insurance", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" },
   { name: "Life Insurance", value: "life", color: "bg-violet-100 text-violet-700 hover:bg-violet-200" },
   { name: "Medicare", value: "medicare", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
-  { name: "Final Expense", value: "final_expense", color: "bg-slate-100 text-slate-700 hover:bg-slate-200" }
+  { name: "Final Expense", value: "final_expense", color: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
+  { name: "Veteran Life", value: "veteran_life", color: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" }
 ];
 
 export default function Home() {
