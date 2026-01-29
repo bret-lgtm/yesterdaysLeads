@@ -127,7 +127,14 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Keep all data for CSV (no removal of fields)
+          // Remove external_id and tier fields
+          delete lead.external_id;
+          delete lead.tier_1;
+          delete lead.tier_2;
+          delete lead.tier_3;
+          delete lead.tier_4;
+          delete lead.tier_5;
+
           return lead;
         });
 
