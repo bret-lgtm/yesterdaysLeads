@@ -88,6 +88,9 @@ Deno.serve(async (req) => {
         return lead;
       });
 
+      console.log('Complete lead data count:', completeLeadData.length);
+      console.log('Session total:', session.amount_total / 100);
+
       // Create order
       const order = await base44.asServiceRole.entities.Order.create({
         customer_id: customer.id,
