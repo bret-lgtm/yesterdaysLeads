@@ -106,13 +106,9 @@ Deno.serve(async (req) => {
 
       console.log('Order created:', order.id);
 
-      // Update leads to sold
-      for (const leadId of leadIds) {
-        await base44.asServiceRole.entities.Lead.update(leadId, { status: 'sold' });
-      }
-
-      // Update suppression list
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIds];
+      // Update suppression list with external IDs from lead snapshot
+      const externalIds = completeLeadData.map(lead => lead.external_id).filter(Boolean);
+      const updatedSuppressionList = [...(customer.suppression_list || []), ...externalIds];
       await base44.asServiceRole.entities.Customer.update(customer.id, {
         suppression_list: updatedSuppressionList
       });
