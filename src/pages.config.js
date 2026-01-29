@@ -50,10 +50,10 @@
 import AdminDashboard from './pages/AdminDashboard';
 import BrowseLeads from './pages/BrowseLeads';
 import Checkout from './pages/Checkout';
+import CheckoutSuccess from './pages/CheckoutSuccess';
 import Home from './pages/Home';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
-import CheckoutSuccess from './pages/CheckoutSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -61,10 +61,10 @@ export const PAGES = {
     "AdminDashboard": AdminDashboard,
     "BrowseLeads": BrowseLeads,
     "Checkout": Checkout,
+    "CheckoutSuccess": CheckoutSuccess,
     "Home": Home,
     "MyOrders": MyOrders,
     "Pricing": Pricing,
-    "CheckoutSuccess": CheckoutSuccess,
 }
 
 export const pagesConfig = {
