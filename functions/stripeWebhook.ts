@@ -57,37 +57,35 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get full lead data from Google Sheets using external IDs
-      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
-      const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
-      
-      // Get purchased leads from database to get external IDs
-      const purchasedLeads = await Promise.all(
-        leadIds.map(id => base44.asServiceRole.entities.Lead.get(id))
-      );
-
-      // Fetch full data from sheets
+      // Fetch all leads from sheets with full data
       const fullLeadsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', {
         filters: {},
         include_last_names: true
       });
       
-      const fullLeadsMap = {};
-      fullLeadsResponse.data.leads.forEach(lead => {
-        if (!fullLeadsMap[lead.external_id]) {
-          fullLeadsMap[lead.external_id] = [];
+      // Create a map of leads by their ID (as they appear in cart)
+      const leadsById = {};
+      fullLeadsResponse.data.leads.forEach((lead, idx) => {
+        const leadType = lead.lead_type;
+        if (!leadsById[leadType]) {
+          leadsById[leadType] = {};
         }
-        fullLeadsMap[lead.external_id].push(lead);
+        leadsById[leadType][idx] = lead;
       });
       
-      // Match purchased leads with full data, maintaining order
-      const completeLeadData = purchasedLeads.map(lead => {
-        const matches = fullLeadsMap[lead.external_id];
-        if (matches && matches.length > 0) {
-          return matches.shift(); // Take first match, remove from array
+      // Match purchased lead IDs to actual lead data
+      const completeLeadData = leadIds.map(leadId => {
+        // leadId format: "type_index" (e.g., "medicare_1", "life_0")
+        const [type, index] = leadId.split('_');
+        const idx = parseInt(index);
+        
+        if (leadsById[type] && leadsById[type][idx]) {
+          return leadsById[type][idx];
         }
-        return lead;
-      });
+        
+        console.warn(`Lead not found: ${leadId}`);
+        return null;
+      }).filter(lead => lead !== null);
 
       console.log('Complete lead data count:', completeLeadData.length);
       console.log('Session total:', session.amount_total / 100);
