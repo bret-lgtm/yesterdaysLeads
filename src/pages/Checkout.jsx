@@ -69,7 +69,8 @@ export default function Checkout() {
 
     try {
       const response = await base44.functions.invoke('createCheckoutSession', {
-        cartItems
+        cartItems,
+        customerEmail: user?.email
       });
 
       if (response.data.url) {
