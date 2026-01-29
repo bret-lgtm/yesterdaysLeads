@@ -12,14 +12,16 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
 const typeLabels = {
-  auto: "Auto Insurance",
-  home: "Home Insurance",
-  health: "Health Insurance",
-  life: "Life Insurance",
-  medicare: "Medicare",
   final_expense: "Final Expense",
-  veteran_life: "Veteran Life"
+  life: "Life",
+  veteran_life: "Veteran Life",
+  home: "Home",
+  auto: "Auto",
+  medicare: "Medicare",
+  health: "Health"
 };
+
+const leadTypeOrder = ['final_expense', 'life', 'veteran_life', 'home', 'auto', 'medicare', 'health'];
 
 export default function Pricing() {
   const { data: pricingTiers = [], isLoading } = useQuery({
@@ -52,7 +54,7 @@ export default function Pricing() {
     return grouped;
   }, [pricingTiers]);
 
-  const leadTypesWithPricing = Object.keys(pricingByType).filter(type => typeLabels[type]);
+  const leadTypesWithPricing = leadTypeOrder.filter(type => pricingByType[type]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -84,50 +86,52 @@ export default function Pricing() {
             {isLoading ? (
               <div className="p-8 text-center text-slate-500">Loading pricing...</div>
             ) : leadTypesWithPricing.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="font-semibold">Lead Type</TableHead>
-                    <TableHead className="text-center font-semibold text-xs">1-3 days</TableHead>
-                    <TableHead className="text-center font-semibold text-xs">4-14 days</TableHead>
-                    <TableHead className="text-center font-semibold text-xs">15-30 days</TableHead>
-                    <TableHead className="text-center font-semibold text-xs">31-90 days</TableHead>
-                    <TableHead className="text-center font-semibold text-xs">91+ days</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leadTypesWithPricing.map((type) => (
-                    <TableRow key={type}>
-                      <TableCell className="font-medium">{typeLabels[type]}</TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].tier1 ? `$${pricingByType[type].tier1.toFixed(2)}` : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].tier2 ? `$${pricingByType[type].tier2.toFixed(2)}` : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].tier3 ? `$${pricingByType[type].tier3.toFixed(2)}` : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].tier4 ? `$${pricingByType[type].tier4.toFixed(2)}` : '-'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="text-lg font-semibold text-emerald-600">
-                          {pricingByType[type].tier5 ? `$${pricingByType[type].tier5.toFixed(2)}` : '-'}
-                        </span>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead className="font-semibold">Lead Type</TableHead>
+                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">1-3 days</TableHead>
+                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">4-14 days</TableHead>
+                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">15-30 days</TableHead>
+                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">31-90 days</TableHead>
+                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">91+ days</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {leadTypesWithPricing.map((type) => (
+                      <TableRow key={type}>
+                        <TableCell className="font-medium whitespace-nowrap">{typeLabels[type]}</TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-base font-semibold text-slate-900">
+                            {pricingByType[type].tier1 ? `$${pricingByType[type].tier1.toFixed(2)}` : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-base font-semibold text-slate-900">
+                            {pricingByType[type].tier2 ? `$${pricingByType[type].tier2.toFixed(2)}` : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-base font-semibold text-slate-900">
+                            {pricingByType[type].tier3 ? `$${pricingByType[type].tier3.toFixed(2)}` : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-base font-semibold text-slate-900">
+                            {pricingByType[type].tier4 ? `$${pricingByType[type].tier4.toFixed(2)}` : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="text-base font-semibold text-emerald-600">
+                            {pricingByType[type].tier5 ? `$${pricingByType[type].tier5.toFixed(2)}` : '-'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="p-8 text-center text-slate-500">No pricing tiers configured yet.</div>
             )}
