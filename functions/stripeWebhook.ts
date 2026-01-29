@@ -58,14 +58,16 @@ Deno.serve(async (req) => {
       }
 
       // Fetch all leads from sheets with full data
-      const fullLeadsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', {
+      const response = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', {
         filters: {},
         include_last_names: true
       });
       
+      const allLeads = response.data?.leads || response.leads || [];
+      
       // Create a map of leads by their ID (as they appear in cart)
       const leadsById = {};
-      fullLeadsResponse.data.leads.forEach((lead, idx) => {
+      allLeads.forEach((lead, idx) => {
         const leadType = lead.lead_type;
         if (!leadsById[leadType]) {
           leadsById[leadType] = {};
