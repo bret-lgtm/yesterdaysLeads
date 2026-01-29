@@ -36,8 +36,11 @@ Deno.serve(async (req) => {
 
       // Extract data from metadata
       const userEmail = metadata.user_email;
-      const leadIds = metadata.lead_ids.split(',');
-      const cartItemIds = metadata.cart_item_ids.split(',');
+      const leadIds = metadata.lead_ids.split(',').filter(id => id.trim());
+      const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
+
+      console.log('Lead IDs from metadata:', leadIds);
+      console.log('Lead IDs count:', leadIds.length);
 
       // Get or create customer record
       let customer = (await base44.asServiceRole.entities.Customer.filter({ email: userEmail }))[0];
