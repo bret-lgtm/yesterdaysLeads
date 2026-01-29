@@ -6,8 +6,9 @@ Deno.serve(async (req) => {
     console.log('🟢 Inside try block');
     const base44 = createClientFromRequest(req);
     console.log('🟡 Base44 client created');
-    const { filters = {} } = await req.json();
+    const { filters = {}, include_last_names = false } = await req.json();
     console.log('🟣 Filters:', JSON.stringify(filters));
+    console.log('🔐 Include last names:', include_last_names);
 
     // Get access token for Google Sheets
     console.log('⏳ Getting access token...');
@@ -130,6 +131,12 @@ Deno.serve(async (req) => {
         // Add required fields
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
+        
+        // Remove last name for security unless explicitly requested
+        if (!include_last_names && lead.last_name) {
+          lead.last_name_initial = lead.last_name.charAt(0).toUpperCase();
+          delete lead.last_name;
+        }
         
         return lead;
       });

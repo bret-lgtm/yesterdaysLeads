@@ -51,10 +51,31 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get lead data for snapshot
+      // Get full lead data from Google Sheets using external IDs
+      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+      const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+      
+      // Get purchased leads from database to get external IDs
       const purchasedLeads = await Promise.all(
         leadIds.map(id => base44.asServiceRole.entities.Lead.get(id))
       );
+
+      // Fetch full data from sheets
+      const fullLeadsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', {
+        filters: {},
+        include_last_names: true
+      });
+      
+      const fullLeadsMap = {};
+      fullLeadsResponse.data.leads.forEach(lead => {
+        fullLeadsMap[lead.external_id] = lead;
+      });
+      
+      // Match purchased leads with full data
+      const completeLeadData = purchasedLeads.map(lead => {
+        const fullLead = fullLeadsMap[lead.external_id];
+        return fullLead || lead;
+      });
 
       // Create order
       const order = await base44.asServiceRole.entities.Order.create({
@@ -64,17 +85,7 @@ Deno.serve(async (req) => {
         lead_count: leadIds.length,
         stripe_transaction_id: session.payment_intent,
         leads_purchased: leadIds,
-        lead_data_snapshot: purchasedLeads.map(l => ({
-          external_id: l.external_id,
-          first_name: l.first_name,
-          last_name: l.last_name,
-          phone: l.phone,
-          email: l.email,
-          state: l.state,
-          zip_code: l.zip_code,
-          lead_type: l.lead_type,
-          utility_bill_amount: l.utility_bill_amount
-        })),
+        lead_data_snapshot: completeLeadData,
         status: 'completed'
       });
 
