@@ -13,7 +13,8 @@ const typeColors = {
   health: "bg-rose-50 text-rose-700 border-rose-200",
   life: "bg-violet-50 text-violet-700 border-violet-200",
   medicare: "bg-amber-50 text-amber-700 border-amber-200",
-  final_expense: "bg-slate-100 text-slate-700 border-slate-200"
+  final_expense: "bg-slate-100 text-slate-700 border-slate-200",
+  veteran_life: "bg-indigo-50 text-indigo-700 border-indigo-200"
 };
 
 const typeLabels = {
@@ -22,7 +23,8 @@ const typeLabels = {
   health: "Health",
   life: "Life",
   medicare: "Medicare",
-  final_expense: "Final Expense"
+  final_expense: "Final Expense",
+  veteran_life: "Veteran Life"
 };
 
 export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, onAddToCart }) {
