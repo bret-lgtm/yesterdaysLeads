@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
           continue;
         }
       
-      const range = `'${sheetName}'!A:M`;
+      const range = `'${sheetName}'!A:Z`;
       
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
