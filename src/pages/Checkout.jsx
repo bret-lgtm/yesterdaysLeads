@@ -94,14 +94,8 @@ export default function Checkout() {
   const downloadCSV = () => {
     if (!completedOrder?.lead_data_snapshot || completedOrder.lead_data_snapshot.length === 0) return;
 
-    // Get all unique column names from the data
-    const allColumns = new Set();
-    completedOrder.lead_data_snapshot.forEach(lead => {
-      Object.keys(lead).forEach(key => allColumns.add(key));
-    });
-
     // Columns to exclude
-    const excludeColumns = new Set(['external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'last_name_initial']);
+    const excludeColumns = new Set(['id', 'created_date', 'updated_date', 'created_by', 'external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'last_name_initial', 'user_email', 'price', 'lead_type', 'lead_name', 'lead_id', 'status']);
 
     // Preferred column order
     const preferredOrder = [
@@ -121,17 +115,27 @@ export default function Checkout() {
       'beneficiary'
     ];
 
+    // Get all unique column names from the data
+    const allColumns = new Set();
+    completedOrder.lead_data_snapshot.forEach(lead => {
+      Object.keys(lead).forEach(key => {
+        if (!excludeColumns.has(key)) {
+          allColumns.add(key);
+        }
+      });
+    });
+
     // Build headers: preferred columns first (if they exist), then remaining columns
     const headers = [];
     preferredOrder.forEach(col => {
-      if (allColumns.has(col) && !excludeColumns.has(col)) {
+      if (allColumns.has(col)) {
         headers.push(col);
       }
     });
 
     // Add any remaining columns not in preferred order
     allColumns.forEach(col => {
-      if (!headers.includes(col) && !excludeColumns.has(col)) {
+      if (!headers.includes(col)) {
         headers.push(col);
       }
     });
