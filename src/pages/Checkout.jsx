@@ -222,7 +222,7 @@ export default function Checkout() {
                     <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                       <div>
                         <p className="font-medium text-slate-900">
-                          {item.lead_name.split(' ')[0]} <span className="blur-sm select-none">{item.lead_name.split(' ').slice(1).join(' ')}</span>
+                          {item.lead_name}
                         </p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary" className="text-xs">

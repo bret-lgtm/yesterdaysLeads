@@ -85,7 +85,7 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="font-medium text-slate-900">
-                              {item.lead_name.split(' ')[0]} <span className="blur-sm select-none">{item.lead_name.split(' ').slice(1).join(' ')}</span>
+                              {item.lead_name}
                             </p>
                             <p className="text-sm text-slate-500">
                               {item.lead_type.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} • {item.state?.toLowerCase() === 'unknown' ? (item.zip_code || 'Unknown') : item.state} • {item.age_in_days}d old
