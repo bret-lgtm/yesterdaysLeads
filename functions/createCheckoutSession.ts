@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
+        lead_ids: cartItems.map(item => item.lead_id).join(','),
         cart_item_ids: cartItems.map(item => item.id).join(',')
       }
     });
