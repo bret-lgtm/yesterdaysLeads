@@ -33,15 +33,19 @@ export default function Pricing() {
     
     pricingTiers.forEach(tier => {
       if (!grouped[tier.lead_type]) {
-        grouped[tier.lead_type] = { fresh: null, standard: null, aged: null };
+        grouped[tier.lead_type] = { tier1: null, tier2: null, tier3: null, tier4: null, tier5: null };
       }
       
-      if (tier.age_range_min <= 14 && tier.age_range_max <= 30) {
-        grouped[tier.lead_type].fresh = tier.base_price;
-      } else if (tier.age_range_min <= 31 && tier.age_range_max <= 90) {
-        grouped[tier.lead_type].standard = tier.base_price;
+      if (tier.age_range_min >= 1 && tier.age_range_max <= 3) {
+        grouped[tier.lead_type].tier1 = tier.base_price;
+      } else if (tier.age_range_min >= 4 && tier.age_range_max <= 14) {
+        grouped[tier.lead_type].tier2 = tier.base_price;
+      } else if (tier.age_range_min >= 15 && tier.age_range_max <= 30) {
+        grouped[tier.lead_type].tier3 = tier.base_price;
+      } else if (tier.age_range_min >= 31 && tier.age_range_max <= 90) {
+        grouped[tier.lead_type].tier4 = tier.base_price;
       } else if (tier.age_range_min >= 91) {
-        grouped[tier.lead_type].aged = tier.base_price;
+        grouped[tier.lead_type].tier5 = tier.base_price;
       }
     });
     
@@ -84,24 +88,11 @@ export default function Pricing() {
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead className="font-semibold">Lead Type</TableHead>
-                    <TableHead className="text-center font-semibold">
-                      <div className="flex flex-col items-center">
-                        <span>Fresh</span>
-                        <span className="text-xs font-normal text-slate-500">1-14 days</span>
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-center font-semibold">
-                      <div className="flex flex-col items-center">
-                        <span>Standard</span>
-                        <span className="text-xs font-normal text-slate-500">31-90 days</span>
-                      </div>
-                    </TableHead>
-                    <TableHead className="text-center font-semibold">
-                      <div className="flex flex-col items-center">
-                        <span>Aged</span>
-                        <span className="text-xs font-normal text-slate-500">91+ days</span>
-                      </div>
-                    </TableHead>
+                    <TableHead className="text-center font-semibold text-xs">1-3 days</TableHead>
+                    <TableHead className="text-center font-semibold text-xs">4-14 days</TableHead>
+                    <TableHead className="text-center font-semibold text-xs">15-30 days</TableHead>
+                    <TableHead className="text-center font-semibold text-xs">31-90 days</TableHead>
+                    <TableHead className="text-center font-semibold text-xs">91+ days</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -110,17 +101,27 @@ export default function Pricing() {
                       <TableCell className="font-medium">{typeLabels[type]}</TableCell>
                       <TableCell className="text-center">
                         <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].fresh ? `$${pricingByType[type].fresh.toFixed(2)}` : '-'}
+                          {pricingByType[type].tier1 ? `$${pricingByType[type].tier1.toFixed(2)}` : '-'}
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="text-lg font-semibold text-slate-900">
-                          {pricingByType[type].standard ? `$${pricingByType[type].standard.toFixed(2)}` : '-'}
+                          {pricingByType[type].tier2 ? `$${pricingByType[type].tier2.toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-lg font-semibold text-slate-900">
+                          {pricingByType[type].tier3 ? `$${pricingByType[type].tier3.toFixed(2)}` : '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-lg font-semibold text-slate-900">
+                          {pricingByType[type].tier4 ? `$${pricingByType[type].tier4.toFixed(2)}` : '-'}
                         </span>
                       </TableCell>
                       <TableCell className="text-center">
                         <span className="text-lg font-semibold text-emerald-600">
-                          {pricingByType[type].aged ? `$${pricingByType[type].aged.toFixed(2)}` : '-'}
+                          {pricingByType[type].tier5 ? `$${pricingByType[type].tier5.toFixed(2)}` : '-'}
                         </span>
                       </TableCell>
                     </TableRow>
