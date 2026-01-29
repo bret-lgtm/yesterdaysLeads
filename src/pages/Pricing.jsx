@@ -194,11 +194,10 @@ export default function Pricing() {
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 "Full contact information",
-                "Phone number included",
-                "Email when available",
-                "State and ZIP code",
+                "Phone number",
+                "Email",
+                "City, State and ZIP code",
                 "Lead type categorization",
-                "Utility bill amount (when available)",
                 "Instant CSV download",
                 "Automatic suppression list",
                 "No duplicate purchases",
