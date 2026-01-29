@@ -117,8 +117,9 @@ export default function BrowseLeads() {
         user_email: user.email,
         lead_id: lead.id,
         lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name}`,
+        lead_name: `${lead.first_name} ${lead.last_name_initial}.`,
         state: lead.state,
+        zip_code: lead.zip_code,
         age_in_days: ageInDays,
         price
       });
