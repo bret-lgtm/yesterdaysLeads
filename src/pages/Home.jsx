@@ -49,7 +49,7 @@ const features = [
 ];
 
 const leadTypes = [
-  { name: "Final Expense", value: "final_expense", color: "bg-red-100 text-red-700 hover:bg-red-200" },
+  { name: "Final Expense", value: "final_expense", color: "bg-cyan-100 text-cyan-700 hover:bg-cyan-200" },
   { name: "Life", value: "life", color: "bg-violet-100 text-violet-700 hover:bg-violet-200" },
   { name: "Veteran Life", value: "veteran_life", color: "bg-orange-100 text-orange-700 hover:bg-orange-200" },
   { name: "Home", value: "home", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },

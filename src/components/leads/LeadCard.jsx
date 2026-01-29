@@ -13,7 +13,7 @@ const typeColors = {
   health: "bg-rose-50 text-rose-700 border-rose-200",
   life: "bg-violet-50 text-violet-700 border-violet-200",
   medicare: "bg-amber-50 text-amber-700 border-amber-200",
-  final_expense: "bg-red-50 text-red-700 border-red-200",
+  final_expense: "bg-cyan-50 text-cyan-700 border-cyan-200",
   veteran_life: "bg-orange-50 text-orange-700 border-orange-200"
 };
 
