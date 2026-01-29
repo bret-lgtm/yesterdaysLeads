@@ -10,9 +10,12 @@ Deno.serve(async (req) => {
     console.log('🟣 Filters:', JSON.stringify(filters));
 
     // Get access token for Google Sheets
+    console.log('⏳ Getting access token...');
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+    console.log('✅ Access token received');
     
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    console.log('📄 Spreadsheet ID:', spreadsheetId ? 'Set' : 'NOT SET');
     if (!spreadsheetId) {
       return Response.json({ 
         success: false, 
@@ -55,12 +58,14 @@ Deno.serve(async (req) => {
     }
     
     const sheetMeta = await sheetMetaResponse.json();
+    console.log('📑 Sheet metadata fetched, sheets count:', sheetMeta.sheets?.length || 0);
     
     const sheetMap = {};
     sheetMeta.sheets?.forEach(sheet => {
       const id = sheet.properties.sheetId.toString();
       sheetMap[id] = sheet.properties.title;
     });
+    console.log('🗺️ Sheet map:', JSON.stringify(sheetMap));
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
