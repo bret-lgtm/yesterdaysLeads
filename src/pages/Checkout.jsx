@@ -94,11 +94,25 @@ export default function Checkout() {
   const downloadCSV = () => {
     if (!completedOrder?.lead_data_snapshot || completedOrder.lead_data_snapshot.length === 0) return;
 
-    // Dynamically build headers from the first lead's keys, excluding status and external_id
-    const firstLead = completedOrder.lead_data_snapshot[0];
-    const headers = Object.keys(firstLead).filter(key => key !== 'status' && key !== 'external_id');
+    // Specify exact columns in desired order
+    const headers = [
+      'age_in_days',
+      'first_name',
+      'last_name',
+      'email',
+      'phone',
+      'date_of_birth',
+      'address',
+      'city',
+      'state',
+      'zip_code',
+      'current_coverage',
+      'coverage_amount',
+      'favorite_hobby',
+      'beneficiary'
+    ];
 
-    // Build rows using the dynamic headers
+    // Build rows using specified headers
     const rows = completedOrder.lead_data_snapshot.map(lead =>
       headers.map(header => lead[header] || '')
     );
