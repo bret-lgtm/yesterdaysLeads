@@ -92,7 +92,7 @@ export default function Layout({ children }) {
     { name: 'Home', href: 'Home', icon: Home },
     { name: 'Browse Leads', href: 'BrowseLeads', icon: Package },
     { name: 'Pricing', href: 'Pricing', icon: DollarSign },
-    { name: 'My Orders', href: 'MyOrders', icon: FileText },
+    ...(user ? [{ name: 'My Orders', href: 'MyOrders', icon: FileText }] : []),
   ];
 
   return (
