@@ -8,13 +8,9 @@ Deno.serve(async (req) => {
     });
     console.log('Using Stripe key:', Deno.env.get("STRIPE_SECRET_KEY")?.substring(0, 7));
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch(() => null);
 
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { cartItems } = await req.json();
+    const { cartItems, customerEmail } = await req.json();
 
     if (!cartItems || cartItems.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
