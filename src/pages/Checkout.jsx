@@ -65,12 +65,6 @@ export default function Checkout() {
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
 
-    // Check if running in iframe (preview mode)
-    if (window.self !== window.top) {
-      toast.error('Checkout only works in published apps. Please publish your app to test payments.');
-      return;
-    }
-
     setProcessing(true);
 
     try {
