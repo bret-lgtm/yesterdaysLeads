@@ -39,7 +39,14 @@ Deno.serve(async (req) => {
     let allLeads = [];
 
     // Extract unique lead types from lead IDs
-    const sheetsToQuery = [...new Set(lead_ids.map(id => id.split('_')[0]))];
+    const leadTypeOrder = ['final_expense', 'veteran_life', 'auto', 'home', 'health', 'life', 'medicare'];
+    const sheetsToQuery = [...new Set(lead_ids.map(id => {
+      for (const type of leadTypeOrder) {
+        if (id.startsWith(type + '_')) return type;
+      }
+      return null;
+    }).filter(Boolean))];
+    console.log('Extracted lead types:', sheetsToQuery);
 
     // Get sheet names from metadata
     const sheetMetaResponse = await fetch(
