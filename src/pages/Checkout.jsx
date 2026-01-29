@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
+import { useCart } from '../components/useCart';
+import { migrateLocalCartToDatabase } from '../components/cartMigration';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,31 +31,31 @@ export default function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
 
-  const { data: user } = useQuery({
+  const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => base44.auth.me()
   });
 
-  const { data: cartItems = [], isLoading } = useQuery({
-    queryKey: ['cart', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return [];
-      return base44.entities.CartItem.filter({ user_email: user.email });
-    },
-    enabled: !!user?.email
-  });
+  // Use cart hook
+  const { cartItems, removeFromCart } = useCart(user);
 
-  const { data: leads = [] } = useQuery({
-    queryKey: ['leads'],
-    queryFn: () => base44.entities.Lead.list()
-  });
-
-  const removeFromCartMutation = useMutation({
-    mutationFn: (itemId) => base44.entities.CartItem.delete(itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!userLoading && !user) {
+      base44.auth.redirectToLogin(window.location.pathname);
     }
-  });
+  }, [user, userLoading]);
+
+  // Migrate cart on sign-in
+  useEffect(() => {
+    if (user?.email) {
+      migrateLocalCartToDatabase(user.email).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+      });
+    }
+  }, [user?.email, queryClient]);
+
+
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
   const bulkDiscount = calculateBulkDiscount(cartItems.length);
@@ -113,6 +115,18 @@ export default function Checkout() {
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+  // Show loading while checking authentication
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (orderComplete) {
     return (
@@ -187,7 +201,7 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {isLoading ? (
+              {userLoading ? (
                 <div className="animate-pulse space-y-4">
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="h-16 bg-slate-100 rounded-xl" />
@@ -224,7 +238,7 @@ export default function Checkout() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeFromCartMutation.mutate(item.id)}
+                          onClick={() => removeFromCart(item.id)}
                           className="h-8 w-8 text-slate-400 hover:text-red-500"
                         >
                           <Trash2 className="w-4 h-4" />
