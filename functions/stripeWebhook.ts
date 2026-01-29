@@ -6,6 +6,7 @@ Deno.serve(async (req) => {
     apiVersion: '2023-10-16'
   });
   console.log('Webhook using Stripe key:', Deno.env.get("STRIPE_SECRET_KEY")?.substring(0, 7));
+  console.log('Webhook secret available:', !!Deno.env.get('STRIPE_WEBHOOK_SECRET'));
   const base44 = createClientFromRequest(req);
   
   try {
