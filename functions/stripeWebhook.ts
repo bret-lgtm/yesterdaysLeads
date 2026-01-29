@@ -77,10 +77,11 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch complete lead data from Google Sheets
+      // Fetch complete lead data from Google Sheets with full last names
       const leadIds = cartItems.map(item => item.lead_id);
       const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheets', { 
-        lead_ids: leadIds 
+        lead_ids: leadIds,
+        include_last_names: true
       });
       const completeLeadData = sheetsResponse.data.leads || [];
 
