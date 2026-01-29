@@ -119,10 +119,18 @@ Deno.serve(async (req) => {
     }
 
     // Apply filters - only show leads with exact status "Available"
+    console.log('📊 Total leads before filtering:', allLeads.length);
+    if (allLeads.length > 0) {
+      console.log('📋 Sample lead:', JSON.stringify(allLeads[0]));
+      console.log('📋 All unique statuses:', [...new Set(allLeads.map(l => `"${l.status}"`))].join(', '));
+    }
+    
     let filteredLeads = allLeads.filter(lead => {
       const statusMatch = lead.status && lead.status.trim().toLowerCase() === 'available';
       return statusMatch;
     });
+    
+    console.log('✅ Leads after status filter:', filteredLeads.length);
 
     if (filters.state && filters.state !== 'all') {
       filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
