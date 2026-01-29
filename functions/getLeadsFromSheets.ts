@@ -98,6 +98,12 @@ Deno.serve(async (req) => {
       // First row is headers
       const headers = rows[0];
       const dataRows = rows.slice(1);
+      
+      // Log headers for Life sheet
+      if (leadType === 'life') {
+        console.log(`🔍 Life sheet headers:`, headers);
+        console.log(`🔍 Life sheet header count:`, headers.length);
+      }
 
       // Convert rows to objects
       const leads = dataRows.map((row, index) => {
@@ -114,6 +120,12 @@ Deno.serve(async (req) => {
         
         return lead;
       });
+      
+      // Log sample lead for Life sheet
+      if (leadType === 'life' && leads.length > 0) {
+        console.log(`🔍 Sample Life lead:`, JSON.stringify(leads[0]));
+        console.log(`🔍 Life lead status value:`, `"${leads[0].status}"`);
+      }
 
       allLeads = allLeads.concat(leads);
     }
