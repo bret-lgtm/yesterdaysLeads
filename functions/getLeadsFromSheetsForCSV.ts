@@ -69,6 +69,8 @@ Deno.serve(async (req) => {
       const id = sheet.properties.sheetId.toString();
       sheetMap[id] = sheet.properties.title;
     });
+    console.log('Sheet map:', JSON.stringify(sheetMap));
+    console.log('Sheets to query:', sheetsToQuery);
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
@@ -76,7 +78,10 @@ Deno.serve(async (req) => {
         const sheetId = sheetIds[leadType];
         const sheetName = sheetMap[sheetId];
         
+        console.log(`Processing ${leadType}: sheetId=${sheetId}, sheetName=${sheetName}`);
+        
         if (!sheetName) {
+          console.log(`No sheet name found for ${leadType}`);
           continue;
         }
       
