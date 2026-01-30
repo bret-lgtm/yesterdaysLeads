@@ -7,7 +7,8 @@ const DEFAULT_PRICING = {
   life: { base: 4.00, fresh: 7.00, aged: 3.00 },
   medicare: { base: 5.00, fresh: 8.00, aged: 3.50 },
   final_expense: { base: 4.50, fresh: 7.50, aged: 3.00 },
-  veteran_life: { base: 4.50, fresh: 7.50, aged: 3.00 }
+  veteran_life: { base: 4.50, fresh: 7.50, aged: 3.00 },
+  retirement: { base: 14.00, fresh: 29.00, aged: 4.50 }
 };
 
 const BULK_DISCOUNTS = [
@@ -33,6 +34,15 @@ export function calculateLeadPrice(lead, pricingTiers = []) {
 
   // Default pricing logic
   const typePrice = DEFAULT_PRICING[lead.lead_type] || DEFAULT_PRICING.auto;
+  
+  // Special pricing logic for retirement leads
+  if (lead.lead_type === 'retirement') {
+    if (ageInDays <= 3) return 29.00;
+    if (ageInDays <= 14) return 19.00;
+    if (ageInDays <= 30) return 14.00;
+    if (ageInDays <= 90) return 9.00;
+    return 4.50;
+  }
   
   if (ageInDays <= 30) {
     return typePrice.fresh;

@@ -14,7 +14,8 @@ const typeColors = {
   life: "bg-violet-50 text-violet-700 border-violet-200",
   medicare: "bg-amber-50 text-amber-700 border-amber-200",
   final_expense: "bg-cyan-50 text-cyan-700 border-cyan-200",
-  veteran_life: "bg-orange-50 text-orange-700 border-orange-200"
+  veteran_life: "bg-orange-50 text-orange-700 border-orange-200",
+  retirement: "bg-indigo-50 text-indigo-700 border-indigo-200"
 };
 
 const typeLabels = {
@@ -24,7 +25,8 @@ const typeLabels = {
   life: "Life",
   medicare: "Medicare",
   final_expense: "Final Expense",
-  veteran_life: "Veteran Life"
+  veteran_life: "Veteran Life",
+  retirement: "Retirement"
 };
 
 export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, onAddToCart }) {
