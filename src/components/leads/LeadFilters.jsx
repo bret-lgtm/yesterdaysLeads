@@ -63,10 +63,10 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All States</SelectItem>
-              <SelectItem value="Unknown">Unknown</SelectItem>
               {US_STATES.map(s => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
+              <SelectItem value="Unknown">Unknown</SelectItem>
             </SelectContent>
           </Select>
         </div>
