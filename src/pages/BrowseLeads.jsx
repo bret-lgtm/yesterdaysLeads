@@ -67,30 +67,15 @@ export default function BrowseLeads() {
     return 'tier1';
   };
 
+  // Filter leads - backend already applies age_range, lead_type, state, zip_code filters
+  // We only need to apply tier-based suppression here
   const filteredLeads = allLeads.filter(lead => {
     // Exclude leads that have been sold in their current tier
     const currentTier = getTierFromAge(lead.age_in_days || 1);
     const soldInCurrentTier = leadSuppressions.some(
       sup => sup.lead_id === lead.id && sup.tier === currentTier
     );
-    if (soldInCurrentTier) return false;
-
-    // Apply filters
-    if (filters.lead_type && filters.lead_type !== 'all' && lead.lead_type !== filters.lead_type) return false;
-    if (filters.state && filters.state !== 'all' && lead.state !== filters.state) return false;
-    if (filters.zip_code && !lead.zip_code?.startsWith(filters.zip_code)) return false;
-
-    if (filters.age_range && filters.age_range !== 'all') {
-      const ageInDays = lead.age_in_days || 0;
-
-      if (filters.age_range === 'yesterday' && ageInDays > 3) return false;
-      if (filters.age_range === '4-14' && (ageInDays < 4 || ageInDays > 14)) return false;
-      if (filters.age_range === '15-30' && (ageInDays < 15 || ageInDays > 30)) return false;
-      if (filters.age_range === '31-90' && (ageInDays < 31 || ageInDays > 90)) return false;
-      if (filters.age_range === '91+' && ageInDays < 91) return false;
-    }
-
-    return true;
+    return !soldInCurrentTier;
   });
 
   // Pagination
