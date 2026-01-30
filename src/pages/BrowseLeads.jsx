@@ -9,7 +9,8 @@ import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
+import { Package, ChevronLeft, ChevronRight, ArrowUpDown, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -23,6 +24,7 @@ export default function BrowseLeads() {
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState('default');
+  const [quantity, setQuantity] = useState('');
 
   // Fetch current user
   const { data: user } = useQuery({
@@ -140,6 +142,29 @@ export default function BrowseLeads() {
     );
   };
 
+  const handleQuantityAddToCart = async () => {
+    const qty = parseInt(quantity);
+    if (!qty || qty <= 0) return;
+
+    const availableLeads = sortedLeads.filter(lead => !cartLeadIds.includes(lead.id));
+    const leadsToAdd = availableLeads.slice(0, qty);
+
+    for (const lead of leadsToAdd) {
+      const price = calculateLeadPrice(lead, pricingTiers);
+      await addToCart({
+        lead_id: lead.id,
+        lead_type: lead.lead_type,
+        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+        state: lead.state,
+        zip_code: lead.zip_code,
+        age_in_days: lead.age_in_days,
+        price
+      });
+    }
+
+    setQuantity('');
+  };
+
   const handleCheckout = () => {
     window.location.href = '/Checkout';
   };
@@ -164,18 +189,42 @@ export default function BrowseLeads() {
         />
 
         {/* Results Header */}
-        <div className="flex items-center justify-between my-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 my-6">
           <p className="text-slate-600">
             <span className="font-semibold text-slate-900">{sortedLeads.length}</span> leads found
           </p>
-          {selectedLeads.length > 0 && (
-            <Button
-              onClick={handleBulkAddToCart}
-              className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
-            >
-              Add {selectedLeads.length} Selected to Cart
-            </Button>
-          )}
+          
+          <div className="flex items-center gap-3">
+            {/* Quantity Selector */}
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                placeholder="Qty"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                className="w-20 h-10 rounded-xl border-slate-200"
+                min="1"
+              />
+              <Button
+                onClick={handleQuantityAddToCart}
+                disabled={!quantity || parseInt(quantity) <= 0 || sortedLeads.length === 0}
+                className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add to Cart
+              </Button>
+            </div>
+
+            {selectedLeads.length > 0 && (
+              <Button
+                onClick={handleBulkAddToCart}
+                variant="outline"
+                className="rounded-xl border-slate-200"
+              >
+                Add {selectedLeads.length} Selected
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Sort Options */}
