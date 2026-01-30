@@ -81,25 +81,29 @@ export default function BrowseLeads() {
   });
 
   // Apply sorting
-  const sortedLeads = [...filteredLeads].sort((a, b) => {
+  const sortedLeads = React.useMemo(() => {
+    const sorted = [...filteredLeads];
+    
     if (sortOption === 'age-old-new') {
-      return (b.age_in_days || 0) - (a.age_in_days || 0);
+      sorted.sort((a, b) => (b.age_in_days || 0) - (a.age_in_days || 0));
+    } else if (sortOption === 'age-new-old') {
+      sorted.sort((a, b) => (a.age_in_days || 0) - (b.age_in_days || 0));
+    } else if (sortOption === 'price-low-high') {
+      sorted.sort((a, b) => {
+        const priceA = calculateLeadPrice(a, pricingTiers);
+        const priceB = calculateLeadPrice(b, pricingTiers);
+        return priceA - priceB;
+      });
+    } else if (sortOption === 'price-high-low') {
+      sorted.sort((a, b) => {
+        const priceA = calculateLeadPrice(a, pricingTiers);
+        const priceB = calculateLeadPrice(b, pricingTiers);
+        return priceB - priceA;
+      });
     }
-    if (sortOption === 'age-new-old') {
-      return (a.age_in_days || 0) - (b.age_in_days || 0);
-    }
-    if (sortOption === 'price-low-high') {
-      const priceA = calculateLeadPrice(a, pricingTiers);
-      const priceB = calculateLeadPrice(b, pricingTiers);
-      return priceA - priceB;
-    }
-    if (sortOption === 'price-high-low') {
-      const priceA = calculateLeadPrice(a, pricingTiers);
-      const priceB = calculateLeadPrice(b, pricingTiers);
-      return priceB - priceA;
-    }
-    return 0; // default - as returned from backend
-  });
+    
+    return sorted;
+  }, [filteredLeads, sortOption, pricingTiers]);
 
   // Pagination
   const totalPages = Math.ceil(sortedLeads.length / ITEMS_PER_PAGE);
