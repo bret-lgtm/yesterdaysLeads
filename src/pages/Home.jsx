@@ -52,7 +52,7 @@ const leadTypes = [
   { name: "Final Expense", value: "final_expense", color: "bg-cyan-100 text-cyan-700 hover:bg-cyan-200" },
   { name: "Life", value: "life", color: "bg-violet-100 text-violet-700 hover:bg-violet-200" },
   { name: "Veteran Life", value: "veteran_life", color: "bg-orange-100 text-orange-700 hover:bg-orange-200" },
-  { name: "Retirement", value: "retirement", color: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" },
+  { name: "Retirement", value: "retirement", color: "bg-gray-100 text-red-600 hover:bg-gray-200" },
   { name: "Home", value: "home", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },
   { name: "Auto", value: "auto", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
   { name: "Medicare", value: "medicare", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
