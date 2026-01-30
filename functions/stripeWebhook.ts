@@ -101,12 +101,26 @@ Deno.serve(async (req) => {
 
       console.log('Order created:', order.id);
 
-      // Update suppression list with lead IDs
-      const leadIdsToSuppress = cartItems.map(item => item.lead_id).filter(Boolean);
-      const updatedSuppressionList = [...(customer.suppression_list || []), ...leadIdsToSuppress];
-      await base44.asServiceRole.entities.Customer.update(customer.id, {
-        suppression_list: updatedSuppressionList
-      });
+      // Create lead suppression records for tier-based suppression
+      // Determine tier for each lead based on age
+      function getTierFromAge(ageInDays) {
+        if (ageInDays >= 1 && ageInDays <= 3) return 'tier1';
+        if (ageInDays >= 4 && ageInDays <= 14) return 'tier2';
+        if (ageInDays >= 15 && ageInDays <= 30) return 'tier3';
+        if (ageInDays >= 31 && ageInDays <= 90) return 'tier4';
+        if (ageInDays >= 91) return 'tier5';
+        return 'tier1';
+      }
+
+      for (const cartItem of cartItems) {
+        const tier = getTierFromAge(cartItem.age_in_days || 1);
+        await base44.asServiceRole.entities.LeadSuppression.create({
+          lead_id: cartItem.lead_id,
+          tier: tier,
+          order_id: order.id,
+          sale_date: new Date().toISOString()
+        });
+      }
 
       // Clear cart items
       for (const cartItemId of cartItemIds) {

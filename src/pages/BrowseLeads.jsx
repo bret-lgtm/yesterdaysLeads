@@ -31,15 +31,10 @@ export default function BrowseLeads() {
   // Use cart hook
   const { cartItems, addToCart, removeFromCart } = useCart(user);
 
-  // Fetch customer data for suppression list
-  const { data: customer } = useQuery({
-    queryKey: ['customer', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return null;
-      const customers = await base44.entities.Customer.filter({ email: user.email });
-      return customers[0] || null;
-    },
-    enabled: !!user?.email
+  // Fetch lead suppressions for tier-based filtering
+  const { data: leadSuppressions = [] } = useQuery({
+    queryKey: ['leadSuppressions'],
+    queryFn: () => base44.entities.LeadSuppression.list()
   });
 
   // Fetch all available leads from Google Sheets
@@ -60,13 +55,25 @@ export default function BrowseLeads() {
     queryFn: () => base44.entities.PricingTier.list()
   });
 
-  // Filter out suppressed leads
-  const suppressionList = customer?.suppression_list || [];
   const cartLeadIds = cartItems.map(item => item.lead_id);
 
+  // Helper function to get tier from age
+  const getTierFromAge = (ageInDays) => {
+    if (ageInDays >= 1 && ageInDays <= 3) return 'tier1';
+    if (ageInDays >= 4 && ageInDays <= 14) return 'tier2';
+    if (ageInDays >= 15 && ageInDays <= 30) return 'tier3';
+    if (ageInDays >= 31 && ageInDays <= 90) return 'tier4';
+    if (ageInDays >= 91) return 'tier5';
+    return 'tier1';
+  };
+
   const filteredLeads = allLeads.filter(lead => {
-    // Exclude suppressed leads (only for authenticated users)
-    if (user && suppressionList.includes(lead.id)) return false;
+    // Exclude leads that have been sold in their current tier
+    const currentTier = getTierFromAge(lead.age_in_days || 1);
+    const soldInCurrentTier = leadSuppressions.some(
+      sup => sup.lead_id === lead.id && sup.tier === currentTier
+    );
+    if (soldInCurrentTier) return false;
 
     // Apply filters
     if (filters.lead_type && filters.lead_type !== 'all' && lead.lead_type !== filters.lead_type) return false;
