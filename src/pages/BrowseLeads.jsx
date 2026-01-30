@@ -8,7 +8,8 @@ import { calculateLeadPrice, calculateBulkDiscount } from '../components/pricing
 import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Package, ChevronLeft, ChevronRight } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Package, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -21,6 +22,7 @@ export default function BrowseLeads() {
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOption, setSortOption] = useState('default');
 
   // Fetch current user
   const { data: user } = useQuery({
@@ -78,9 +80,30 @@ export default function BrowseLeads() {
     return !soldInCurrentTier;
   });
 
+  // Apply sorting
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
+    if (sortOption === 'age-old-new') {
+      return (b.age_in_days || 0) - (a.age_in_days || 0);
+    }
+    if (sortOption === 'age-new-old') {
+      return (a.age_in_days || 0) - (b.age_in_days || 0);
+    }
+    if (sortOption === 'price-low-high') {
+      const priceA = calculateLeadPrice(a, pricingTiers);
+      const priceB = calculateLeadPrice(b, pricingTiers);
+      return priceA - priceB;
+    }
+    if (sortOption === 'price-high-low') {
+      const priceA = calculateLeadPrice(a, pricingTiers);
+      const priceB = calculateLeadPrice(b, pricingTiers);
+      return priceB - priceA;
+    }
+    return 0; // default - as returned from backend
+  });
+
   // Pagination
-  const totalPages = Math.ceil(filteredLeads.length / ITEMS_PER_PAGE);
-  const paginatedLeads = filteredLeads.slice(
+  const totalPages = Math.ceil(sortedLeads.length / ITEMS_PER_PAGE);
+  const paginatedLeads = sortedLeads.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -139,7 +162,7 @@ export default function BrowseLeads() {
         {/* Results Header */}
         <div className="flex items-center justify-between my-6">
           <p className="text-slate-600">
-            <span className="font-semibold text-slate-900">{filteredLeads.length}</span> leads found
+            <span className="font-semibold text-slate-900">{sortedLeads.length}</span> leads found
           </p>
           {selectedLeads.length > 0 && (
             <Button
@@ -150,6 +173,25 @@ export default function BrowseLeads() {
             </Button>
           )}
         </div>
+
+        {/* Sort Options */}
+        {sortedLeads.length > 0 && (
+          <div className="flex items-center gap-3 mb-4">
+            <ArrowUpDown className="w-4 h-4 text-slate-500" />
+            <Select value={sortOption} onValueChange={setSortOption}>
+              <SelectTrigger className="w-48 h-10 rounded-xl border-slate-200">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="age-old-new">Age: Old → New</SelectItem>
+                <SelectItem value="age-new-old">Age: New → Old</SelectItem>
+                <SelectItem value="price-low-high">Price: Low → High</SelectItem>
+                <SelectItem value="price-high-low">Price: High → Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Leads Grid */}
         {leadsLoading ? (
