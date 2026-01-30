@@ -17,6 +17,7 @@ const LEAD_TYPES = [
   { value: "final_expense", label: "Final Expense" },
   { value: "life", label: "Life" },
   { value: "veteran_life", label: "Veteran Life" },
+  { value: "retirement", label: "Retirement" },
   { value: "home", label: "Home" },
   { value: "auto", label: "Auto" },
   { value: "medicare", label: "Medicare" },
