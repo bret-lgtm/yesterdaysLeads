@@ -7,6 +7,8 @@ import CartSidebar from '../components/leads/CartSidebar';
 import { calculateLeadPrice, calculateBulkDiscount } from '../components/pricing/PricingCalculator';
 import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, ChevronLeft, ChevronRight, ArrowUpDown, Plus } from "lucide-react";
@@ -25,6 +27,8 @@ export default function BrowseLeads() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState('default');
   const [quantity, setQuantity] = useState('');
+
+  const queryClient = useQueryClient();
 
   // Fetch current user
   const { data: user } = useQuery({
@@ -149,17 +153,40 @@ export default function BrowseLeads() {
     const availableLeads = sortedLeads.filter(lead => !cartLeadIds.includes(lead.id));
     const leadsToAdd = availableLeads.slice(0, qty);
 
-    for (const lead of leadsToAdd) {
-      const price = calculateLeadPrice(lead, pricingTiers);
-      await addToCart({
+    console.log('Quantity requested:', qty);
+    console.log('Available leads:', availableLeads.length);
+    console.log('Leads to add:', leadsToAdd.length);
+
+    if (user) {
+      // Bulk create for database
+      const itemsToCreate = leadsToAdd.map(lead => ({
+        user_email: user.email,
         lead_id: lead.id,
         lead_type: lead.lead_type,
         lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
         state: lead.state,
         zip_code: lead.zip_code,
         age_in_days: lead.age_in_days,
-        price
-      });
+        price: calculateLeadPrice(lead, pricingTiers)
+      }));
+
+      await base44.entities.CartItem.bulkCreate(itemsToCreate);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(`${leadsToAdd.length} leads added to cart`);
+    } else {
+      // Local storage for anonymous users
+      for (const lead of leadsToAdd) {
+        const price = calculateLeadPrice(lead, pricingTiers);
+        await addToCart({
+          lead_id: lead.id,
+          lead_type: lead.lead_type,
+          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+          state: lead.state,
+          zip_code: lead.zip_code,
+          age_in_days: lead.age_in_days,
+          price
+        });
+      }
     }
 
     setQuantity('');
