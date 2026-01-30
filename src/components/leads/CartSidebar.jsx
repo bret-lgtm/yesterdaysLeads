@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, X, Trash2, CreditCard, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onToggle, bulkDiscount }) {
+export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onToggle, bulkDiscount, onRemoveAll }) {
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   const discountAmount = bulkDiscount > 0 ? subtotal * (bulkDiscount / 100) : 0;
   const total = subtotal - discountAmount;
@@ -45,7 +45,7 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
             >
               {/* Header */}
               <div className="p-6 border-b border-slate-100">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center">
                       <ShoppingCart className="w-5 h-5 text-slate-600" />
@@ -59,6 +59,17 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
                     <X className="w-5 h-5" />
                   </Button>
                 </div>
+                {items.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onRemoveAll}
+                    className="w-full rounded-xl border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove All
+                  </Button>
+                )}
               </div>
 
               {/* Items */}

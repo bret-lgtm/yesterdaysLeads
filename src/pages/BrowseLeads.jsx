@@ -37,7 +37,7 @@ export default function BrowseLeads() {
   });
 
   // Use cart hook
-  const { cartItems, addToCart, removeFromCart } = useCart(user);
+  const { cartItems, addToCart, removeFromCart, clearLocalCart } = useCart(user);
 
   // Fetch lead suppressions for tier-based filtering
   const { data: leadSuppressions = [] } = useQuery({
@@ -194,6 +194,21 @@ export default function BrowseLeads() {
 
   const handleCheckout = () => {
     window.location.href = '/Checkout';
+  };
+
+  const handleRemoveAll = async () => {
+    if (user) {
+      // Delete all cart items for authenticated user
+      for (const item of cartItems) {
+        await base44.entities.CartItem.delete(item.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success('Cart cleared');
+    } else {
+      // Clear local storage for anonymous user
+      clearLocalCart();
+      toast.success('Cart cleared');
+    }
   };
 
   const bulkDiscount = calculateBulkDiscount(cartItems.length);
@@ -356,6 +371,7 @@ export default function BrowseLeads() {
         isOpen={cartOpen}
         onToggle={() => setCartOpen(!cartOpen)}
         bulkDiscount={bulkDiscount}
+        onRemoveAll={handleRemoveAll}
       />
     </div>
   );
