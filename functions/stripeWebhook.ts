@@ -120,6 +120,17 @@ Deno.serve(async (req) => {
           order_id: order.id,
           sale_date: new Date().toISOString()
         });
+
+        // Update the Google Sheet tier status
+        try {
+          await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
+            lead_id: cartItem.lead_id,
+            tier: tier
+          });
+          console.log(`Updated sheet for lead ${cartItem.lead_id}, ${tier} to Sold`);
+        } catch (err) {
+          console.error(`Failed to update sheet for ${cartItem.lead_id}:`, err.message);
+        }
       }
 
       // Clear cart items
