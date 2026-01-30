@@ -170,6 +170,7 @@ Deno.serve(async (req) => {
       if (leadType === 'life' && leads.length > 0) {
         console.log(`🔍 Sample Life lead:`, JSON.stringify(leads[0]));
         console.log(`🔍 Life lead status value:`, `"${leads[0].status}"`);
+        console.log(`🔍 Life lead age_in_days:`, leads[0].age_in_days);
       }
       if (leadType === 'medicare') {
         console.log(`🔍 Medicare total leads before filtering:`, leads.length);
@@ -179,6 +180,9 @@ Deno.serve(async (req) => {
           statusCounts[status] = (statusCounts[status] || 0) + 1;
         });
         console.log(`🔍 Medicare status breakdown:`, JSON.stringify(statusCounts));
+      }
+      if (leadType === 'auto' && leads.length > 0) {
+        console.log(`🔍 Sample Auto lead age_in_days:`, leads[0].age_in_days);
       }
 
       allLeads = allLeads.concat(leads);
