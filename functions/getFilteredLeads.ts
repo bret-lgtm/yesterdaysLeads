@@ -135,36 +135,114 @@ Deno.serve(async (req) => {
       const normalizedSearchZip = normalizeZip(filters.zip_code);
 
       if (filters.distance) {
-        // Distance-based search
-        const searchZipResults = await base44.asServiceRole.entities.ZipCode.filter({ 
-          zip_code: normalizedSearchZip 
-        });
+        // Distance-based search with geocoding
+        const distance = parseFloat(filters.distance);
 
-        console.log('🔍 Search zip results:', searchZipResults.length);
+        // Helper: Get coordinates for a zip code (cache or Nominatim)
+        const getZipCoordinates = async (zipCode) => {
+          // Check cache first
+          const cached = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: zipCode });
+          if (cached.length > 0) {
+            const data = cached[0].data || cached[0];
+            return { latitude: data.latitude, longitude: data.longitude };
+          }
 
-        if (searchZipResults.length > 0) {
-          const searchZipData = searchZipResults[0].data || searchZipResults[0];
-          const { latitude: lat1, longitude: lon1 } = searchZipData;
-          const distance = parseFloat(filters.distance);
+          // Fetch from Nominatim
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
+            { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
+          );
+          
+          if (!response.ok) return null;
+          
+          const results = await response.json();
+          if (results.length === 0) return null;
 
-          console.log('📍 Search zip coords:', lat1, lon1, 'Distance:', distance);
-          console.log('📦 Total leads before distance filter:', filtered.length);
+          const coords = {
+            latitude: parseFloat(results[0].lat),
+            longitude: parseFloat(results[0].lon)
+          };
 
-          // Load all zip codes once - use a large limit to get all ~42,000 US zip codes
-          const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 100000);
+          // Cache for future use
+          await base44.asServiceRole.entities.ZipCode.create({
+            zip_code: zipCode,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+            city: results[0].display_name?.split(',')[0] || '',
+            state: ''
+          });
+
+          return coords;
+        };
+
+        // Get search zip coordinates
+        const searchCoords = await getZipCoordinates(normalizedSearchZip);
+        if (!searchCoords) {
+          // Search zip not found, return empty
+          filtered = [];
+        } else {
+          const { latitude: lat1, longitude: lon1 } = searchCoords;
+
+          // Get unique lead zip codes
+          const uniqueLeadZips = [...new Set(filtered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
+          
+          // Check cache for all lead zips
+          const cachedZips = await base44.asServiceRole.entities.ZipCode.list('', 50000);
           const zipMap = new Map();
-          allZipCodes.forEach(result => {
+          cachedZips.forEach(result => {
             const zipData = result.data || result;
             if (zipData.zip_code) {
               zipMap.set(normalizeZip(zipData.zip_code), zipData);
             }
           });
 
-          console.log('🗺️ Zip codes loaded:', zipMap.size);
+          // Find missing zips
+          const missingZips = uniqueLeadZips.filter(z => !zipMap.has(z));
 
-          // Haversine distance
+          // Bulk lookup missing zips using InvokeLLM (no rate limits)
+          if (missingZips.length > 0) {
+            const lookupResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+              prompt: `Return the latitude and longitude coordinates for these US ZIP codes: ${missingZips.join(', ')}. Return accurate coordinates only for valid ZIP codes.`,
+              add_context_from_internet: true,
+              response_json_schema: {
+                type: "object",
+                properties: {
+                  zip_codes: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        zip_code: { type: "string" },
+                        latitude: { type: "number" },
+                        longitude: { type: "number" }
+                      }
+                    }
+                  }
+                }
+              }
+            });
+
+            // Cache the new coordinates
+            if (lookupResult.zip_codes && lookupResult.zip_codes.length > 0) {
+              for (const zipData of lookupResult.zip_codes) {
+                if (zipData.latitude && zipData.longitude) {
+                  zipMap.set(normalizeZip(zipData.zip_code), zipData);
+                  // Cache in database
+                  await base44.asServiceRole.entities.ZipCode.create({
+                    zip_code: normalizeZip(zipData.zip_code),
+                    latitude: zipData.latitude,
+                    longitude: zipData.longitude,
+                    city: '',
+                    state: ''
+                  });
+                }
+              }
+            }
+          }
+
+          // Haversine distance formula
           const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 3959;
+            const R = 3959; // Earth radius in miles
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -174,39 +252,22 @@ Deno.serve(async (req) => {
             return R * c;
           };
 
-          let matchedCount = 0;
-          let missingZipCount = 0;
-          const missingZips = new Set();
-
+          // Filter leads by distance
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
             const normalizedLeadZip = normalizeZip(lead.zip_code);
-            if (normalizedLeadZip === normalizedSearchZip) {
-              matchedCount++;
-              return true;
-            }
+            
+            // Exact match always included
+            if (normalizedLeadZip === normalizedSearchZip) return true;
 
+            // Check if we have coordinates for this zip
             const leadZipData = zipMap.get(normalizedLeadZip);
-            if (!leadZipData) {
-              missingZipCount++;
-              missingZips.add(normalizedLeadZip);
-              return false;
-            }
+            if (!leadZipData) return false;
 
+            // Calculate distance
             const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-            if (dist <= distance) {
-              matchedCount++;
-              return true;
-            }
-            return false;
+            return dist <= distance;
           });
-
-          console.log('✅ Leads matched within distance:', matchedCount);
-          console.log('❌ Leads with missing zip codes:', missingZipCount);
-          console.log('🔢 Sample missing zips:', Array.from(missingZips).slice(0, 20).join(', '));
-        } else {
-          // Search zip not found, exact match only
-          filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
         }
       } else {
         // Just zip code filter, no distance
