@@ -161,60 +161,78 @@ Deno.serve(async (req) => {
         }
 
         if (searchZipResults.length > 0) {
-          const searchZipData = searchZipResults[0].data || searchZipResults[0];
-          console.log('Search zip data:', JSON.stringify(searchZipData));
-          const { latitude: lat1, longitude: lon1 } = searchZipData;
-          console.log('Extracted coords:', lat1, lon1);
-          const distance = parseFloat(filters.distance);
-          console.log('Distance threshold:', distance);
-
-          // Load all zip codes once
-          const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
-          const zipMap = new Map();
-          allZipCodes.forEach(result => {
-            const zipData = result.data || result;
-            if (zipData.zip_code) {
-              zipMap.set(normalizeZip(zipData.zip_code), zipData);
-            }
-          });
-
-          // Haversine distance
-          const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 3959;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-          };
-
-          console.log('Distance filter - search zip:', normalizedSearchZip, 'coords:', lat1, lon1, 'distance:', distance);
-          console.log('Total leads before distance filter:', filtered.length);
-          console.log('Zip codes in database:', zipMap.size);
-
-          filtered = filtered.filter(lead => {
-            if (!lead.zip_code) return false;
-            const normalizedLeadZip = normalizeZip(lead.zip_code);
-            if (normalizedLeadZip === normalizedSearchZip) return true;
-
-            const leadZipData = zipMap.get(normalizedLeadZip);
-            if (!leadZipData) {
-              console.log('Missing zip data for:', normalizedLeadZip);
-              return false;
-            }
-
-            const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-            if (dist <= distance) {
-              console.log('Match found:', normalizedLeadZip, 'distance:', dist.toFixed(2), 'miles');
-            }
-            return dist <= distance;
-          });
+          const searchZipRecord = searchZipResults[0];
+          const searchZipData = searchZipRecord.data || searchZipRecord;
+          console.log('Search zip data structure:', JSON.stringify(searchZipData));
           
-          console.log('Leads after distance filter:', filtered.length);
+          // Check both direct access and .data access
+          const lat1 = searchZipData.latitude || searchZipRecord.latitude;
+          const lon1 = searchZipData.longitude || searchZipRecord.longitude;
+          console.log('Extracted coords - lat:', lat1, 'lon:', lon1);
+          
+          if (!lat1 || !lon1) {
+            console.error('❌ Could not extract coordinates from search zip');
+            filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
+          } else {
+            const distance = parseFloat(filters.distance);
+            console.log('Distance threshold:', distance, 'miles');
+
+            // Load all zip codes once
+            console.log('⏳ Loading all zip codes...');
+            const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
+            console.log('✅ Loaded', allZipCodes.length, 'zip codes');
+            
+            const zipMap = new Map();
+            allZipCodes.forEach(result => {
+              const zipData = result.data || result;
+              if (zipData.zip_code && zipData.latitude && zipData.longitude) {
+                zipMap.set(normalizeZip(zipData.zip_code), zipData);
+              }
+            });
+            console.log('📍 Zip map size:', zipMap.size);
+
+            // Haversine distance
+            const calculateDistance = (lat1, lon1, lat2, lon2) => {
+              const R = 3959;
+              const dLat = (lat2 - lat1) * Math.PI / 180;
+              const dLon = (lon2 - lon1) * Math.PI / 180;
+              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              return R * c;
+            };
+
+            console.log('🔍 Starting distance filtering...');
+            let matchCount = 0;
+            filtered = filtered.filter(lead => {
+              if (!lead.zip_code) return false;
+              const normalizedLeadZip = normalizeZip(lead.zip_code);
+              if (normalizedLeadZip === normalizedSearchZip) {
+                matchCount++;
+                return true;
+              }
+
+              const leadZipData = zipMap.get(normalizedLeadZip);
+              if (!leadZipData) {
+                return false;
+              }
+
+              const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+              if (dist <= distance) {
+                matchCount++;
+                if (matchCount <= 5) {
+                  console.log(`✅ Match #${matchCount}: ${normalizedLeadZip} @ ${dist.toFixed(2)} miles`);
+                }
+              }
+              return dist <= distance;
+            });
+            
+            console.log('✅ Total matches found:', matchCount);
+          }
         } else {
           // Search zip not found, exact match only
+          console.log('Search zip not found in database, using exact match');
           filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
         }
       } else {
@@ -225,9 +243,10 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log('🏁 Final result count:', filtered.length);
     return Response.json({ leads: filtered });
   } catch (error) {
-    console.error('Filter error:', error);
+    console.error('❌ Filter error:', error);
     return Response.json({ error: error.message, leads: [] }, { status: 500 });
   }
 });
