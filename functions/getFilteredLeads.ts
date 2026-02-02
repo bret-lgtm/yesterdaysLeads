@@ -32,12 +32,15 @@ Deno.serve(async (req) => {
       : Object.keys(sheetIds);
 
     // Fetch sheet metadata to get names
+    console.log('🌐 Fetching sheet metadata...');
     const sheetMetaResponse = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
+    console.log('📡 Metadata response status:', sheetMetaResponse.status);
     
     const sheetMeta = await sheetMetaResponse.json();
+    console.log('📑 Sheets found:', sheetMeta.sheets?.length);
     const sheetMap = {};
     sheetMeta.sheets?.forEach(sheet => {
       const id = sheet.properties.sheetId.toString();
