@@ -30,6 +30,11 @@ export default function BrowseLeads() {
 
   const queryClient = useQueryClient();
 
+  // Fetch initial leads on mount
+  useEffect(() => {
+    refetch();
+  }, []);
+
   // Fetch current user
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -46,7 +51,7 @@ export default function BrowseLeads() {
   });
 
   // Fetch filtered leads from backend
-  const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
+  const { data: allLeads = [], isLoading: leadsLoading, refetch } = useQuery({
     queryKey: ['filteredLeads', JSON.stringify(filters)],
     queryFn: async () => {
       const response = await base44.functions.invoke('getFilteredLeads', { filters });
@@ -54,7 +59,8 @@ export default function BrowseLeads() {
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 1
+    retry: 1,
+    enabled: false // Don't auto-fetch on mount
   });
 
   // Fetch pricing tiers
@@ -225,10 +231,14 @@ export default function BrowseLeads() {
         <LeadFilters
           filters={filters}
           onChange={setFilters}
-          onSearch={() => setCurrentPage(1)}
+          onSearch={() => {
+            setCurrentPage(1);
+            refetch();
+          }}
           onReset={() => {
             setFilters({ age_range: 'all', lead_type: 'all' });
             setCurrentPage(1);
+            refetch();
           }}
         />
 
