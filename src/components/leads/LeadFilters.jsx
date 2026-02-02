@@ -72,7 +72,7 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Age Range</Label>
+          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lead Age</Label>
           <Select value={filters.age_range || "all"} onValueChange={(v) => handleChange('age_range', v)}>
             <SelectTrigger className="h-11 rounded-xl border-slate-200">
               <SelectValue placeholder="All Ages" />
