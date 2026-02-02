@@ -104,18 +104,20 @@ export default function BrowseLeads() {
       // Normalize zip codes to 5 digits with leading zeros
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       
-      const zipCodeMap = new Map(zipCodes.map(z => {
+      const zipCodeMap = new Map();
+      zipCodes.forEach(z => {
         const zipData = z.data || z;
-        return [normalizeZip(zipData.zip_code), zipData];
-      }));
+        const normalizedZip = normalizeZip(zipData.zip_code);
+        zipCodeMap.set(normalizedZip, zipData);
+      });
+      
       const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
       const searchZipData = zipCodeMap.get(normalizedSearchZip);
       
       console.log('🔍 Searching zip:', normalizedSearchZip, 'Distance:', activeZipFilters.distance);
-      console.log('🔍 Map has this zip?:', zipCodeMap.has(normalizedSearchZip));
       console.log('🔍 Search zip data:', searchZipData);
       console.log('🔍 Total zip codes in map:', zipCodeMap.size);
-      console.log('🔍 Checking zips near 65804:', Array.from(zipCodeMap.keys()).filter(z => z.startsWith('658')).slice(0, 10));
+      console.log('🔍 Sample zips from DB:', zipCodes.slice(0, 3).map(z => (z.data || z).zip_code));
 
       if (activeZipFilters.distance) {
         const distance = parseFloat(activeZipFilters.distance);
