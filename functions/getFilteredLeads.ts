@@ -150,8 +150,8 @@ Deno.serve(async (req) => {
           console.log('📍 Search zip coords:', lat1, lon1, 'Distance:', distance);
           console.log('📦 Total leads before distance filter:', filtered.length);
 
-          // Load all zip codes once
-          const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
+          // Load all zip codes once - use a large limit to get all ~42,000 US zip codes
+          const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 100000);
           const zipMap = new Map();
           allZipCodes.forEach(result => {
             const zipData = result.data || result;
