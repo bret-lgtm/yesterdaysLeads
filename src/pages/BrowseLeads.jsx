@@ -57,7 +57,85 @@ export default function BrowseLeads() {
     refetchOnMount: false
   });
 
-  const allLeads = sheetsResponse.leads || [];
+  // Fetch zip codes for distance calculations
+  const { data: zipCodes = [] } = useQuery({
+    queryKey: ['zipCodes'],
+    queryFn: () => base44.entities.ZipCode.list(),
+    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
+    refetchOnWindowFocus: false
+  });
+
+  // Apply filters client-side
+  const allLeads = React.useMemo(() => {
+    let filtered = [...allLeadsData];
+
+    // State filter
+    if (filters.state && filters.state !== 'all') {
+      filtered = filtered.filter(lead => lead.state === filters.state);
+    }
+
+    // Lead type filter
+    if (filters.lead_type && filters.lead_type !== 'all') {
+      filtered = filtered.filter(lead => lead.lead_type === filters.lead_type);
+    }
+
+    // Age range filter
+    if (filters.age_range && filters.age_range !== 'all') {
+      filtered = filtered.filter(lead => {
+        const age = lead.age_in_days || 0;
+        if (filters.age_range === 'yesterday') return age <= 3;
+        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
+        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
+        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
+        if (filters.age_range === '91+') return age >= 91;
+        return true;
+      });
+    }
+
+    // Zip code and distance filter
+    if (filters.zip_code) {
+      if (filters.distance) {
+        const distance = parseFloat(filters.distance);
+        const zipCodeMap = new Map(zipCodes.map(z => [z.zip_code, z]));
+        const searchZipData = zipCodeMap.get(filters.zip_code);
+
+        if (searchZipData) {
+          const { latitude: lat1, longitude: lon1 } = searchZipData;
+
+          // Haversine distance function
+          const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 3959;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+          };
+
+          filtered = filtered.filter(lead => {
+            if (!lead.zip_code) return false;
+            if (lead.zip_code === filters.zip_code) return true;
+
+            const leadZipData = zipCodeMap.get(lead.zip_code);
+            if (!leadZipData) return false;
+
+            const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+            return dist <= distance;
+          });
+        } else {
+          filtered = filtered.filter(lead => lead.zip_code === filters.zip_code);
+        }
+      } else {
+        filtered = filtered.filter(lead => 
+          lead.zip_code && (lead.zip_code === filters.zip_code || lead.zip_code.startsWith(filters.zip_code))
+        );
+      }
+    }
+
+    return filtered;
+  }, [allLeadsData, filters, zipCodes]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
