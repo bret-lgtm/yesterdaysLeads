@@ -205,6 +205,9 @@ Deno.serve(async (req) => {
 
             console.log('🔍 Starting distance filtering...');
             let matchCount = 0;
+            let missingZipCount = 0;
+            const sampleMissingZips = [];
+            
             filtered = filtered.filter(lead => {
               if (!lead.zip_code) return false;
               const normalizedLeadZip = normalizeZip(lead.zip_code);
@@ -215,6 +218,10 @@ Deno.serve(async (req) => {
 
               const leadZipData = zipMap.get(normalizedLeadZip);
               if (!leadZipData) {
+                missingZipCount++;
+                if (sampleMissingZips.length < 10) {
+                  sampleMissingZips.push(normalizedLeadZip);
+                }
                 return false;
               }
 
