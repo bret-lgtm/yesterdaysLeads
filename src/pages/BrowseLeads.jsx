@@ -28,6 +28,7 @@ export default function BrowseLeads() {
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState('default');
   const [quantity, setQuantity] = useState('');
+  const [distanceFilteredLeads, setDistanceFilteredLeads] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -59,7 +60,7 @@ export default function BrowseLeads() {
   });
 
   // Fetch specific zip code when searching with distance
-  const { data: searchZipData, isLoading: zipLoading } = useQuery({
+  const { data: searchZipData } = useQuery({
     queryKey: ['searchZip', activeZipFilters.zip_code],
     queryFn: async () => {
       if (!activeZipFilters.zip_code) return null;
@@ -72,8 +73,83 @@ export default function BrowseLeads() {
     staleTime: 30 * 60 * 1000
   });
 
+  // Calculate distance filtering in useEffect
+  useEffect(() => {
+    if (!activeZipFilters.distance || !searchZipData) {
+      setDistanceFilteredLeads(null);
+      return;
+    }
+
+    const normalizeZip = (zip) => String(zip).padStart(5, '0');
+    const distance = parseFloat(activeZipFilters.distance);
+    const { latitude: lat1, longitude: lon1 } = searchZipData;
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 3959;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
+
+    // Apply basic filters first
+    let baseFiltered = [...allLeadsData];
+    if (filters.state && filters.state !== 'all') {
+      baseFiltered = baseFiltered.filter(lead => lead.state === filters.state);
+    }
+    if (filters.lead_type && filters.lead_type !== 'all') {
+      baseFiltered = baseFiltered.filter(lead => lead.lead_type === filters.lead_type);
+    }
+    if (filters.age_range && filters.age_range !== 'all') {
+      baseFiltered = baseFiltered.filter(lead => {
+        const age = lead.age_in_days || 0;
+        if (filters.age_range === 'yesterday') return age <= 3;
+        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
+        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
+        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
+        if (filters.age_range === '91+') return age >= 91;
+        return true;
+      });
+    }
+
+    // Get unique zips and fetch their coordinates
+    const uniqueZips = [...new Set(baseFiltered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
+    
+    Promise.all(
+      uniqueZips.map(async (zip) => {
+        const results = await base44.entities.ZipCode.filter({ zip_code: zip });
+        return results.length > 0 ? [zip, results[0].data || results[0]] : [zip, null];
+      })
+    ).then(entries => {
+      const zipMap = new Map(entries);
+      const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
+      
+      const result = baseFiltered.filter(lead => {
+        if (!lead.zip_code) return false;
+        const normalizedLeadZip = normalizeZip(lead.zip_code);
+        if (normalizedLeadZip === normalizedSearchZip) return true;
+
+        const leadZipData = zipMap.get(normalizedLeadZip);
+        if (!leadZipData) return false;
+
+        const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+        return dist <= distance;
+      });
+      
+      setDistanceFilteredLeads(result);
+    });
+  }, [activeZipFilters, searchZipData, allLeadsData, filters]);
+
   // Apply filters client-side
   const allLeads = React.useMemo(() => {
+    // If distance filtering is active, use the pre-calculated results
+    if (distanceFilteredLeads !== null) {
+      return distanceFilteredLeads;
+    }
+
     let filtered = [...allLeadsData];
 
     // State filter (dynamic)
@@ -99,68 +175,17 @@ export default function BrowseLeads() {
       });
     }
 
-    // Zip code and distance filter (only when Search is clicked)
-    if (activeZipFilters.zip_code) {
+    // Zip code filter (without distance)
+    if (activeZipFilters.zip_code && !activeZipFilters.distance) {
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
-
-      if (activeZipFilters.distance && searchZipData) {
-        const distance = parseFloat(activeZipFilters.distance);
-        const { latitude: lat1, longitude: lon1 } = searchZipData;
-
-        // Haversine distance function
-        const calculateDistance = (lat1, lon1, lat2, lon2) => {
-          const R = 3959;
-          const dLat = (lat2 - lat1) * Math.PI / 180;
-          const dLon = (lon2 - lon1) * Math.PI / 180;
-          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-          return R * c;
-        };
-
-        // Get unique zip codes from filtered leads
-        const uniqueLeadZips = [...new Set(filtered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
-
-        // Fetch zip data for all unique lead zips
-        const zipDataPromises = uniqueLeadZips.map(async (zip) => {
-          const results = await base44.entities.ZipCode.filter({ zip_code: zip });
-          if (results.length > 0) {
-            const data = results[0].data || results[0];
-            return [zip, data];
-          }
-          return [zip, null];
-        });
-
-        const zipDataEntries = await Promise.all(zipDataPromises);
-        const leadZipMap = new Map(zipDataEntries);
-
-        filtered = filtered.filter(lead => {
-          if (!lead.zip_code) return false;
-          const normalizedLeadZip = normalizeZip(lead.zip_code);
-          
-          if (normalizedLeadZip === normalizedSearchZip) return true;
-
-          const leadZipData = leadZipMap.get(normalizedLeadZip);
-          if (!leadZipData) return false;
-
-          const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-          return dist <= distance;
-        });
-      } else if (activeZipFilters.distance && !searchZipData) {
-        // Search zip not found, do exact match only
-        filtered = filtered.filter(lead => normalizeZip(lead.zip_code) === normalizedSearchZip);
-      } else {
-        // Just zip code filter, no distance
-        filtered = filtered.filter(lead => 
-          lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
-        );
-      }
+      filtered = filtered.filter(lead => 
+        lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
+      );
     }
 
     return filtered;
-  }, [allLeadsData, filters, activeZipFilters, searchZipData]);
+  }, [allLeadsData, filters, activeZipFilters, distanceFilteredLeads]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
