@@ -220,9 +220,46 @@ Deno.serve(async (req) => {
       }
 
       if (filters.zip_code) {
-        filteredLeads = filteredLeads.filter(lead => 
-          lead.zip_code && lead.zip_code.startsWith(filters.zip_code)
-        );
+        if (filters.distance) {
+          // Distance-based filtering
+          const distance = parseFloat(filters.distance);
+          
+          // Get coordinates for the search zip code
+          const searchZip = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: filters.zip_code });
+          
+          if (searchZip.length > 0) {
+            const { latitude: lat1, longitude: lon1 } = searchZip[0];
+            
+            // Filter leads within the distance radius
+            filteredLeads = await Promise.all(filteredLeads.map(async (lead) => {
+              if (!lead.zip_code) return null;
+              
+              const leadZip = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: lead.zip_code });
+              if (leadZip.length === 0) return null;
+              
+              const { latitude: lat2, longitude: lon2 } = leadZip[0];
+              
+              // Haversine formula
+              const R = 3959; // Earth radius in miles
+              const dLat = (lat2 - lat1) * Math.PI / 180;
+              const dLon = (lon2 - lon1) * Math.PI / 180;
+              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+              const dist = R * c;
+              
+              return dist <= distance ? lead : null;
+            }));
+            
+            filteredLeads = filteredLeads.filter(lead => lead !== null);
+          }
+        } else {
+          // Regular zip code prefix filtering
+          filteredLeads = filteredLeads.filter(lead => 
+            lead.zip_code && lead.zip_code.startsWith(filters.zip_code)
+          );
+        }
       }
 
       if (filters.age_range && filters.age_range !== 'all') {
