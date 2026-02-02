@@ -167,17 +167,29 @@ Deno.serve(async (req) => {
             return R * c;
           };
 
+          console.log('Distance filter - search zip:', normalizedSearchZip, 'coords:', lat1, lon1, 'distance:', distance);
+          console.log('Total leads before distance filter:', filtered.length);
+          console.log('Zip codes in database:', zipMap.size);
+
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
             const normalizedLeadZip = normalizeZip(lead.zip_code);
             if (normalizedLeadZip === normalizedSearchZip) return true;
 
             const leadZipData = zipMap.get(normalizedLeadZip);
-            if (!leadZipData) return false;
+            if (!leadZipData) {
+              console.log('Missing zip data for:', normalizedLeadZip);
+              return false;
+            }
 
             const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+            if (dist <= distance) {
+              console.log('Match found:', normalizedLeadZip, 'distance:', dist.toFixed(2), 'miles');
+            }
             return dist <= distance;
           });
+          
+          console.log('Leads after distance filter:', filtered.length);
         } else {
           // Search zip not found, exact match only
           filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
