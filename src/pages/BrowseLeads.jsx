@@ -52,7 +52,8 @@ export default function BrowseLeads() {
       const response = await base44.functions.invoke('getLeadsFromSheets', { filters });
       return response.data;
     },
-    refetchInterval: 30000 // Refresh every 30 seconds
+    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
+    refetchOnWindowFocus: false // Don't refetch when tab regains focus
   });
 
   const allLeads = sheetsResponse.leads || [];
