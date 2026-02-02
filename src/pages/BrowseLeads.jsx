@@ -95,10 +95,14 @@ export default function BrowseLeads() {
 
     // Zip code and distance filter (only when Search is clicked)
     if (activeZipFilters.zip_code) {
-      const zipCodeMap = new Map(zipCodes.map(z => [z.zip_code, z]));
-      const searchZipData = zipCodeMap.get(activeZipFilters.zip_code);
+      // Normalize zip codes to 5 digits with leading zeros
+      const normalizeZip = (zip) => String(zip).padStart(5, '0');
       
-      console.log('🔍 Searching zip:', activeZipFilters.zip_code, 'Distance:', activeZipFilters.distance);
+      const zipCodeMap = new Map(zipCodes.map(z => [normalizeZip(z.zip_code), z]));
+      const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
+      const searchZipData = zipCodeMap.get(normalizedSearchZip);
+      
+      console.log('🔍 Searching zip:', normalizedSearchZip, 'Distance:', activeZipFilters.distance);
       console.log('🔍 Search zip data:', searchZipData);
       console.log('🔍 Total zip codes available:', zipCodes.length);
 
@@ -123,12 +127,14 @@ export default function BrowseLeads() {
           let matchCount = 0;
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
-            if (lead.zip_code === activeZipFilters.zip_code) {
+            
+            const normalizedLeadZip = normalizeZip(lead.zip_code);
+            if (normalizedLeadZip === normalizedSearchZip) {
               matchCount++;
               return true;
             }
 
-            const leadZipData = zipCodeMap.get(lead.zip_code);
+            const leadZipData = zipCodeMap.get(normalizedLeadZip);
             if (!leadZipData) return false;
 
             const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
@@ -140,11 +146,11 @@ export default function BrowseLeads() {
           console.log('🔍 Leads found within', distance, 'miles:', matchCount);
         } else {
           console.log('⚠️ Zip code not found in database, doing exact match only');
-          filtered = filtered.filter(lead => lead.zip_code === activeZipFilters.zip_code);
+          filtered = filtered.filter(lead => normalizeZip(lead.zip_code) === normalizedSearchZip);
         }
       } else {
         filtered = filtered.filter(lead => 
-          lead.zip_code && (lead.zip_code === activeZipFilters.zip_code || lead.zip_code.startsWith(activeZipFilters.zip_code))
+          lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
         );
       }
     }
