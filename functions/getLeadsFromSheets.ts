@@ -230,16 +230,15 @@ Deno.serve(async (req) => {
           if (searchZip.length > 0) {
             const { latitude: lat1, longitude: lon1 } = searchZip[0];
             
-            // Filter leads within the distance radius
-            filteredLeads = await Promise.all(filteredLeads.map(async (lead) => {
-              if (!lead.zip_code) return null;
-              
-              const leadZip = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: lead.zip_code });
-              if (leadZip.length === 0) return null;
-              
-              const { latitude: lat2, longitude: lon2 } = leadZip[0];
-              
-              // Haversine formula
+            // Get unique zip codes from leads
+            const uniqueZipCodes = [...new Set(filteredLeads.map(l => l.zip_code).filter(Boolean))];
+            
+            // Fetch all zip code coordinates in bulk
+            const allZipCodesData = await base44.asServiceRole.entities.ZipCode.list();
+            const zipCodeMap = new Map(allZipCodesData.map(z => [z.zip_code, z]));
+            
+            // Haversine distance function
+            const calculateDistance = (lat1, lon1, lat2, lon2) => {
               const R = 3959; // Earth radius in miles
               const dLat = (lat2 - lat1) * Math.PI / 180;
               const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -247,12 +246,19 @@ Deno.serve(async (req) => {
                         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                         Math.sin(dLon / 2) * Math.sin(dLon / 2);
               const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              const dist = R * c;
-              
-              return dist <= distance ? lead : null;
-            }));
+              return R * c;
+            };
             
-            filteredLeads = filteredLeads.filter(lead => lead !== null);
+            // Filter leads based on distance
+            filteredLeads = filteredLeads.filter(lead => {
+              if (!lead.zip_code) return false;
+              
+              const leadZipData = zipCodeMap.get(lead.zip_code);
+              if (!leadZipData) return false;
+              
+              const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+              return dist <= distance;
+            });
           }
         } else {
           // Regular zip code prefix filtering
