@@ -196,49 +196,43 @@ Deno.serve(async (req) => {
             }
           });
 
-          // Find missing zips
-          const missingZips = uniqueLeadZips.filter(z => !zipMap.has(z));
+          // Find missing zips - limit to 5 to avoid timeout
+          const missingZips = uniqueLeadZips.filter(z => !zipMap.has(z)).slice(0, 5);
 
-          // Lookup missing zips using Nominatim (with rate limiting)
+          // Lookup missing zips using Nominatim
           if (missingZips.length > 0) {
-            // Process in batches with delay to respect 1 req/sec rate limit
-            const batchSize = 10;
-            for (let i = 0; i < missingZips.length; i += batchSize) {
-              const batch = missingZips.slice(i, i + batchSize);
-              
-              for (const zipCode of batch) {
-                try {
-                  const response = await fetch(
-                    `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
-                    { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
-                  );
-                  
-                  if (response.ok) {
-                    const results = await response.json();
-                    if (results.length > 0) {
-                      const coords = {
-                        latitude: parseFloat(results[0].lat),
-                        longitude: parseFloat(results[0].lon)
-                      };
-                      
-                      zipMap.set(zipCode, coords);
-                      
-                      // Cache in database
-                      await base44.asServiceRole.entities.ZipCode.create({
-                        zip_code: zipCode,
-                        latitude: coords.latitude,
-                        longitude: coords.longitude,
-                        city: results[0].display_name?.split(',')[0] || '',
-                        state: ''
-                      });
-                    }
+            for (const zipCode of missingZips) {
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
+                  { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
+                );
+                
+                if (response.ok) {
+                  const results = await response.json();
+                  if (results.length > 0) {
+                    const coords = {
+                      latitude: parseFloat(results[0].lat),
+                      longitude: parseFloat(results[0].lon)
+                    };
+                    
+                    zipMap.set(zipCode, coords);
+                    
+                    // Cache in database (async, don't await)
+                    base44.asServiceRole.entities.ZipCode.create({
+                      zip_code: zipCode,
+                      latitude: coords.latitude,
+                      longitude: coords.longitude,
+                      city: results[0].display_name?.split(',')[0] || '',
+                      state: ''
+                    }).catch(err => console.error('Cache failed:', err.message));
                   }
-                  
-                  // Rate limit: 1 request per second
-                  await new Promise(resolve => setTimeout(resolve, 1100));
-                } catch (error) {
-                  console.error(`Failed to lookup zip ${zipCode}:`, error.message);
                 }
+                
+                // Rate limit: 1 request per second
+                await new Promise(resolve => setTimeout(resolve, 1100));
+              } catch (error) {
+                console.error(`Failed to lookup zip ${zipCode}:`, error.message);
               }
             }
           }
