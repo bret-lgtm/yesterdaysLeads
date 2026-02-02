@@ -45,15 +45,16 @@ export default function BrowseLeads() {
     queryFn: () => base44.entities.LeadSuppression.list()
   });
 
-  // Fetch all available leads from Google Sheets
-  const { data: sheetsResponse = { leads: [] }, isLoading: leadsLoading } = useQuery({
-    queryKey: ['leads', filters],
+  // Fetch all available leads from Google Sheets once
+  const { data: allLeadsData = [], isLoading: leadsLoading } = useQuery({
+    queryKey: ['allLeads'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getLeadsFromSheets', { filters });
-      return response.data;
+      const response = await base44.functions.invoke('getLeadsFromSheets', { filters: { age_range: 'all', lead_type: 'all' } });
+      return response.data.leads || [];
     },
     staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
-    refetchOnWindowFocus: false // Don't refetch when tab regains focus
+    refetchOnWindowFocus: false,
+    refetchOnMount: false
   });
 
   const allLeads = sheetsResponse.leads || [];
