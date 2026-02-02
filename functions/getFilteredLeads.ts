@@ -140,10 +140,15 @@ Deno.serve(async (req) => {
           zip_code: normalizedSearchZip 
         });
 
+        console.log('🔍 Search zip results:', searchZipResults.length);
+
         if (searchZipResults.length > 0) {
           const searchZipData = searchZipResults[0].data || searchZipResults[0];
           const { latitude: lat1, longitude: lon1 } = searchZipData;
           const distance = parseFloat(filters.distance);
+
+          console.log('📍 Search zip coords:', lat1, lon1, 'Distance:', distance);
+          console.log('📦 Total leads before distance filter:', filtered.length);
 
           // Load all zip codes once
           const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
@@ -154,6 +159,8 @@ Deno.serve(async (req) => {
               zipMap.set(normalizeZip(zipData.zip_code), zipData);
             }
           });
+
+          console.log('🗺️ Zip codes loaded:', zipMap.size);
 
           // Haversine distance
           const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -167,17 +174,33 @@ Deno.serve(async (req) => {
             return R * c;
           };
 
+          let matchedCount = 0;
+          let missingZipCount = 0;
+
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
             const normalizedLeadZip = normalizeZip(lead.zip_code);
-            if (normalizedLeadZip === normalizedSearchZip) return true;
+            if (normalizedLeadZip === normalizedSearchZip) {
+              matchedCount++;
+              return true;
+            }
 
             const leadZipData = zipMap.get(normalizedLeadZip);
-            if (!leadZipData) return false;
+            if (!leadZipData) {
+              missingZipCount++;
+              return false;
+            }
 
             const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-            return dist <= distance;
+            if (dist <= distance) {
+              matchedCount++;
+              return true;
+            }
+            return false;
           });
+
+          console.log('✅ Leads matched within distance:', matchedCount);
+          console.log('❌ Leads with missing zip codes:', missingZipCount);
         } else {
           // Search zip not found, exact match only
           filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
