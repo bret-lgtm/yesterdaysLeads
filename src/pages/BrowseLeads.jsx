@@ -58,19 +58,19 @@ export default function BrowseLeads() {
     refetchOnMount: false
   });
 
-  // Fetch zip codes for distance calculations
-  const { data: zipCodesRaw = [] } = useQuery({
-    queryKey: ['zipCodes'],
-    queryFn: () => base44.entities.ZipCode.list('', 50000),
-    staleTime: 30 * 60 * 1000, // Cache for 30 minutes
-    refetchOnWindowFocus: false
+  // Fetch specific zip code when searching with distance
+  const { data: searchZipData, isLoading: zipLoading } = useQuery({
+    queryKey: ['searchZip', activeZipFilters.zip_code],
+    queryFn: async () => {
+      if (!activeZipFilters.zip_code) return null;
+      const normalizeZip = (zip) => String(zip).padStart(5, '0');
+      const normalized = normalizeZip(activeZipFilters.zip_code);
+      const results = await base44.entities.ZipCode.filter({ zip_code: normalized });
+      return results.length > 0 ? (results[0].data || results[0]) : null;
+    },
+    enabled: !!activeZipFilters.zip_code && !!activeZipFilters.distance,
+    staleTime: 30 * 60 * 1000
   });
-
-  // Extract data from entity wrapper
-  const zipCodes = React.useMemo(() => {
-    console.log('📦 Total zip codes loaded:', zipCodesRaw.length);
-    return zipCodesRaw;
-  }, [zipCodesRaw]);
 
   // Apply filters client-side
   const allLeads = React.useMemo(() => {
