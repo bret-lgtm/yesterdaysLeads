@@ -224,18 +224,15 @@ Deno.serve(async (req) => {
           // Distance-based filtering
           const distance = parseFloat(filters.distance);
           
-          // Get coordinates for the search zip code
-          const searchZip = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: filters.zip_code });
+          // Fetch all zip code coordinates in bulk
+          const allZipCodesData = await base44.asServiceRole.entities.ZipCode.list();
+          const zipCodeMap = new Map(allZipCodesData.map(z => [z.zip_code, z]));
           
-          if (searchZip.length > 0) {
-            const { latitude: lat1, longitude: lon1 } = searchZip[0];
-            
-            // Get unique zip codes from leads
-            const uniqueZipCodes = [...new Set(filteredLeads.map(l => l.zip_code).filter(Boolean))];
-            
-            // Fetch all zip code coordinates in bulk
-            const allZipCodesData = await base44.asServiceRole.entities.ZipCode.list();
-            const zipCodeMap = new Map(allZipCodesData.map(z => [z.zip_code, z]));
+          // Get coordinates for the search zip code
+          const searchZipData = zipCodeMap.get(filters.zip_code);
+          
+          if (searchZipData) {
+            const { latitude: lat1, longitude: lon1 } = searchZipData;
             
             // Haversine distance function
             const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -253,17 +250,26 @@ Deno.serve(async (req) => {
             filteredLeads = filteredLeads.filter(lead => {
               if (!lead.zip_code) return false;
               
+              // Always include exact zip code matches
+              if (lead.zip_code === filters.zip_code) return true;
+              
+              // For other zip codes, calculate distance if coordinates exist
               const leadZipData = zipCodeMap.get(lead.zip_code);
               if (!leadZipData) return false;
               
               const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
               return dist <= distance;
             });
+          } else {
+            // Search zip not found in database, just do exact match
+            filteredLeads = filteredLeads.filter(lead => 
+              lead.zip_code && lead.zip_code === filters.zip_code
+            );
           }
         } else {
-          // Regular zip code prefix filtering
+          // No distance - show exact matches and prefix matches
           filteredLeads = filteredLeads.filter(lead => 
-            lead.zip_code && lead.zip_code.startsWith(filters.zip_code)
+            lead.zip_code && (lead.zip_code === filters.zip_code || lead.zip_code.startsWith(filters.zip_code))
           );
         }
       }
