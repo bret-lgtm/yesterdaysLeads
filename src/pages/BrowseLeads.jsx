@@ -59,12 +59,18 @@ export default function BrowseLeads() {
   });
 
   // Fetch zip codes for distance calculations
-  const { data: zipCodes = [] } = useQuery({
+  const { data: zipCodesRaw = [] } = useQuery({
     queryKey: ['zipCodes'],
     queryFn: () => base44.entities.ZipCode.list(),
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
     refetchOnWindowFocus: false
   });
+
+  // Extract data from entity wrapper
+  const zipCodes = React.useMemo(() => {
+    console.log('📦 Raw zip codes sample:', zipCodesRaw.slice(0, 2));
+    return zipCodesRaw;
+  }, [zipCodesRaw]);
 
   // Apply filters client-side
   const allLeads = React.useMemo(() => {
