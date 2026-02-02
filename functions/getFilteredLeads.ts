@@ -199,42 +199,45 @@ Deno.serve(async (req) => {
           // Find missing zips
           const missingZips = uniqueLeadZips.filter(z => !zipMap.has(z));
 
-          // Bulk lookup missing zips using InvokeLLM (no rate limits)
+          // Lookup missing zips using Nominatim (with rate limiting)
           if (missingZips.length > 0) {
-            const lookupResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-              prompt: `Return the latitude and longitude coordinates for these US ZIP codes: ${missingZips.join(', ')}. Return accurate coordinates only for valid ZIP codes.`,
-              add_context_from_internet: true,
-              response_json_schema: {
-                type: "object",
-                properties: {
-                  zip_codes: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        zip_code: { type: "string" },
-                        latitude: { type: "number" },
-                        longitude: { type: "number" }
-                      }
+            // Process in batches with delay to respect 1 req/sec rate limit
+            const batchSize = 10;
+            for (let i = 0; i < missingZips.length; i += batchSize) {
+              const batch = missingZips.slice(i, i + batchSize);
+              
+              for (const zipCode of batch) {
+                try {
+                  const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
+                    { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
+                  );
+                  
+                  if (response.ok) {
+                    const results = await response.json();
+                    if (results.length > 0) {
+                      const coords = {
+                        latitude: parseFloat(results[0].lat),
+                        longitude: parseFloat(results[0].lon)
+                      };
+                      
+                      zipMap.set(zipCode, coords);
+                      
+                      // Cache in database
+                      await base44.asServiceRole.entities.ZipCode.create({
+                        zip_code: zipCode,
+                        latitude: coords.latitude,
+                        longitude: coords.longitude,
+                        city: results[0].display_name?.split(',')[0] || '',
+                        state: ''
+                      });
                     }
                   }
-                }
-              }
-            });
-
-            // Cache the new coordinates
-            if (lookupResult.zip_codes && lookupResult.zip_codes.length > 0) {
-              for (const zipData of lookupResult.zip_codes) {
-                if (zipData.latitude && zipData.longitude) {
-                  zipMap.set(normalizeZip(zipData.zip_code), zipData);
-                  // Cache in database
-                  await base44.asServiceRole.entities.ZipCode.create({
-                    zip_code: normalizeZip(zipData.zip_code),
-                    latitude: zipData.latitude,
-                    longitude: zipData.longitude,
-                    city: '',
-                    state: ''
-                  });
+                  
+                  // Rate limit: 1 request per second
+                  await new Promise(resolve => setTimeout(resolve, 1100));
+                } catch (error) {
+                  console.error(`Failed to lookup zip ${zipCode}:`, error.message);
                 }
               }
             }
