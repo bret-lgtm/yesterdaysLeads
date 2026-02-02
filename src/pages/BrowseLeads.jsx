@@ -59,41 +59,12 @@ export default function BrowseLeads() {
     refetchOnMount: false
   });
 
-  // Fetch specific zip code when searching with distance
-  const { data: searchZipData } = useQuery({
-    queryKey: ['searchZip', activeZipFilters.zip_code],
-    queryFn: async () => {
-      if (!activeZipFilters.zip_code) return null;
-      const normalizeZip = (zip) => String(zip).padStart(5, '0');
-      const normalized = normalizeZip(activeZipFilters.zip_code);
-      const results = await base44.entities.ZipCode.filter({ zip_code: normalized });
-      return results.length > 0 ? (results[0].data || results[0]) : null;
-    },
-    enabled: !!activeZipFilters.zip_code && !!activeZipFilters.distance,
-    staleTime: 30 * 60 * 1000
-  });
-
   // Calculate distance filtering in useEffect
   useEffect(() => {
-    if (!activeZipFilters.distance || !searchZipData) {
+    if (!activeZipFilters.zip_code || !activeZipFilters.distance) {
       setDistanceFilteredLeads(null);
       return;
     }
-
-    const normalizeZip = (zip) => String(zip).padStart(5, '0');
-    const distance = parseFloat(activeZipFilters.distance);
-    const { latitude: lat1, longitude: lon1 } = searchZipData;
-
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
-      const R = 3959;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    };
 
     // Apply basic filters first
     let baseFiltered = [...allLeadsData];
@@ -115,33 +86,18 @@ export default function BrowseLeads() {
       });
     }
 
-    // Get unique zips and fetch their coordinates
-    const uniqueZips = [...new Set(baseFiltered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
-    
-    Promise.all(
-      uniqueZips.map(async (zip) => {
-        const results = await base44.entities.ZipCode.filter({ zip_code: zip });
-        return results.length > 0 ? [zip, results[0].data || results[0]] : [zip, null];
-      })
-    ).then(entries => {
-      const zipMap = new Map(entries);
-      const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
-      
-      const result = baseFiltered.filter(lead => {
-        if (!lead.zip_code) return false;
-        const normalizedLeadZip = normalizeZip(lead.zip_code);
-        if (normalizedLeadZip === normalizedSearchZip) return true;
-
-        const leadZipData = zipMap.get(normalizedLeadZip);
-        if (!leadZipData) return false;
-
-        const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-        return dist <= distance;
-      });
-      
-      setDistanceFilteredLeads(result);
+    // Call backend function to filter by distance
+    base44.functions.invoke('filterLeadsByDistance', {
+      search_zip: activeZipFilters.zip_code,
+      distance: activeZipFilters.distance,
+      leads: baseFiltered
+    }).then(response => {
+      setDistanceFilteredLeads(response.data.filtered_leads);
+    }).catch(error => {
+      console.error('Distance filter error:', error);
+      setDistanceFilteredLeads([]);
     });
-  }, [activeZipFilters, searchZipData, allLeadsData, filters]);
+  }, [activeZipFilters, allLeadsData, filters]);
 
   // Apply filters client-side
   const allLeads = React.useMemo(() => {
