@@ -21,7 +21,8 @@ export default function BrowseLeads() {
   const urlParams = new URLSearchParams(window.location.search);
   const urlLeadType = urlParams.get('lead_type');
   
-  const [filters, setFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
+  const [inputFilters, setInputFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
+  const [activeFilters, setActiveFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,34 +71,34 @@ export default function BrowseLeads() {
     let filtered = [...allLeadsData];
 
     // State filter
-    if (filters.state && filters.state !== 'all') {
-      filtered = filtered.filter(lead => lead.state === filters.state);
+    if (activeFilters.state && activeFilters.state !== 'all') {
+      filtered = filtered.filter(lead => lead.state === activeFilters.state);
     }
 
     // Lead type filter
-    if (filters.lead_type && filters.lead_type !== 'all') {
-      filtered = filtered.filter(lead => lead.lead_type === filters.lead_type);
+    if (activeFilters.lead_type && activeFilters.lead_type !== 'all') {
+      filtered = filtered.filter(lead => lead.lead_type === activeFilters.lead_type);
     }
 
     // Age range filter
-    if (filters.age_range && filters.age_range !== 'all') {
+    if (activeFilters.age_range && activeFilters.age_range !== 'all') {
       filtered = filtered.filter(lead => {
         const age = lead.age_in_days || 0;
-        if (filters.age_range === 'yesterday') return age <= 3;
-        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
-        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
-        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
-        if (filters.age_range === '91+') return age >= 91;
+        if (activeFilters.age_range === 'yesterday') return age <= 3;
+        if (activeFilters.age_range === '4-14') return age >= 4 && age <= 14;
+        if (activeFilters.age_range === '15-30') return age >= 15 && age <= 30;
+        if (activeFilters.age_range === '31-90') return age >= 31 && age <= 90;
+        if (activeFilters.age_range === '91+') return age >= 91;
         return true;
       });
     }
 
     // Zip code and distance filter
-    if (filters.zip_code) {
-      if (filters.distance) {
-        const distance = parseFloat(filters.distance);
+    if (activeFilters.zip_code) {
+      if (activeFilters.distance) {
+        const distance = parseFloat(activeFilters.distance);
         const zipCodeMap = new Map(zipCodes.map(z => [z.zip_code, z]));
-        const searchZipData = zipCodeMap.get(filters.zip_code);
+        const searchZipData = zipCodeMap.get(activeFilters.zip_code);
 
         if (searchZipData) {
           const { latitude: lat1, longitude: lon1 } = searchZipData;
@@ -116,7 +117,7 @@ export default function BrowseLeads() {
 
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
-            if (lead.zip_code === filters.zip_code) return true;
+            if (lead.zip_code === activeFilters.zip_code) return true;
 
             const leadZipData = zipCodeMap.get(lead.zip_code);
             if (!leadZipData) return false;
@@ -125,17 +126,17 @@ export default function BrowseLeads() {
             return dist <= distance;
           });
         } else {
-          filtered = filtered.filter(lead => lead.zip_code === filters.zip_code);
+          filtered = filtered.filter(lead => lead.zip_code === activeFilters.zip_code);
         }
       } else {
         filtered = filtered.filter(lead => 
-          lead.zip_code && (lead.zip_code === filters.zip_code || lead.zip_code.startsWith(filters.zip_code))
+          lead.zip_code && (lead.zip_code === activeFilters.zip_code || lead.zip_code.startsWith(activeFilters.zip_code))
         );
       }
     }
 
     return filtered;
-  }, [allLeadsData, filters, zipCodes]);
+  }, [allLeadsData, activeFilters, zipCodes]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
@@ -304,10 +305,17 @@ export default function BrowseLeads() {
 
         {/* Filters */}
         <LeadFilters
-          filters={filters}
-          onChange={setFilters}
-          onSearch={() => setCurrentPage(1)}
-          onReset={() => { setFilters({ age_range: 'all', lead_type: 'all' }); setCurrentPage(1); }}
+          filters={inputFilters}
+          onChange={setInputFilters}
+          onSearch={() => {
+            setActiveFilters(inputFilters);
+            setCurrentPage(1);
+          }}
+          onReset={() => {
+            setInputFilters({ age_range: 'all', lead_type: 'all' });
+            setActiveFilters({ age_range: 'all', lead_type: 'all' });
+            setCurrentPage(1);
+          }}
         />
 
         {/* Results Header */}
