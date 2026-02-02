@@ -141,16 +141,17 @@ Deno.serve(async (req) => {
         });
 
         if (searchZipResults.length > 0) {
-          const searchZipData = searchZipResults[0];
+          const searchZipData = searchZipResults[0].data || searchZipResults[0];
           const { latitude: lat1, longitude: lon1 } = searchZipData;
           const distance = parseFloat(filters.distance);
 
           // Load all zip codes once
           const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
           const zipMap = new Map();
-          allZipCodes.forEach(zipCode => {
-            if (zipCode.zip_code) {
-              zipMap.set(normalizeZip(zipCode.zip_code), zipCode);
+          allZipCodes.forEach(result => {
+            const zipData = result.data || result;
+            if (zipData.zip_code) {
+              zipMap.set(normalizeZip(zipData.zip_code), zipData);
             }
           });
 
