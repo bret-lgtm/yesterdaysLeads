@@ -101,68 +101,58 @@ export default function BrowseLeads() {
 
     // Zip code and distance filter (only when Search is clicked)
     if (activeZipFilters.zip_code) {
-      // Normalize zip codes to 5 digits with leading zeros
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
-      
-      const zipCodeMap = new Map();
-      zipCodes.forEach(z => {
-        const zipData = z.data || z;
-        const normalizedZip = normalizeZip(zipData.zip_code);
-        zipCodeMap.set(normalizedZip, zipData);
-      });
-      
       const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
-      const searchZipData = zipCodeMap.get(normalizedSearchZip);
-      
-      console.log('🔍 Searching zip:', normalizedSearchZip, 'Distance:', activeZipFilters.distance);
-      console.log('🔍 Search zip data:', searchZipData);
-      console.log('🔍 Total zip codes in map:', zipCodeMap.size);
-      console.log('🔍 Sample zips from DB:', zipCodes.slice(0, 3).map(z => (z.data || z).zip_code));
 
-      if (activeZipFilters.distance) {
+      if (activeZipFilters.distance && searchZipData) {
         const distance = parseFloat(activeZipFilters.distance);
+        const { latitude: lat1, longitude: lon1 } = searchZipData;
 
-        if (searchZipData) {
-          const { latitude: lat1, longitude: lon1 } = searchZipData;
+        // Haversine distance function
+        const calculateDistance = (lat1, lon1, lat2, lon2) => {
+          const R = 3959;
+          const dLat = (lat2 - lat1) * Math.PI / 180;
+          const dLon = (lon2 - lon1) * Math.PI / 180;
+          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        };
 
-          // Haversine distance function
-          const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 3959;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-          };
+        // Get unique zip codes from filtered leads
+        const uniqueLeadZips = [...new Set(filtered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
 
-          let matchCount = 0;
-          filtered = filtered.filter(lead => {
-            if (!lead.zip_code) return false;
-            
-            const normalizedLeadZip = normalizeZip(lead.zip_code);
-            if (normalizedLeadZip === normalizedSearchZip) {
-              matchCount++;
-              return true;
-            }
+        // Fetch zip data for all unique lead zips
+        const zipDataPromises = uniqueLeadZips.map(async (zip) => {
+          const results = await base44.entities.ZipCode.filter({ zip_code: zip });
+          if (results.length > 0) {
+            const data = results[0].data || results[0];
+            return [zip, data];
+          }
+          return [zip, null];
+        });
 
-            const leadZipData = zipCodeMap.get(normalizedLeadZip);
-            if (!leadZipData) return false;
+        const zipDataEntries = await Promise.all(zipDataPromises);
+        const leadZipMap = new Map(zipDataEntries);
 
-            const { latitude: lat2, longitude: lon2 } = leadZipData;
-            const dist = calculateDistance(lat1, lon1, lat2, lon2);
-            const isWithinRange = dist <= distance;
-            if (isWithinRange) matchCount++;
-            return isWithinRange;
-          });
+        filtered = filtered.filter(lead => {
+          if (!lead.zip_code) return false;
+          const normalizedLeadZip = normalizeZip(lead.zip_code);
           
-          console.log('🔍 Leads found within', distance, 'miles:', matchCount);
-        } else {
-          console.log('⚠️ Zip code not found in database, doing exact match only');
-          filtered = filtered.filter(lead => normalizeZip(lead.zip_code) === normalizedSearchZip);
-        }
+          if (normalizedLeadZip === normalizedSearchZip) return true;
+
+          const leadZipData = leadZipMap.get(normalizedLeadZip);
+          if (!leadZipData) return false;
+
+          const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+          return dist <= distance;
+        });
+      } else if (activeZipFilters.distance && !searchZipData) {
+        // Search zip not found, do exact match only
+        filtered = filtered.filter(lead => normalizeZip(lead.zip_code) === normalizedSearchZip);
       } else {
+        // Just zip code filter, no distance
         filtered = filtered.filter(lead => 
           lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
         );
@@ -170,7 +160,7 @@ export default function BrowseLeads() {
     }
 
     return filtered;
-  }, [allLeadsData, filters, activeZipFilters, zipCodes]);
+  }, [allLeadsData, filters, activeZipFilters, searchZipData]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
