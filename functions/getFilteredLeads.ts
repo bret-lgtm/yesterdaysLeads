@@ -183,8 +183,23 @@ Deno.serve(async (req) => {
         } else {
           const { latitude: lat1, longitude: lon1 } = searchCoords;
 
-          // Get unique lead zip codes
-          const uniqueLeadZips = [...new Set(filtered.map(l => normalizeZip(l.zip_code)).filter(Boolean))];
+          // Get unique lead zip codes (validate 5-digit format)
+          const validateZip = (zip) => {
+            const normalized = normalizeZip(zip);
+            return normalized.length === 5 && /^\d{5}$/.test(normalized);
+          };
+          
+          const uniqueLeadZips = [...new Set(
+            filtered
+              .map(l => normalizeZip(l.zip_code))
+              .filter(z => {
+                if (!validateZip(z)) {
+                  console.warn(`Invalid ZIP code format: ${z}`);
+                  return false;
+                }
+                return true;
+              })
+          )];
           
           // Check cache for all lead zips
           const cachedZips = await base44.asServiceRole.entities.ZipCode.list('', 50000);
