@@ -6,7 +6,6 @@ import InventoryByType from '../components/admin/InventoryByType';
 import InventoryByAge from '../components/admin/InventoryByAge';
 import CSVUploader from '../components/admin/CSVUploader';
 import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
-import ZapierSync from '../components/admin/ZapierSync';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -157,8 +156,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="upload">
-            <div className="max-w-xl space-y-6">
-              <ZapierSync onSyncComplete={handleRefresh} />
+            <div className="max-w-xl">
               <CSVUploader onUploadComplete={handleRefresh} />
             </div>
           </TabsContent>
