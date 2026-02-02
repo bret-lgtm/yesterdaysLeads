@@ -107,10 +107,12 @@ Deno.serve(async (req) => {
     }
 
     // Filter by status
+    console.log('Total leads before filtering:', allLeads.length);
     let filtered = allLeads.filter(lead => {
       if (!lead.status || lead.status === 'undefined') return true;
       return lead.status.trim().toLowerCase() === 'available';
     });
+    console.log('Leads after status filter:', filtered.length);
 
     // State filter
     if (filters.state && filters.state !== 'all') {
