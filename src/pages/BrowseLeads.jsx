@@ -227,7 +227,7 @@ export default function BrowseLeads() {
           filters={filters}
           onChange={setFilters}
           onSearch={() => setCurrentPage(1)}
-          onReset={() => { setFilters({ age_range: 'yesterday' }); setCurrentPage(1); }}
+          onReset={() => { setFilters({ age_range: 'all', lead_type: 'all' }); setCurrentPage(1); }}
         />
 
         {/* Results Header */}
