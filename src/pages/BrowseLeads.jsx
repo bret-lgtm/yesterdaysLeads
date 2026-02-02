@@ -22,13 +22,11 @@ export default function BrowseLeads() {
   const urlLeadType = urlParams.get('lead_type');
   
   const [filters, setFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
-  const [activeZipFilters, setActiveZipFilters] = useState({});
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOption, setSortOption] = useState('default');
   const [quantity, setQuantity] = useState('');
-  const [distanceFilteredLeads, setDistanceFilteredLeads] = useState(null);
 
   const queryClient = useQueryClient();
 
@@ -47,101 +45,16 @@ export default function BrowseLeads() {
     queryFn: () => base44.entities.LeadSuppression.list()
   });
 
-  // Fetch all available leads from Google Sheets once
-  const { data: allLeadsData = [], isLoading: leadsLoading } = useQuery({
-    queryKey: ['allLeads'],
+  // Fetch filtered leads from backend
+  const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
+    queryKey: ['filteredLeads', filters],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getLeadsFromSheets', { filters: { age_range: 'all', lead_type: 'all' } });
+      const response = await base44.functions.invoke('getFilteredLeads', { filters });
       return response.data.leads || [];
     },
-    staleTime: 5 * 60 * 1000, // Data stays fresh for 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
-
-  // Calculate distance filtering in useEffect
-  useEffect(() => {
-    if (!activeZipFilters.zip_code || !activeZipFilters.distance) {
-      setDistanceFilteredLeads(null);
-      return;
-    }
-
-    // Apply basic filters first
-    let baseFiltered = [...allLeadsData];
-    if (filters.state && filters.state !== 'all') {
-      baseFiltered = baseFiltered.filter(lead => lead.state === filters.state);
-    }
-    if (filters.lead_type && filters.lead_type !== 'all') {
-      baseFiltered = baseFiltered.filter(lead => lead.lead_type === filters.lead_type);
-    }
-    if (filters.age_range && filters.age_range !== 'all') {
-      baseFiltered = baseFiltered.filter(lead => {
-        const age = lead.age_in_days || 0;
-        if (filters.age_range === 'yesterday') return age <= 3;
-        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
-        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
-        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
-        if (filters.age_range === '91+') return age >= 91;
-        return true;
-      });
-    }
-
-    // Call backend function to filter by distance
-    base44.functions.invoke('filterLeadsByDistance', {
-      search_zip: activeZipFilters.zip_code,
-      distance: activeZipFilters.distance,
-      leads: baseFiltered
-    }).then(response => {
-      setDistanceFilteredLeads(response.data.filtered_leads);
-    }).catch(error => {
-      console.error('Distance filter error:', error);
-      setDistanceFilteredLeads([]);
-    });
-  }, [activeZipFilters, allLeadsData, filters]);
-
-  // Apply filters client-side
-  const allLeads = React.useMemo(() => {
-    // If distance filtering is active, use the pre-calculated results
-    if (distanceFilteredLeads !== null) {
-      return distanceFilteredLeads;
-    }
-
-    let filtered = [...allLeadsData];
-
-    // State filter (dynamic)
-    if (filters.state && filters.state !== 'all') {
-      filtered = filtered.filter(lead => lead.state === filters.state);
-    }
-
-    // Lead type filter (dynamic)
-    if (filters.lead_type && filters.lead_type !== 'all') {
-      filtered = filtered.filter(lead => lead.lead_type === filters.lead_type);
-    }
-
-    // Age range filter (dynamic)
-    if (filters.age_range && filters.age_range !== 'all') {
-      filtered = filtered.filter(lead => {
-        const age = lead.age_in_days || 0;
-        if (filters.age_range === 'yesterday') return age <= 3;
-        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
-        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
-        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
-        if (filters.age_range === '91+') return age >= 91;
-        return true;
-      });
-    }
-
-    // Zip code filter (without distance)
-    if (activeZipFilters.zip_code && !activeZipFilters.distance) {
-      const normalizeZip = (zip) => String(zip).padStart(5, '0');
-      const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
-      filtered = filtered.filter(lead => 
-        lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
-      );
-    }
-
-    return filtered;
-  }, [allLeadsData, filters, activeZipFilters, distanceFilteredLeads]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
@@ -161,8 +74,7 @@ export default function BrowseLeads() {
     return 'tier1';
   };
 
-  // Filter leads - backend already applies age_range, lead_type, state, zip_code filters
-  // We only need to apply tier-based suppression here
+  // Apply tier-based suppression
   const filteredLeads = allLeads.filter(lead => {
     // Exclude leads that have been sold in their current tier
     const currentTier = getTierFromAge(lead.age_in_days || 1);
@@ -312,13 +224,9 @@ export default function BrowseLeads() {
         <LeadFilters
           filters={filters}
           onChange={setFilters}
-          onSearch={() => {
-            setActiveZipFilters({ zip_code: filters.zip_code, distance: filters.distance });
-            setCurrentPage(1);
-          }}
+          onSearch={() => setCurrentPage(1)}
           onReset={() => {
             setFilters({ age_range: 'all', lead_type: 'all' });
-            setActiveZipFilters({});
             setCurrentPage(1);
           }}
         />
