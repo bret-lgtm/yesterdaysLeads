@@ -61,14 +61,14 @@ export default function BrowseLeads() {
   // Fetch zip codes for distance calculations
   const { data: zipCodesRaw = [] } = useQuery({
     queryKey: ['zipCodes'],
-    queryFn: () => base44.entities.ZipCode.list(),
+    queryFn: () => base44.entities.ZipCode.list('', 50000),
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
     refetchOnWindowFocus: false
   });
 
   // Extract data from entity wrapper
   const zipCodes = React.useMemo(() => {
-    console.log('📦 Raw zip codes sample:', zipCodesRaw.slice(0, 2));
+    console.log('📦 Total zip codes loaded:', zipCodesRaw.length);
     return zipCodesRaw;
   }, [zipCodesRaw]);
 
