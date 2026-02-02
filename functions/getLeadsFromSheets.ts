@@ -191,20 +191,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Apply filters - if no status column exists, treat all leads as available
-    console.log('📊 Total leads before filtering:', allLeads.length);
-    if (allLeads.length > 0) {
-      console.log('📋 Sample lead:', JSON.stringify(allLeads[0]));
-      console.log('📋 All unique statuses:', [...new Set(allLeads.map(l => `"${l.status}"`))].join(', '));
-    }
-
+    // Apply status filtering only - if no status column exists, treat all leads as available
     let filteredLeads = allLeads;
 
     // If specific lead IDs were requested, filter to only those
     if (lead_ids && lead_ids.length > 0) {
       filteredLeads = allLeads.filter(lead => lead_ids.includes(lead.id));
     } else {
-      // Otherwise apply normal filters
+      // Only filter by status - all other filtering happens client-side for speed
       filteredLeads = allLeads.filter(lead => {
         // If status is undefined or empty, treat as available
         if (!lead.status || lead.status === 'undefined') return true;
@@ -212,103 +206,6 @@ Deno.serve(async (req) => {
         const statusMatch = lead.status.trim().toLowerCase() === 'available';
         return statusMatch;
       });
-
-      console.log('✅ Leads after status filter:', filteredLeads.length);
-
-      if (filters.state && filters.state !== 'all') {
-        filteredLeads = filteredLeads.filter(lead => lead.state === filters.state);
-      }
-
-      if (filters.zip_code) {
-        if (filters.distance) {
-          // Distance-based filtering
-          const distance = parseFloat(filters.distance);
-          
-          // Fetch all zip code coordinates in bulk
-          const allZipCodesData = await base44.asServiceRole.entities.ZipCode.list();
-          const zipCodeMap = new Map(allZipCodesData.map(z => [z.zip_code, z]));
-          
-          // Get coordinates for the search zip code
-          const searchZipData = zipCodeMap.get(filters.zip_code);
-          
-          if (searchZipData) {
-            const { latitude: lat1, longitude: lon1 } = searchZipData;
-            
-            // Haversine distance function
-            const calculateDistance = (lat1, lon1, lat2, lon2) => {
-              const R = 3959; // Earth radius in miles
-              const dLat = (lat2 - lat1) * Math.PI / 180;
-              const dLon = (lon2 - lon1) * Math.PI / 180;
-              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              return R * c;
-            };
-            
-            // Filter leads based on distance
-            filteredLeads = filteredLeads.filter(lead => {
-              if (!lead.zip_code) return false;
-              
-              // Always include exact zip code matches
-              if (lead.zip_code === filters.zip_code) return true;
-              
-              // For other zip codes, calculate distance if coordinates exist
-              const leadZipData = zipCodeMap.get(lead.zip_code);
-              if (!leadZipData) return false;
-              
-              const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-              return dist <= distance;
-            });
-          } else {
-            // Search zip not found in database, just do exact match
-            filteredLeads = filteredLeads.filter(lead => 
-              lead.zip_code && lead.zip_code === filters.zip_code
-            );
-          }
-        } else {
-          // No distance - show exact matches and prefix matches
-          filteredLeads = filteredLeads.filter(lead => 
-            lead.zip_code && (lead.zip_code === filters.zip_code || lead.zip_code.startsWith(filters.zip_code))
-          );
-        }
-      }
-
-      if (filters.age_range && filters.age_range !== 'all') {
-        filteredLeads = filteredLeads.filter(lead => {
-          if (!lead.external_id) return false;
-          
-          // Parse date from external_id format: YYYYMMDD-TYPE-###
-          const dateStr = lead.external_id.split('-')[0];
-          if (dateStr.length !== 8) return false;
-          
-          const year = parseInt(dateStr.substring(0, 4));
-          const month = parseInt(dateStr.substring(4, 6)) - 1;
-          const day = parseInt(dateStr.substring(6, 8));
-          const uploadDate = new Date(year, month, day);
-          
-          // Validate the date
-          if (isNaN(uploadDate.getTime())) return false;
-          
-          const now = new Date();
-          const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
-          const ageInDays = Math.floor(hoursSinceUpload / 24);
-          
-          if (filters.age_range === 'yesterday') {
-            return hoursSinceUpload <= 72;
-          } else if (filters.age_range === '4-14') {
-            return ageInDays >= 4 && ageInDays <= 14;
-          } else if (filters.age_range === '15-30') {
-            return ageInDays >= 15 && ageInDays <= 30;
-          } else if (filters.age_range === '31-90') {
-            return ageInDays >= 31 && ageInDays <= 90;
-          } else if (filters.age_range === '91+') {
-            return ageInDays >= 91;
-          }
-          
-          return true;
-        });
-      }
     }
 
     return Response.json({
