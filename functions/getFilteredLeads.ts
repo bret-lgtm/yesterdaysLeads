@@ -236,6 +236,10 @@ Deno.serve(async (req) => {
             });
             
             console.log('✅ Total matches found:', matchCount);
+            console.log('❌ Missing zip codes:', missingZipCount);
+            if (sampleMissingZips.length > 0) {
+              console.log('📋 Sample missing zips:', sampleMissingZips.join(', '));
+            }
           }
         } else {
           // Search zip not found, exact match only
