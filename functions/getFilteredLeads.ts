@@ -149,6 +149,9 @@ Deno.serve(async (req) => {
           zip_code: normalizedSearchZip 
         });
         console.log('Search zip results:', searchZipResults.length);
+        if (searchZipResults.length > 0) {
+          console.log('Search zip found:', JSON.stringify(searchZipResults[0]));
+        }
 
         if (searchZipResults.length > 0) {
           const searchZipData = searchZipResults[0].data || searchZipResults[0];
