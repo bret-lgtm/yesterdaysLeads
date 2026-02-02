@@ -43,7 +43,7 @@ export default function Checkout() {
   });
 
   // Use cart hook
-  const { cartItems, removeFromCart } = useCart(user);
+  const { cartItems, removeFromCart, clearLocalCart } = useCart(user);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -88,6 +88,21 @@ export default function Checkout() {
       toast.error('Failed to start checkout. Please try again.');
       console.error(error);
       setProcessing(false);
+    }
+  };
+
+  const handleRemoveAll = async () => {
+    if (user) {
+      // Delete all cart items for authenticated user
+      for (const item of cartItems) {
+        await removeFromCart(item.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success('Cart cleared');
+    } else {
+      // Clear local storage for anonymous user
+      clearLocalCart();
+      toast.success('Cart cleared');
     }
   };
 
@@ -248,6 +263,14 @@ export default function Checkout() {
                       </div>
                     </div>
                   ))}
+                  <Button
+                    variant="outline"
+                    onClick={handleRemoveAll}
+                    className="w-full rounded-xl border-slate-200 text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove All
+                  </Button>
                 </div>
               )}
             </Card>
