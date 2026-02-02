@@ -119,7 +119,9 @@ Deno.serve(async (req) => {
 
     // State filter
     if (filters.state && filters.state !== 'all') {
+      console.log('Applying state filter:', filters.state);
       filtered = filtered.filter(lead => lead.state === filters.state);
+      console.log('After state filter:', filtered.length);
     }
 
     // Age range filter
