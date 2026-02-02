@@ -4,7 +4,6 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const { filters = {} } = await req.json();
-    console.log('🔵 Function called with filters:', JSON.stringify(filters));
 
     // Get access token for Google Sheets
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
@@ -32,15 +31,12 @@ Deno.serve(async (req) => {
       : Object.keys(sheetIds);
 
     // Fetch sheet metadata to get names
-    console.log('🌐 Fetching sheet metadata...');
     const sheetMetaResponse = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
       { headers: { 'Authorization': `Bearer ${accessToken}` } }
     );
-    console.log('📡 Metadata response status:', sheetMetaResponse.status);
     
     const sheetMeta = await sheetMetaResponse.json();
-    console.log('📑 Sheets found:', sheetMeta.sheets?.length);
     const sheetMap = {};
     sheetMeta.sheets?.forEach(sheet => {
       const id = sheet.properties.sheetId.toString();
@@ -52,12 +48,8 @@ Deno.serve(async (req) => {
     for (const leadType of sheetsToQuery) {
       const sheetId = sheetIds[leadType];
       const sheetName = sheetMap[sheetId];
-      console.log(`Processing ${leadType}: sheetId=${sheetId}, sheetName=${sheetName}`);
       
-      if (!sheetName) {
-        console.log(`❌ No sheet name found for ${leadType}`);
-        continue;
-      }
+      if (!sheetName) continue;
     
       const range = `'${sheetName}'!A:Z`;
       const response = await fetch(
@@ -83,7 +75,6 @@ Deno.serve(async (req) => {
         
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
-        lead.status = lead.status || 'available';
         
         // Calculate age_in_days from external_id
         if (lead.external_id) {
@@ -115,18 +106,14 @@ Deno.serve(async (req) => {
     }
 
     // Filter by status
-    console.log('Total leads before filtering:', allLeads.length);
     let filtered = allLeads.filter(lead => {
       if (!lead.status || lead.status === 'undefined') return true;
       return lead.status.trim().toLowerCase() === 'available';
     });
-    console.log('Leads after status filter:', filtered.length);
 
     // State filter
     if (filters.state && filters.state !== 'all') {
-      console.log('Applying state filter:', filters.state);
       filtered = filtered.filter(lead => lead.state === filters.state);
-      console.log('After state filter:', filtered.length);
     }
 
     // Age range filter
@@ -144,106 +131,55 @@ Deno.serve(async (req) => {
 
     // Zip code and distance filter
     if (filters.zip_code) {
-      console.log('Zip code filter triggered:', filters.zip_code, 'distance:', filters.distance);
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       const normalizedSearchZip = normalizeZip(filters.zip_code);
-      console.log('Normalized search zip:', normalizedSearchZip);
 
       if (filters.distance) {
         // Distance-based search
-        console.log('Looking up search zip in database...');
         const searchZipResults = await base44.asServiceRole.entities.ZipCode.filter({ 
           zip_code: normalizedSearchZip 
         });
-        console.log('Search zip results:', searchZipResults.length);
-        if (searchZipResults.length > 0) {
-          console.log('Search zip found:', JSON.stringify(searchZipResults[0]));
-        }
 
         if (searchZipResults.length > 0) {
-          const searchZipRecord = searchZipResults[0];
-          const searchZipData = searchZipRecord.data || searchZipRecord;
-          console.log('Search zip data structure:', JSON.stringify(searchZipData));
-          
-          // Check both direct access and .data access
-          const lat1 = searchZipData.latitude || searchZipRecord.latitude;
-          const lon1 = searchZipData.longitude || searchZipRecord.longitude;
-          console.log('Extracted coords - lat:', lat1, 'lon:', lon1);
-          
-          if (!lat1 || !lon1) {
-            console.error('❌ Could not extract coordinates from search zip');
-            filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
-          } else {
-            const distance = parseFloat(filters.distance);
-            console.log('Distance threshold:', distance, 'miles');
+          const searchZipData = searchZipResults[0].data || searchZipResults[0];
+          const { latitude: lat1, longitude: lon1 } = searchZipData;
+          const distance = parseFloat(filters.distance);
 
-            // Load all zip codes once
-            console.log('⏳ Loading all zip codes...');
-            const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
-            console.log('✅ Loaded', allZipCodes.length, 'zip codes');
-            
-            const zipMap = new Map();
-            allZipCodes.forEach(result => {
-              const zipData = result.data || result;
-              if (zipData.zip_code && zipData.latitude && zipData.longitude) {
-                zipMap.set(normalizeZip(zipData.zip_code), zipData);
-              }
-            });
-            console.log('📍 Zip map size:', zipMap.size);
-
-            // Haversine distance
-            const calculateDistance = (lat1, lon1, lat2, lon2) => {
-              const R = 3959;
-              const dLat = (lat2 - lat1) * Math.PI / 180;
-              const dLon = (lon2 - lon1) * Math.PI / 180;
-              const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-              const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-              return R * c;
-            };
-
-            console.log('🔍 Starting distance filtering...');
-            let matchCount = 0;
-            let missingZipCount = 0;
-            const sampleMissingZips = [];
-            
-            filtered = filtered.filter(lead => {
-              if (!lead.zip_code) return false;
-              const normalizedLeadZip = normalizeZip(lead.zip_code);
-              if (normalizedLeadZip === normalizedSearchZip) {
-                matchCount++;
-                return true;
-              }
-
-              const leadZipData = zipMap.get(normalizedLeadZip);
-              if (!leadZipData) {
-                missingZipCount++;
-                if (sampleMissingZips.length < 10) {
-                  sampleMissingZips.push(normalizedLeadZip);
-                }
-                return false;
-              }
-
-              const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-              if (dist <= distance) {
-                matchCount++;
-                if (matchCount <= 5) {
-                  console.log(`✅ Match #${matchCount}: ${normalizedLeadZip} @ ${dist.toFixed(2)} miles`);
-                }
-              }
-              return dist <= distance;
-            });
-            
-            console.log('✅ Total matches found:', matchCount);
-            console.log('❌ Missing zip codes:', missingZipCount);
-            if (sampleMissingZips.length > 0) {
-              console.log('📋 Sample missing zips:', sampleMissingZips.join(', '));
+          // Load all zip codes once
+          const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
+          const zipMap = new Map();
+          allZipCodes.forEach(result => {
+            const zipData = result.data || result;
+            if (zipData.zip_code) {
+              zipMap.set(normalizeZip(zipData.zip_code), zipData);
             }
-          }
+          });
+
+          // Haversine distance
+          const calculateDistance = (lat1, lon1, lat2, lon2) => {
+            const R = 3959;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+          };
+
+          filtered = filtered.filter(lead => {
+            if (!lead.zip_code) return false;
+            const normalizedLeadZip = normalizeZip(lead.zip_code);
+            if (normalizedLeadZip === normalizedSearchZip) return true;
+
+            const leadZipData = zipMap.get(normalizedLeadZip);
+            if (!leadZipData) return false;
+
+            const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+            return dist <= distance;
+          });
         } else {
           // Search zip not found, exact match only
-          console.log('Search zip not found in database, using exact match');
           filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
         }
       } else {
@@ -254,10 +190,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('🏁 Final result count:', filtered.length);
     return Response.json({ leads: filtered });
   } catch (error) {
-    console.error('❌ Filter error:', error);
+    console.error('Filter error:', error);
     return Response.json({ error: error.message, leads: [] }, { status: 500 });
   }
 });
