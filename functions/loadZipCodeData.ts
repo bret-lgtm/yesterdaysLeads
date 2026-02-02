@@ -9,8 +9,8 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
         }
 
-        // Fetch free zip code data from SimpleMaps
-        const response = await fetch('https://simplemaps.com/static/data/us-zips/1.82/basic/simplemaps_uszips_basicv1.82.csv');
+        // Fetch free zip code data from US Census via GitHub Gist
+        const response = await fetch('https://gist.githubusercontent.com/steinbring/c0cdb3c72ad58e63c95d9c9b6b2851cb/raw/f0afd97cc5e77f163a33e746c244b69d27905bcc/zipCodeToLatLong.csv');
         
         if (!response.ok) {
             throw new Error('Failed to fetch zip code data');
@@ -18,34 +18,22 @@ Deno.serve(async (req) => {
 
         const csvText = await response.text();
         const lines = csvText.split('\n');
-        const headers = lines[0].split(',');
-
-        // Find column indices
-        const zipIdx = headers.findIndex(h => h.trim() === 'zip');
-        const latIdx = headers.findIndex(h => h.trim() === 'lat');
-        const lngIdx = headers.findIndex(h => h.trim() === 'lng');
-        const cityIdx = headers.findIndex(h => h.trim() === 'city');
-        const stateIdx = headers.findIndex(h => h.trim() === 'state_id');
 
         const zipCodes = [];
         
+        // Format: zip,latitude,longitude (skip header row)
         for (let i = 1; i < lines.length; i++) {
             if (!lines[i].trim()) continue;
             
-            const cols = lines[i].split(',');
-            const zip = cols[zipIdx]?.trim().replace(/"/g, '');
-            const lat = parseFloat(cols[latIdx]?.trim());
-            const lng = parseFloat(cols[lngIdx]?.trim());
-            const city = cols[cityIdx]?.trim().replace(/"/g, '');
-            const state = cols[stateIdx]?.trim().replace(/"/g, '');
+            const [zip, lat, lng] = lines[i].split(',').map(s => s.trim());
 
-            if (zip && !isNaN(lat) && !isNaN(lng)) {
+            if (zip && lat && lng) {
                 zipCodes.push({
                     zip_code: zip,
-                    latitude: lat,
-                    longitude: lng,
-                    city: city || '',
-                    state: state || ''
+                    latitude: parseFloat(lat),
+                    longitude: parseFloat(lng),
+                    city: '',
+                    state: ''
                 });
             }
         }
