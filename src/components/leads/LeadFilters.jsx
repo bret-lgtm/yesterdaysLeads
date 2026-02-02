@@ -39,7 +39,7 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 p-6 shadow-sm">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <div className="space-y-2">
           <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lead Type</Label>
           <Select value={filters.lead_type || "all"} onValueChange={(v) => handleChange('lead_type', v)}>
@@ -96,7 +96,19 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
           />
         </div>
 
-        <div className="flex items-end gap-2">
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Distance (miles)</Label>
+          <Input
+            type="number"
+            placeholder="Radius"
+            value={filters.distance || ""}
+            onChange={(e) => handleChange('distance', e.target.value)}
+            className="h-11 rounded-xl border-slate-200"
+            disabled={!filters.zip_code}
+          />
+        </div>
+
+        <div className="flex items-end gap-2 lg:col-span-1">
           <Button onClick={onSearch} className="h-11 flex-1 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20">
             <Search className="w-4 h-4 mr-2" />
             Search
