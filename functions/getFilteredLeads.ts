@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
         
         lead.id = `${leadType}_${index}`;
         lead.lead_type = leadType;
+        lead.status = lead.status || 'available';
         
         // Calculate age_in_days from external_id
         if (lead.external_id) {
