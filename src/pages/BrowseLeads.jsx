@@ -104,19 +104,25 @@ export default function BrowseLeads() {
       // Normalize zip codes to 5 digits with leading zeros
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       
-      const zipCodeMap = new Map(zipCodes.map(z => [normalizeZip(z.zip_code), z]));
+      console.log('📦 Zip codes structure check:', zipCodes.slice(0, 3));
+      const zipCodeMap = new Map(zipCodes.map(z => {
+        const zipCode = z.zip_code || z.data?.zip_code;
+        return [normalizeZip(zipCode), z];
+      }));
       const normalizedSearchZip = normalizeZip(activeZipFilters.zip_code);
       const searchZipData = zipCodeMap.get(normalizedSearchZip);
       
       console.log('🔍 Searching zip:', normalizedSearchZip, 'Distance:', activeZipFilters.distance);
       console.log('🔍 Search zip data:', searchZipData);
       console.log('🔍 Total zip codes available:', zipCodes.length);
+      console.log('🔍 Sample from map:', Array.from(zipCodeMap.keys()).slice(0, 5));
 
       if (activeZipFilters.distance) {
         const distance = parseFloat(activeZipFilters.distance);
 
         if (searchZipData) {
-          const { latitude: lat1, longitude: lon1 } = searchZipData;
+          const lat1 = searchZipData.latitude || searchZipData.data?.latitude;
+          const lon1 = searchZipData.longitude || searchZipData.data?.longitude;
 
           // Haversine distance function
           const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -143,7 +149,9 @@ export default function BrowseLeads() {
             const leadZipData = zipCodeMap.get(normalizedLeadZip);
             if (!leadZipData) return false;
 
-            const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
+            const lat2 = leadZipData.latitude || leadZipData.data?.latitude;
+            const lon2 = leadZipData.longitude || leadZipData.data?.longitude;
+            const dist = calculateDistance(lat1, lon1, lat2, lon2);
             const isWithinRange = dist <= distance;
             if (isWithinRange) matchCount++;
             return isWithinRange;
