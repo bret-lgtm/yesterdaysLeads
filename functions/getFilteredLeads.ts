@@ -52,8 +52,12 @@ Deno.serve(async (req) => {
     for (const leadType of sheetsToQuery) {
       const sheetId = sheetIds[leadType];
       const sheetName = sheetMap[sheetId];
+      console.log(`Processing ${leadType}: sheetId=${sheetId}, sheetName=${sheetName}`);
       
-      if (!sheetName) continue;
+      if (!sheetName) {
+        console.log(`❌ No sheet name found for ${leadType}`);
+        continue;
+      }
     
       const range = `'${sheetName}'!A:Z`;
       const response = await fetch(
