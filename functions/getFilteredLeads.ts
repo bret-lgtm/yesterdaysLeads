@@ -131,14 +131,18 @@ Deno.serve(async (req) => {
 
     // Zip code and distance filter
     if (filters.zip_code) {
+      console.log('Zip code filter triggered:', filters.zip_code, 'distance:', filters.distance);
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       const normalizedSearchZip = normalizeZip(filters.zip_code);
+      console.log('Normalized search zip:', normalizedSearchZip);
 
       if (filters.distance) {
         // Distance-based search
+        console.log('Looking up search zip in database...');
         const searchZipResults = await base44.asServiceRole.entities.ZipCode.filter({ 
           zip_code: normalizedSearchZip 
         });
+        console.log('Search zip results:', searchZipResults.length);
 
         if (searchZipResults.length > 0) {
           const searchZipData = searchZipResults[0].data || searchZipResults[0];
