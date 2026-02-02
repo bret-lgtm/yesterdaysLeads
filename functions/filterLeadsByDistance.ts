@@ -29,21 +29,17 @@ Deno.serve(async (req) => {
     // Get unique zip codes from leads
     const uniqueZips = [...new Set(leads.map(l => normalizeZip(l.zip_code || '')).filter(Boolean))];
 
-    // Fetch all zip data in batches
-    const batchSize = 100;
+    // Fetch all zip codes at once (up to 50k limit)
+    const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
+    
+    // Build a map for fast lookups
     const zipDataMap = new Map();
-
-    for (let i = 0; i < uniqueZips.length; i += batchSize) {
-      const batch = uniqueZips.slice(i, i + batchSize);
-      const results = await base44.asServiceRole.entities.ZipCode.filter({
-        zip_code: { $in: batch }
-      });
-      
-      results.forEach(result => {
-        const data = result.data || result;
-        zipDataMap.set(data.zip_code, data);
-      });
-    }
+    allZipCodes.forEach(result => {
+      const data = result.data || result;
+      if (data.zip_code) {
+        zipDataMap.set(normalizeZip(data.zip_code), data);
+      }
+    });
 
     // Haversine distance calculation
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
