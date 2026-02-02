@@ -47,13 +47,14 @@ export default function BrowseLeads() {
 
   // Fetch filtered leads from backend
   const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
-    queryKey: ['filteredLeads', filters],
+    queryKey: ['filteredLeads', JSON.stringify(filters)],
     queryFn: async () => {
       const response = await base44.functions.invoke('getFilteredLeads', { filters });
-      return response.data.leads || [];
+      return response.data?.leads || [];
     },
     staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1
   });
 
   // Fetch pricing tiers
