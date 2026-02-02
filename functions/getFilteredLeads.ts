@@ -176,6 +176,7 @@ Deno.serve(async (req) => {
 
           let matchedCount = 0;
           let missingZipCount = 0;
+          const missingZips = new Set();
 
           filtered = filtered.filter(lead => {
             if (!lead.zip_code) return false;
@@ -188,6 +189,7 @@ Deno.serve(async (req) => {
             const leadZipData = zipMap.get(normalizedLeadZip);
             if (!leadZipData) {
               missingZipCount++;
+              missingZips.add(normalizedLeadZip);
               return false;
             }
 
@@ -201,6 +203,7 @@ Deno.serve(async (req) => {
 
           console.log('✅ Leads matched within distance:', matchedCount);
           console.log('❌ Leads with missing zip codes:', missingZipCount);
+          console.log('🔢 Sample missing zips:', Array.from(missingZips).slice(0, 20).join(', '));
         } else {
           // Search zip not found, exact match only
           filtered = filtered.filter(lead => normalizeZip(lead.zip_code || '') === normalizedSearchZip);
