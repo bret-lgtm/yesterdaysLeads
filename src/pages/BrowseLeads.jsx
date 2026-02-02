@@ -112,9 +112,10 @@ export default function BrowseLeads() {
       const searchZipData = zipCodeMap.get(normalizedSearchZip);
       
       console.log('🔍 Searching zip:', normalizedSearchZip, 'Distance:', activeZipFilters.distance);
+      console.log('🔍 Map has this zip?:', zipCodeMap.has(normalizedSearchZip));
       console.log('🔍 Search zip data:', searchZipData);
-      console.log('🔍 Total zip codes available:', zipCodes.length);
-      console.log('🔍 Sample from map:', Array.from(zipCodeMap.keys()).slice(0, 5));
+      console.log('🔍 Total zip codes in map:', zipCodeMap.size);
+      console.log('🔍 Checking zips near 65804:', Array.from(zipCodeMap.keys()).filter(z => z.startsWith('658')).slice(0, 10));
 
       if (activeZipFilters.distance) {
         const distance = parseFloat(activeZipFilters.distance);
