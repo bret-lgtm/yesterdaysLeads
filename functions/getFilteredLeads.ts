@@ -157,8 +157,11 @@ Deno.serve(async (req) => {
 
         if (searchZipResults.length > 0) {
           const searchZipData = searchZipResults[0].data || searchZipResults[0];
+          console.log('Search zip data:', JSON.stringify(searchZipData));
           const { latitude: lat1, longitude: lon1 } = searchZipData;
+          console.log('Extracted coords:', lat1, lon1);
           const distance = parseFloat(filters.distance);
+          console.log('Distance threshold:', distance);
 
           // Load all zip codes once
           const allZipCodes = await base44.asServiceRole.entities.ZipCode.list('', 50000);
