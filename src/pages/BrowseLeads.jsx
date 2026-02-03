@@ -49,8 +49,16 @@ export default function BrowseLeads() {
   const { data: allLeads = [], isLoading: leadsLoading, error: leadsError } = useQuery({
     queryKey: ['filteredLeads', JSON.stringify(filters)],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getFilteredLeads', { filters });
-      return response.data?.leads || [];
+      try {
+        const response = await base44.functions.invoke('getFilteredLeads', { filters });
+        console.log('Response status:', response.status);
+        console.log('Response data:', response.data);
+        return response.data?.leads || [];
+      } catch (err) {
+        console.error('Function call error:', err);
+        console.error('Error response:', err.response?.data);
+        throw err;
+      }
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
