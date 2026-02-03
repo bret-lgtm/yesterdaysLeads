@@ -129,6 +129,14 @@ export default function BrowseLeads() {
   const handleBulkAddToCart = async () => {
     const leadsToAdd = selectedLeads.filter(lead => !cartLeadIds.includes(lead.id));
     
+    console.log('Selected leads:', selectedLeads.length);
+    console.log('Leads to add (not in cart):', leadsToAdd.length);
+    
+    if (leadsToAdd.length === 0) {
+      toast.info('All selected leads are already in cart');
+      return;
+    }
+    
     if (user) {
       // Bulk create for authenticated users
       const itemsToCreate = leadsToAdd.map(lead => ({
@@ -142,6 +150,7 @@ export default function BrowseLeads() {
         price: calculateLeadPrice(lead, pricingTiers)
       }));
 
+      console.log('Creating items:', itemsToCreate.length);
       await base44.entities.CartItem.bulkCreate(itemsToCreate);
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
@@ -159,6 +168,7 @@ export default function BrowseLeads() {
           price
         });
       }
+      toast.success(`${leadsToAdd.length} leads added to cart`);
     }
     
     setSelectedLeads([]);
