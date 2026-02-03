@@ -295,7 +295,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    return Response.json({ leads: filtered });
+    // Limit response size to prevent timeouts (return max 500 leads)
+    const limitedLeads = filtered.slice(0, 500);
+    
+    return Response.json({ 
+      leads: limitedLeads,
+      total: filtered.length,
+      showing: limitedLeads.length
+    });
   } catch (error) {
     console.error('getFilteredLeads error:', error);
     return Response.json({ 
