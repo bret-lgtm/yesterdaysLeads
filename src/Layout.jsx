@@ -56,31 +56,31 @@ export default function Layout({ children }) {
 
   // Track localStorage cart count for anonymous users
   React.useEffect(() => {
-    if (!user) {
-      const updateLocalCount = () => {
-        const stored = localStorage.getItem('anonymous_cart');
-        if (stored) {
-          try {
-            const cart = JSON.parse(stored);
-            setLocalCartCount(cart.length);
-          } catch {
-            setLocalCartCount(0);
-          }
-        } else {
+    const updateLocalCount = () => {
+      const stored = localStorage.getItem('anonymous_cart');
+      if (stored) {
+        try {
+          const cart = JSON.parse(stored);
+          setLocalCartCount(cart.length);
+        } catch {
           setLocalCartCount(0);
         }
-      };
+      } else {
+        setLocalCartCount(0);
+      }
+    };
 
+    if (!user) {
       updateLocalCount();
       window.addEventListener('storage', updateLocalCount);
-      
-      // Custom event for same-tab updates
       window.addEventListener('cartUpdated', updateLocalCount);
 
       return () => {
         window.removeEventListener('storage', updateLocalCount);
         window.removeEventListener('cartUpdated', updateLocalCount);
       };
+    } else {
+      setLocalCartCount(0);
     }
   }, [user]);
 
