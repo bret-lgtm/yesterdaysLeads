@@ -46,16 +46,25 @@ export default function BrowseLeads() {
   });
 
   // Fetch filtered leads from backend
-  const { data: allLeads = [], isLoading: leadsLoading } = useQuery({
+  const { data: allLeads = [], isLoading: leadsLoading, error: leadsError } = useQuery({
     queryKey: ['filteredLeads', JSON.stringify(filters)],
     queryFn: async () => {
       const response = await base44.functions.invoke('getFilteredLeads', { filters });
+      console.log('getFilteredLeads response:', response);
       return response.data?.leads || [];
     },
     staleTime: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 1
   });
+
+  // Log any errors
+  React.useEffect(() => {
+    if (leadsError) {
+      console.error('Error loading leads:', leadsError);
+      toast.error('Failed to load leads. Please try again.');
+    }
+  }, [leadsError]);
 
   // Fetch pricing tiers
   const { data: pricingTiers = [] } = useQuery({
