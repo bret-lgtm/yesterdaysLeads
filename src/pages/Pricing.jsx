@@ -63,7 +63,7 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center mb-16">
           <Badge className="mb-4 bg-slate-100 text-slate-700 border-slate-200 px-3 py-1">
-            Transparent Pricing
+            Phone Verified Leads
           </Badge>
           <h1 className="text-4xl font-bold text-slate-900 mb-4">
             Simple, Tiered Pricing
