@@ -19,7 +19,7 @@ const BULK_DISCOUNTS = [
 ];
 
 export function calculateLeadPrice(lead, pricingTiers = []) {
-  const ageInDays = lead.age_in_days || 0;
+  const ageInDays = Math.max(1, lead.age_in_days || 1);
   
   // Check for custom pricing tier
   const customTier = pricingTiers.find(tier => 
