@@ -195,7 +195,7 @@ export default function Pricing() {
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 "Full contact information",
-                "Phone number",
+                "SMS-Verified Phone number",
                 "Email",
                 "City, State and ZIP code",
                 "Lead type categorization",
