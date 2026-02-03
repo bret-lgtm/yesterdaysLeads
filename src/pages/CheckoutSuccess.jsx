@@ -113,6 +113,18 @@ export default function CheckoutSuccess() {
     });
   };
 
+  if (!user?.email) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
+        <Card className="p-8 rounded-3xl border-slate-200/60 text-center max-w-md">
+          <Loader2 className="w-12 h-12 text-slate-400 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Loading...</h2>
+          <p className="text-slate-500">Please wait</p>
+        </Card>
+      </div>
+    );
+  }
+
   if (!orderReady || !latestOrder) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center p-4">
@@ -120,6 +132,7 @@ export default function CheckoutSuccess() {
           <Loader2 className="w-12 h-12 text-slate-400 animate-spin mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-slate-900 mb-2">Processing your order...</h2>
           <p className="text-slate-500">Please wait while we prepare your leads</p>
+          <p className="text-xs text-slate-400 mt-3">This may take up to 30 seconds</p>
         </Card>
       </div>
     );
