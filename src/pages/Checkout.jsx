@@ -68,6 +68,23 @@ export default function Checkout() {
   const discountAmount = subtotal * (bulkDiscount / 100);
   const total = subtotal - discountAmount;
 
+  // Group by lead type, then by age
+  const groupedItems = React.useMemo(() => {
+    const groups = {};
+    cartItems.forEach(item => {
+      const type = item.lead_type;
+      if (!groups[type]) groups[type] = {};
+      
+      const ageKey = item.age_in_days;
+      if (!groups[type][ageKey]) {
+        groups[type][ageKey] = { count: 0, price: item.price, age_in_days: ageKey, items: [] };
+      }
+      groups[type][ageKey].count++;
+      groups[type][ageKey].items.push(item);
+    });
+    return groups;
+  }, [cartItems]);
+
   const handleCheckout = async () => {
     if (cartItems.length === 0) return;
 
@@ -234,33 +251,31 @@ export default function Checkout() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {cartItems.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div>
-                        <p className="font-medium text-slate-900">
-                          {item.lead_name}
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">
-                            {item.lead_type.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                          </Badge>
-                          <span className="text-xs text-slate-500">
-                            {item.state} • {item.age_in_days}d old
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold text-slate-900">${item.price.toFixed(2)}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFromCart(item.id)}
-                          className="h-8 w-8 text-slate-400 hover:text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                <div className="space-y-4">
+                  {Object.entries(groupedItems).map(([leadType, ageGroups]) => (
+                    <div key={leadType} className="space-y-3">
+                      <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                        {leadType.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      </h3>
+                      {Object.entries(ageGroups)
+                        .sort(([a], [b]) => Number(a) - Number(b))
+                        .map(([age, group]) => (
+                          <div key={age} className="bg-slate-50 rounded-xl p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium text-slate-900">
+                                  {group.count}x Leads
+                                </p>
+                                <p className="text-sm text-slate-500">
+                                  {age} days old • ${group.price.toFixed(2)} each
+                                </p>
+                              </div>
+                              <span className="font-semibold text-slate-900">
+                                ${(group.count * group.price).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   ))}
                   <Button
