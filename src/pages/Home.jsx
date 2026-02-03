@@ -17,6 +17,11 @@ import {
 
 const features = [
   {
+    icon: Users,
+    title: "Phone Verified",
+    description: "Never get a bad phone number. All of our leads are required to verify their phone via SMS before becoming a lead."
+  },
+  {
     icon: TrendingDown,
     title: "Aged Lead Pricing",
     description: "Get premium leads at a fraction of the cost. Our tiered pricing ensures you pay less for older leads."
@@ -35,11 +40,6 @@ const features = [
     icon: Zap,
     title: "Instant Delivery",
     description: "Download your leads immediately after purchase in CSV format, ready for your CRM."
-  },
-  {
-    icon: Users,
-    title: "Bulk Discounts",
-    description: "The more you buy, the more you save. Automatic discounts on larger orders."
   },
   {
     icon: FileCheck,
