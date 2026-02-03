@@ -154,19 +154,24 @@ export default function BrowseLeads() {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
     } else {
-      // Add to localStorage for anonymous users
-      for (const lead of leadsToAdd) {
-        const price = calculateLeadPrice(lead, pricingTiers);
-        await addToCart({
-          lead_id: lead.id,
-          lead_type: lead.lead_type,
-          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-          state: lead.state,
-          zip_code: String(lead.zip_code || ''),
-          age_in_days: lead.age_in_days,
-          price
-        });
-      }
+      // Batch add to localStorage for anonymous users
+      const stored = localStorage.getItem('anonymous_cart');
+      const existingCart = stored ? JSON.parse(stored) : [];
+      
+      const newItems = leadsToAdd.map(lead => ({
+        id: `local_${Date.now()}_${Math.random()}`,
+        lead_id: lead.id,
+        lead_type: lead.lead_type,
+        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+        state: lead.state,
+        zip_code: String(lead.zip_code || ''),
+        age_in_days: lead.age_in_days,
+        price: calculateLeadPrice(lead, pricingTiers)
+      }));
+      
+      const updatedCart = [...existingCart, ...newItems];
+      localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
+      window.dispatchEvent(new Event('cartUpdated'));
       toast.success(`${leadsToAdd.length} leads added to cart`);
     }
     
@@ -209,19 +214,24 @@ export default function BrowseLeads() {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
     } else {
-      // Local storage for anonymous users
-      for (const lead of leadsToAdd) {
-        const price = calculateLeadPrice(lead, pricingTiers);
-        await addToCart({
-          lead_id: lead.id,
-          lead_type: lead.lead_type,
-          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-          state: lead.state,
-          zip_code: lead.zip_code,
-          age_in_days: lead.age_in_days,
-          price
-        });
-      }
+      // Batch add to localStorage for anonymous users
+      const stored = localStorage.getItem('anonymous_cart');
+      const existingCart = stored ? JSON.parse(stored) : [];
+      
+      const newItems = leadsToAdd.map(lead => ({
+        id: `local_${Date.now()}_${Math.random()}`,
+        lead_id: lead.id,
+        lead_type: lead.lead_type,
+        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+        state: lead.state,
+        zip_code: String(lead.zip_code || ''),
+        age_in_days: lead.age_in_days,
+        price: calculateLeadPrice(lead, pricingTiers)
+      }));
+      
+      const updatedCart = [...existingCart, ...newItems];
+      localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
+      window.dispatchEvent(new Event('cartUpdated'));
     }
 
     setQuantity('');
