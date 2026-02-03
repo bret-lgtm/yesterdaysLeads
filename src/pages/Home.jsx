@@ -11,13 +11,13 @@ import {
   Zap, 
   Target,
   TrendingDown,
-  Users,
+  Phone,
   FileCheck
 } from "lucide-react";
 
 const features = [
   {
-    icon: Users,
+    icon: Phone,
     title: "Phone Verified",
     description: "Never get a bad phone number. All of our leads are required to verify their phone via SMS before becoming a lead."
   },
