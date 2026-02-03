@@ -166,7 +166,7 @@ export default function Home() {
 
           {/* The 4 Pillars */}
           <div className="mb-8">
-            <h3 className="text-2xl font-bold text-slate-900 text-center mb-8">The 4 Pillars of Our Advantage</h3>
+            <h3 className="text-2xl font-bold text-slate-900 text-center mb-8">The Yesterday's Leads Difference</h3>
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4 mb-3">
