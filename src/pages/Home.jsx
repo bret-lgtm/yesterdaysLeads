@@ -75,7 +75,7 @@ export default function Home() {
             <Badge className="mb-6 bg-slate-100 text-slate-700 border-slate-200 px-4 py-1.5 text-sm pointer-events-none">
               Premium Aged Insurance Leads
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tracking-tight mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight mb-6">
               Quality, Phone Verified Leads at
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
                 Unbeatable Prices
