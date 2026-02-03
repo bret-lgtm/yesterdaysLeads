@@ -297,6 +297,8 @@ Deno.serve(async (req) => {
       }
     }
 
+    console.log(`Returning ${filtered.length} filtered leads`);
+    
     return Response.json({ 
       leads: filtered,
       total: filtered.length
