@@ -98,7 +98,7 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-slate-200/60">
+      <header className="sticky top-0 z-50 bg-emerald-700 border-b border-emerald-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -116,7 +116,7 @@ export default function Layout({ children }) {
                 <Link
                   key={link.href}
                   to={createPageUrl(link.href)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white hover:text-white rounded-lg hover:bg-emerald-600 transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -124,7 +124,7 @@ export default function Layout({ children }) {
               {user?.role === 'admin' && (
                 <Link
                   to={createPageUrl('AdminDashboard')}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white hover:text-white rounded-lg hover:bg-emerald-600 transition-colors"
                 >
                   Admin
                 </Link>
@@ -135,8 +135,8 @@ export default function Layout({ children }) {
             <div className="flex items-center gap-3">
               {/* Cart */}
               <Link to={createPageUrl('Checkout')} className="relative">
-                <Button variant="ghost" size="icon" className="rounded-xl">
-                  <ShoppingCart className="w-5 h-5 text-slate-600" />
+                <Button variant="ghost" size="icon" className="rounded-xl hover:bg-emerald-600">
+                  <ShoppingCart className="w-5 h-5 text-white" />
                   {((user ? cartItems.length : localCartCount) > 0) && (
                     <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-emerald-600 p-0 flex items-center justify-center text-xs">
                       {user ? cartItems.length : localCartCount}
@@ -149,11 +149,11 @@ export default function Layout({ children }) {
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="rounded-xl gap-2 px-3">
-                      <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                        <User className="w-4 h-4 text-slate-600" />
+                    <Button variant="ghost" className="rounded-xl gap-2 px-3 hover:bg-emerald-600">
+                      <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
                       </div>
-                      <span className="hidden sm:block text-sm font-medium text-slate-700">
+                      <span className="hidden sm:block text-sm font-medium text-white">
                         {user.full_name?.split(' ')[0] || user.email?.split('@')[0]}
                       </span>
                     </Button>
@@ -188,7 +188,7 @@ export default function Layout({ children }) {
               ) : (
                 <Button 
                   onClick={() => base44.auth.redirectToLogin()}
-                  className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
+                  className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
                 >
                   Sign In
                 </Button>
@@ -198,10 +198,10 @@ export default function Layout({ children }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden rounded-xl"
+                className="md:hidden rounded-xl hover:bg-emerald-600"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
               </Button>
             </div>
           </div>
@@ -209,16 +209,16 @@ export default function Layout({ children }) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-white">
+          <div className="md:hidden border-t border-emerald-800 bg-emerald-700">
             <nav className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   to={createPageUrl(link.href)}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-white rounded-xl hover:bg-emerald-600 transition-colors"
                 >
-                  <link.icon className="w-5 h-5 text-slate-500" />
+                  <link.icon className="w-5 h-5 text-white/80" />
                   {link.name}
                 </Link>
               ))}
@@ -226,9 +226,9 @@ export default function Layout({ children }) {
                 <Link
                   to={createPageUrl('AdminDashboard')}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-white rounded-xl hover:bg-emerald-600 transition-colors"
                 >
-                  <Settings className="w-5 h-5 text-slate-500" />
+                  <Settings className="w-5 h-5 text-white/80" />
                   Admin Dashboard
                 </Link>
               )}
@@ -243,7 +243,7 @@ export default function Layout({ children }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-auto">
+      <footer className="bg-emerald-700 border-t border-emerald-800 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <img 
@@ -251,7 +251,7 @@ export default function Layout({ children }) {
               alt="Yesterday's Leads"
               className="h-8 w-auto"
             />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-white">
               © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
             </p>
           </div>
