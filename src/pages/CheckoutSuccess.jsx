@@ -13,7 +13,13 @@ export default function CheckoutSuccess() {
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch {
+        return null;
+      }
+    }
   });
 
   const { data: orders = [], refetch } = useQuery({
@@ -23,7 +29,9 @@ export default function CheckoutSuccess() {
       const allOrders = await base44.entities.Order.filter({ customer_email: user.email });
       return allOrders.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
-    enabled: !!user?.email
+    enabled: !!user?.email,
+    retry: 3,
+    retryDelay: 1000
   });
 
   const latestOrder = orders[0];
