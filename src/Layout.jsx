@@ -103,10 +103,11 @@ export default function Layout({ children }) {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl('Home')} className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Package className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-slate-900 text-lg hidden sm:block">Yesterday's Leads</span>
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/ac72ff8b0_YesterdaysLeadsMAINLOGO.png"
+                alt="Yesterday's Leads"
+                className="h-10 sm:h-12 w-auto"
+              />
             </Link>
 
             {/* Desktop Nav */}
@@ -245,12 +246,11 @@ export default function Layout({ children }) {
       <footer className="bg-white border-t border-slate-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
-                <Package className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-semibold text-slate-900">Yesterday's Leads</span>
-            </div>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/ac72ff8b0_YesterdaysLeadsMAINLOGO.png"
+              alt="Yesterday's Leads"
+              className="h-8 w-auto"
+            />
             <p className="text-sm text-slate-500">
               © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
             </p>
