@@ -218,13 +218,17 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Bottom Line */}
+          {/* Bottom Line CTA */}
           <div className="text-center">
-            <Card className="p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 inline-block">
-              <p className="text-xl font-bold text-white">
-                The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
-              </p>
-            </Card>
+            <p className="text-xl font-bold text-slate-900 mb-6">
+              The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
+            </p>
+            <Link to={createPageUrl('BrowseLeads')}>
+              <Button size="lg" className="h-14 px-8 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-base shadow-lg shadow-emerald-500/30">
+                Browse Leads Now
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </section>
