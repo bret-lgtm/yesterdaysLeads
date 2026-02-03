@@ -30,12 +30,20 @@ const typeLabels = {
 };
 
 export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, onAddToCart }) {
-  const dateStr = lead.external_id.split('-')[0];
-  const year = parseInt(dateStr.substring(0, 4));
-  const month = parseInt(dateStr.substring(4, 6)) - 1;
-  const day = parseInt(dateStr.substring(6, 8));
-  const uploadDate = new Date(year, month, day);
-  const ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+  let ageInDays = lead.age_in_days || 1;
+  
+  if (lead.external_id && lead.external_id.includes('-')) {
+    const dateStr = lead.external_id.split('-')[0];
+    if (dateStr && dateStr.length === 8) {
+      const year = parseInt(dateStr.substring(0, 4));
+      const month = parseInt(dateStr.substring(4, 6)) - 1;
+      const day = parseInt(dateStr.substring(6, 8));
+      const uploadDate = new Date(year, month, day);
+      if (!isNaN(uploadDate.getTime())) {
+        ageInDays = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+      }
+    }
+  }
   
   return (
     <motion.div
