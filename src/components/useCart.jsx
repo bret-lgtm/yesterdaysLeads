@@ -110,6 +110,7 @@ export function useCart(user) {
   const clearLocalCart = () => {
     setLocalCart([]);
     localStorage.removeItem(CART_STORAGE_KEY);
+    window.dispatchEvent(new Event('cartUpdated'));
   };
 
   return {
