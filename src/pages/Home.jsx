@@ -12,7 +12,11 @@ import {
   Target,
   TrendingDown,
   Phone,
-  FileCheck
+  FileCheck,
+  AlertCircle,
+  CheckCircle2,
+  BarChart3,
+  Users
 } from "lucide-react";
 
 const features = [
@@ -116,6 +120,113 @@ export default function Home() {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* The Aged Lead Antidote Section */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-24">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">The Aged Lead Antidote</h2>
+          </div>
+
+          {/* The Problem */}
+          <Card className="p-8 rounded-2xl border-red-200 bg-red-50/50 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">The Problem</h3>
+                <p className="text-slate-700 leading-relaxed">
+                  Most vendors sell "recycled garbage"—data sold 10+ times, harvested from junk surveys, and riddled with disconnected numbers.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Our Solution */}
+          <Card className="p-8 rounded-2xl border-emerald-200 bg-emerald-50/50 mb-12">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-slate-900 mb-2">Our Solution</h3>
+                <p className="text-slate-700 leading-relaxed">
+                  Yesterday's Leads provides high-intent, phone-verified data without the industry fluff.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* The 4 Pillars */}
+          <div className="mb-8">
+            <h3 className="text-2xl font-bold text-slate-900 text-center mb-8">The 4 Pillars of Our Advantage</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-900">Capped Distribution</h4>
+                </div>
+                <p className="text-slate-600">
+                  We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.
+                </p>
+              </Card>
+
+              <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-violet-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-900">Audit-Ready Compliance</h4>
+                </div>
+                <p className="text-slate-600">
+                  No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.
+                </p>
+              </Card>
+
+              <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-900">Phone-Verified Connectivity</h4>
+                </div>
+                <p className="text-slate-600">
+                  We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.
+                </p>
+              </Card>
+
+              <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+                <div className="flex items-start gap-4 mb-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-slate-900">Organic Intent Only</h4>
+                </div>
+                <p className="text-slate-600">
+                  We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.
+                </p>
+              </Card>
+            </div>
+          </div>
+
+          {/* Bottom Line */}
+          <div className="text-center">
+            <Card className="p-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 inline-block">
+              <p className="text-xl font-bold text-white">
+                The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
+              </p>
+            </Card>
+          </div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
