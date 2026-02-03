@@ -297,7 +297,11 @@ Deno.serve(async (req) => {
 
     return Response.json({ leads: filtered });
   } catch (error) {
-    console.error('Filter error:', error);
-    return Response.json({ error: error.message, leads: [] }, { status: 500 });
+    console.error('getFilteredLeads error:', error);
+    return Response.json({ 
+      error: error.message, 
+      stack: error.stack,
+      leads: [] 
+    }, { status: 500 });
   }
 });
