@@ -42,6 +42,10 @@ export default function CheckoutSuccess() {
       return;
     }
 
+    if (!user?.email) {
+      return;
+    }
+
     // Poll for order creation (webhook might take a moment)
     const interval = setInterval(() => {
       refetch();
@@ -50,13 +54,13 @@ export default function CheckoutSuccess() {
     const timeout = setTimeout(() => {
       clearInterval(interval);
       setOrderReady(true);
-    }, 10000);
+    }, 30000); // Increased to 30 seconds
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [latestOrder, refetch]);
+  }, [latestOrder, refetch, user]);
 
   const downloadCSV = () => {
     if (!latestOrder?.lead_data_snapshot) return;
