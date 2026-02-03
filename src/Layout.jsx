@@ -104,7 +104,7 @@ export default function Layout({ children }) {
             {/* Logo */}
             <Link to={createPageUrl('Home')} className="flex items-center gap-2">
               <img 
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/5053c725c_YesterdaysLeadsFaviconFULLLOGO.png"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/297055a20_YesterdaysLeadsMAINLOGOWHITE.png"
                 alt="Yesterday's Leads"
                 className="h-10 sm:h-12 w-auto"
               />
@@ -247,7 +247,7 @@ export default function Layout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/5053c725c_YesterdaysLeadsFaviconFULLLOGO.png"
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/697a2f6ba7fe7cab15e8500b/297055a20_YesterdaysLeadsMAINLOGOWHITE.png"
               alt="Yesterday's Leads"
               className="h-8 w-auto"
             />
