@@ -51,12 +51,9 @@ export default function BrowseLeads() {
     queryFn: async () => {
       try {
         const response = await base44.functions.invoke('getFilteredLeads', { filters });
-        console.log('Response status:', response.status);
-        console.log('Response data:', response.data);
         return response.data?.leads || [];
       } catch (err) {
-        console.error('Function call error:', err);
-        console.error('Error response:', err.response?.data);
+        console.error('Failed to load leads');
         throw err;
       }
     },
