@@ -53,14 +53,18 @@ Deno.serve(async (req) => {
     
       const range = `'${sheetName}'!A:Z`;
       const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
         { headers: { 'Authorization': `Bearer ${accessToken}` } }
       );
 
-      if (!response.ok) continue;
+      if (!response.ok) {
+        console.error(`Failed to fetch ${leadType} sheet:`, response.status, await response.text());
+        continue;
+      }
 
       const data = await response.json();
       const rows = data.values || [];
+      console.log(`Fetched ${rows.length} rows from ${leadType} sheet`);
       if (rows.length < 2) continue;
 
       const headers = rows[0];
