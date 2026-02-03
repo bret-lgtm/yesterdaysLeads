@@ -289,23 +289,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Limit response size to prevent timeouts (return max 100 leads with minimal data)
-    const limitedLeads = filtered.slice(0, 100).map(lead => ({
-      id: lead.id,
-      external_id: lead.external_id,
-      first_name: lead.first_name,
-      last_name_initial: lead.last_name_initial,
-      email: lead.email,
-      phone: lead.phone,
-      state: lead.state,
-      zip_code: lead.zip_code,
-      city: lead.city,
-      lead_type: lead.lead_type,
-      age_in_days: lead.age_in_days
-    }));
-    
     return Response.json({ 
-      leads: limitedLeads,
+      leads: filtered,
       total: filtered.length
     });
   } catch (error) {
