@@ -151,7 +151,9 @@ export default function BrowseLeads() {
       }));
 
       console.log('Creating items:', itemsToCreate.length);
-      await base44.entities.CartItem.bulkCreate(itemsToCreate);
+      console.log('Items to create:', itemsToCreate);
+      const result = await base44.entities.CartItem.bulkCreate(itemsToCreate);
+      console.log('Bulk create result:', result);
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
     } else {
