@@ -127,10 +127,28 @@ export default function BrowseLeads() {
 
   // Bulk add to cart
   const handleBulkAddToCart = async () => {
-    for (const lead of selectedLeads) {
-      if (!cartLeadIds.includes(lead.id)) {
+    const leadsToAdd = selectedLeads.filter(lead => !cartLeadIds.includes(lead.id));
+    
+    if (user) {
+      // Bulk create for authenticated users
+      const itemsToCreate = leadsToAdd.map(lead => ({
+        user_email: user.email,
+        lead_id: lead.id,
+        lead_type: lead.lead_type,
+        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+        state: lead.state,
+        zip_code: lead.zip_code,
+        age_in_days: lead.age_in_days,
+        price: calculateLeadPrice(lead, pricingTiers)
+      }));
+
+      await base44.entities.CartItem.bulkCreate(itemsToCreate);
+      queryClient.invalidateQueries({ queryKey: ['cart'] });
+      toast.success(`${leadsToAdd.length} leads added to cart`);
+    } else {
+      // Add to localStorage for anonymous users
+      for (const lead of leadsToAdd) {
         const price = calculateLeadPrice(lead, pricingTiers);
-        
         await addToCart({
           lead_id: lead.id,
           lead_type: lead.lead_type,
@@ -142,6 +160,7 @@ export default function BrowseLeads() {
         });
       }
     }
+    
     setSelectedLeads([]);
   };
 
