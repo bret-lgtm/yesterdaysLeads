@@ -9,17 +9,28 @@ export function useCart(user) {
   const queryClient = useQueryClient();
   const [localCart, setLocalCart] = useState([]);
 
-  // Load localStorage cart on mount
+  // Load localStorage cart on mount and listen for updates
   useEffect(() => {
     if (!user) {
-      const stored = localStorage.getItem(CART_STORAGE_KEY);
-      if (stored) {
-        try {
-          setLocalCart(JSON.parse(stored));
-        } catch (e) {
-          localStorage.removeItem(CART_STORAGE_KEY);
+      const loadCart = () => {
+        const stored = localStorage.getItem(CART_STORAGE_KEY);
+        if (stored) {
+          try {
+            setLocalCart(JSON.parse(stored));
+          } catch (e) {
+            localStorage.removeItem(CART_STORAGE_KEY);
+          }
+        } else {
+          setLocalCart([]);
         }
-      }
+      };
+
+      loadCart();
+      window.addEventListener('cartUpdated', loadCart);
+
+      return () => {
+        window.removeEventListener('cartUpdated', loadCart);
+      };
     }
   }, [user]);
 
