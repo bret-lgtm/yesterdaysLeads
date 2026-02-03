@@ -3,6 +3,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Handle OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { status: 200 });
+    }
+    
     const { filters = {} } = await req.json();
 
     // Get access token for Google Sheets
