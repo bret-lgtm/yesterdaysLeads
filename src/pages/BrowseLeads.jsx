@@ -138,22 +138,19 @@ export default function BrowseLeads() {
     }
     
     if (user) {
-      // Bulk create for authenticated users
-      const itemsToCreate = leadsToAdd.map(lead => ({
-        user_email: user.email,
-        lead_id: lead.id,
-        lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-        state: lead.state,
-        zip_code: String(lead.zip_code || ''),
-        age_in_days: lead.age_in_days,
-        price: calculateLeadPrice(lead, pricingTiers)
-      }));
-
-      console.log('Creating items:', itemsToCreate.length);
-      console.log('Items to create:', itemsToCreate);
-      const result = await base44.entities.CartItem.bulkCreate(itemsToCreate);
-      console.log('Bulk create result:', result);
+      // Create items one by one for authenticated users (RLS compatibility)
+      for (const lead of leadsToAdd) {
+        await base44.entities.CartItem.create({
+          user_email: user.email,
+          lead_id: lead.id,
+          lead_type: lead.lead_type,
+          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+          state: lead.state,
+          zip_code: String(lead.zip_code || ''),
+          age_in_days: lead.age_in_days,
+          price: calculateLeadPrice(lead, pricingTiers)
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
     } else {
@@ -197,18 +194,18 @@ export default function BrowseLeads() {
 
     if (user) {
       // Bulk create for database
-      const itemsToCreate = leadsToAdd.map(lead => ({
-        user_email: user.email,
-        lead_id: lead.id,
-        lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-        state: lead.state,
-        zip_code: String(lead.zip_code || ''),
-        age_in_days: lead.age_in_days,
-        price: calculateLeadPrice(lead, pricingTiers)
-      }));
-
-      await base44.entities.CartItem.bulkCreate(itemsToCreate);
+      for (const lead of leadsToAdd) {
+        await base44.entities.CartItem.create({
+          user_email: user.email,
+          lead_id: lead.id,
+          lead_type: lead.lead_type,
+          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+          state: lead.state,
+          zip_code: String(lead.zip_code || ''),
+          age_in_days: lead.age_in_days,
+          price: calculateLeadPrice(lead, pricingTiers)
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
     } else {
