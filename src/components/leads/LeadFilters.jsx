@@ -103,12 +103,12 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center gap-1">
-            <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Distance (miles)</Label>
+          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+            Distance (miles)
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button type="button" className="inline-flex">
+                  <button type="button" className="inline-flex ml-1 align-middle">
                     <Info className="w-3 h-3 text-slate-400" />
                   </button>
                 </TooltipTrigger>
@@ -117,7 +117,7 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          </Label>
           <Input
             type="number"
             placeholder="Radius"
