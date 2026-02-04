@@ -9,7 +9,7 @@ const typeLabels = {
   life: "Life",
   medicare: "Medicare",
   final_expense: "Final Exp.",
-  veteran_life: "Veteran Life",
+  veteran_life: "Vet Life",
   retirement: "Retirement"
 };
 
