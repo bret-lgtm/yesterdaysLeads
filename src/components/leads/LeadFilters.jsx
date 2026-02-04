@@ -103,19 +103,21 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1">
-            Distance (miles)
+          <div className="flex items-center gap-1">
+            <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Distance (miles)</Label>
             <TooltipProvider>
               <Tooltip>
-                <TooltipTrigger>
-                  <Info className="w-3 h-3 text-slate-400" />
+                <TooltipTrigger asChild>
+                  <button type="button" className="inline-flex">
+                    <Info className="w-3 h-3 text-slate-400" />
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">Use this to expand on Zip Code</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </Label>
+          </div>
           <Input
             type="number"
             placeholder="Radius"
