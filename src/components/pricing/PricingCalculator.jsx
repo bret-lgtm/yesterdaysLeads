@@ -18,8 +18,8 @@ export function calculateLeadPrice(lead, pricingTiers = []) {
   
   // Check if lead has Unknown city or state
   const hasUnknownLocation = 
-    (lead.city && lead.city.toLowerCase() === 'unknown') || 
-    (lead.state && lead.state.toLowerCase() === 'unknown');
+    (lead.city?.toLowerCase() === 'unknown') || 
+    (lead.state?.toLowerCase() === 'unknown');
   
   // Check for custom pricing tier
   const customTier = pricingTiers.find(tier => 
