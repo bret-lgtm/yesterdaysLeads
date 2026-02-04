@@ -3,8 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Package, Clock, DollarSign, TrendingUp } from "lucide-react";
 
 export default function InventoryStats({ leads }) {
-  const totalLeads = leads.filter(l => l.status === 'available').length;
+  const availableLeads = leads.filter(l => l.status === 'available').length;
   const soldLeads = leads.filter(l => l.status === 'sold').length;
+  const totalLeads = leads.length;
   
   const avgAge = leads.length > 0 
     ? Math.round(leads.reduce((sum, l) => {
@@ -31,10 +32,10 @@ export default function InventoryStats({ leads }) {
   const stats = [
     {
       label: "Available Leads",
-      value: totalLeads.toLocaleString(),
+      value: availableLeads.toLocaleString(),
       icon: Package,
       color: "bg-emerald-50 text-emerald-600",
-      trend: `${soldLeads} sold`
+      trend: "ready to sell"
     },
     {
       label: "Average Age",
@@ -45,17 +46,17 @@ export default function InventoryStats({ leads }) {
     },
     {
       label: "Total Inventory",
-      value: leads.length.toLocaleString(),
+      value: totalLeads.toLocaleString(),
       icon: TrendingUp,
       color: "bg-violet-50 text-violet-600",
-      trend: "all statuses"
+      trend: "all leads"
     },
     {
-      label: "Conversion Rate",
-      value: leads.length > 0 ? `${((soldLeads / leads.length) * 100).toFixed(1)}%` : '0%',
+      label: "Leads Sold",
+      value: soldLeads.toLocaleString(),
       icon: DollarSign,
       color: "bg-amber-50 text-amber-600",
-      trend: "sold / total"
+      trend: "completed sales"
     }
   ];
 
