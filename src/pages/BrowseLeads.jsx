@@ -340,7 +340,7 @@ export default function BrowseLeads() {
                 variant="outline"
                 className="rounded-xl border-slate-200"
               >
-                {paginatedLeads.every(lead => selectedLeads.find(l => l.id === lead.id)) ? 'Unselect Page' : 'Select Page'}
+                {paginatedLeads.every(lead => selectedLeads.find(l => l.id === lead.id)) ? 'Unselect All on Page' : 'Select All on Page'}
               </Button>
             )}
 
