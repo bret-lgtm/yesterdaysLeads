@@ -34,7 +34,6 @@ export default function InventoryStats({ leads }) {
             <div>
               <p className="text-sm text-slate-500 mb-1">{stat.label}</p>
               <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
-              <p className="text-xs text-slate-400 mt-1">{stat.trend}</p>
             </div>
             <div className={`h-11 w-11 rounded-xl ${stat.color} flex items-center justify-center`}>
               <stat.icon className="w-5 h-5" />
