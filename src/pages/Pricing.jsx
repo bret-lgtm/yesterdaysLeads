@@ -79,82 +79,130 @@ export default function Pricing() {
           transition={{ duration: 0.5 }}
         >
           <Card className="rounded-2xl border-slate-200/60 overflow-hidden mb-12">
-            <div className="p-6 border-b border-slate-100">
-              <h2 className="text-xl font-semibold text-slate-900">Price Per Lead by Type & Age</h2>
+            <div className="p-4 sm:p-6 border-b border-slate-100">
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-900">Price Per Lead by Type & Age</h2>
             </div>
             {isLoading ? (
               <div className="p-8 text-center text-slate-500">Loading pricing...</div>
             ) : leadTypesWithPricing.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50">
-                      <TableHead className="font-semibold">Lead Type</TableHead>
-                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">1-3 days</TableHead>
-                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">4-14 days</TableHead>
-                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">15-30 days</TableHead>
-                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">31-90 days</TableHead>
-                      <TableHead className="text-center font-semibold text-xs whitespace-nowrap">91+ days</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {leadTypesWithPricing.map((type) => (
-                      <TableRow key={type} className="hover:bg-slate-50 transition-colors">
-                        <TableCell className="font-medium whitespace-nowrap">
-                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}`} className="text-slate-900 hover:text-emerald-600 transition-colors">
-                            {typeLabels[type]}
-                          </Link>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pricingByType[type].tier1 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=yesterday`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
-                              ${pricingByType[type].tier1.toFixed(2)}
-                            </Link>
-                          ) : (
-                            <span className="text-base font-semibold text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pricingByType[type].tier2 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=4-14`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
-                              ${pricingByType[type].tier2.toFixed(2)}
-                            </Link>
-                          ) : (
-                            <span className="text-base font-semibold text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pricingByType[type].tier3 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=15-30`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
-                              ${pricingByType[type].tier3.toFixed(2)}
-                            </Link>
-                          ) : (
-                            <span className="text-base font-semibold text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pricingByType[type].tier4 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=31-90`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
-                              ${pricingByType[type].tier4.toFixed(2)}
-                            </Link>
-                          ) : (
-                            <span className="text-base font-semibold text-slate-400">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {pricingByType[type].tier5 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=91%2B`} className="text-base font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
-                              ${pricingByType[type].tier5.toFixed(2)}
-                            </Link>
-                          ) : (
-                            <span className="text-base font-semibold text-slate-400">-</span>
-                          )}
-                        </TableCell>
+              <>
+                {/* Desktop Table */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="font-semibold">Lead Type</TableHead>
+                        <TableHead className="text-center font-semibold text-xs whitespace-nowrap">1-3 days</TableHead>
+                        <TableHead className="text-center font-semibold text-xs whitespace-nowrap">4-14 days</TableHead>
+                        <TableHead className="text-center font-semibold text-xs whitespace-nowrap">15-30 days</TableHead>
+                        <TableHead className="text-center font-semibold text-xs whitespace-nowrap">31-90 days</TableHead>
+                        <TableHead className="text-center font-semibold text-xs whitespace-nowrap">91+ days</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {leadTypesWithPricing.map((type) => (
+                        <TableRow key={type} className="hover:bg-slate-50 transition-colors">
+                          <TableCell className="font-medium whitespace-nowrap">
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}`} className="text-slate-900 hover:text-emerald-600 transition-colors">
+                              {typeLabels[type]}
+                            </Link>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pricingByType[type].tier1 ? (
+                              <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=yesterday`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                                ${pricingByType[type].tier1.toFixed(2)}
+                              </Link>
+                            ) : (
+                              <span className="text-base font-semibold text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pricingByType[type].tier2 ? (
+                              <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=4-14`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                                ${pricingByType[type].tier2.toFixed(2)}
+                              </Link>
+                            ) : (
+                              <span className="text-base font-semibold text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pricingByType[type].tier3 ? (
+                              <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=15-30`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                                ${pricingByType[type].tier3.toFixed(2)}
+                              </Link>
+                            ) : (
+                              <span className="text-base font-semibold text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pricingByType[type].tier4 ? (
+                              <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=31-90`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                                ${pricingByType[type].tier4.toFixed(2)}
+                              </Link>
+                            ) : (
+                              <span className="text-base font-semibold text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pricingByType[type].tier5 ? (
+                              <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=91%2B`} className="text-base font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                                ${pricingByType[type].tier5.toFixed(2)}
+                              </Link>
+                            ) : (
+                              <span className="text-base font-semibold text-slate-400">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="sm:hidden divide-y divide-slate-100">
+                  {leadTypesWithPricing.map((type) => (
+                    <div key={type} className="p-4">
+                      <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}`} className="block mb-3">
+                        <h3 className="text-lg font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                          {typeLabels[type]}
+                        </h3>
+                      </Link>
+                      <div className="space-y-2">
+                        {pricingByType[type].tier1 && (
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=yesterday`} className="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors">
+                            <span className="text-sm text-slate-600">1-3 days</span>
+                            <span className="text-base font-semibold text-slate-900">${pricingByType[type].tier1.toFixed(2)}</span>
+                          </Link>
+                        )}
+                        {pricingByType[type].tier2 && (
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=4-14`} className="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors">
+                            <span className="text-sm text-slate-600">4-14 days</span>
+                            <span className="text-base font-semibold text-slate-900">${pricingByType[type].tier2.toFixed(2)}</span>
+                          </Link>
+                        )}
+                        {pricingByType[type].tier3 && (
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=15-30`} className="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors">
+                            <span className="text-sm text-slate-600">15-30 days</span>
+                            <span className="text-base font-semibold text-slate-900">${pricingByType[type].tier3.toFixed(2)}</span>
+                          </Link>
+                        )}
+                        {pricingByType[type].tier4 && (
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=31-90`} className="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors">
+                            <span className="text-sm text-slate-600">31-90 days</span>
+                            <span className="text-base font-semibold text-slate-900">${pricingByType[type].tier4.toFixed(2)}</span>
+                          </Link>
+                        )}
+                        {pricingByType[type].tier5 && (
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=91%2B`} className="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 -mx-2 transition-colors">
+                            <span className="text-sm text-slate-600">91+ days</span>
+                            <span className="text-base font-semibold text-emerald-600">${pricingByType[type].tier5.toFixed(2)}</span>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="p-8 text-center text-slate-500">No pricing tiers configured yet.</div>
             )}
