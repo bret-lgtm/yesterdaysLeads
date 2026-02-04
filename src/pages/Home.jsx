@@ -170,8 +170,8 @@ export default function Home() {
             <div className="grid md:grid-cols-2 gap-6">
               <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <BarChart3 className="w-5 h-5 text-blue-600" />
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-emerald-700" />
                   </div>
                   <h4 className="text-lg font-semibold text-slate-900">Capped Distribution</h4>
                 </div>
@@ -182,8 +182,8 @@ export default function Home() {
 
               <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-violet-100 flex items-center justify-center flex-shrink-0">
-                    <Shield className="w-5 h-5 text-violet-600" />
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Shield className="w-5 h-5 text-emerald-700" />
                   </div>
                   <h4 className="text-lg font-semibold text-slate-900">Audit-Ready Compliance</h4>
                 </div>
@@ -194,8 +194,8 @@ export default function Home() {
 
               <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-5 h-5 text-emerald-600" />
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-emerald-700" />
                   </div>
                   <h4 className="text-lg font-semibold text-slate-900">Phone-Verified Connectivity</h4>
                 </div>
@@ -206,8 +206,8 @@ export default function Home() {
 
               <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
                 <div className="flex items-start gap-4 mb-3">
-                  <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-5 h-5 text-amber-600" />
+                  <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-emerald-700" />
                   </div>
                   <h4 className="text-lg font-semibold text-slate-900">Organic Intent Only</h4>
                 </div>
