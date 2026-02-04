@@ -17,11 +17,12 @@ import { Input } from "@/components/ui/input";
 const ITEMS_PER_PAGE = 20;
 
 export default function BrowseLeads() {
-  // Get lead_type from URL params if present
+  // Get lead_type and age_range from URL params if present
   const urlParams = new URLSearchParams(window.location.search);
   const urlLeadType = urlParams.get('lead_type');
+  const urlAgeRange = urlParams.get('age_range');
   
-  const [filters, setFilters] = useState({ age_range: 'all', lead_type: urlLeadType || 'all' });
+  const [filters, setFilters] = useState({ age_range: urlAgeRange || 'all', lead_type: urlLeadType || 'all' });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
