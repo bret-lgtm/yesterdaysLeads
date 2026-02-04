@@ -51,18 +51,18 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={`p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${
+      <Card className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 hover:shadow-md ${
         isSelected ? 'border-emerald-600 bg-emerald-50/30 shadow-md shadow-emerald-500/10' : 'border-slate-200/60 bg-white'
       }`}>
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onSelect(lead)}
-            className="mt-1 h-5 w-5 rounded-md border-slate-300"
+            className="mt-1 h-5 w-5 rounded-md border-slate-300 sm:order-1"
           />
           
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-3">
+          <div className="flex-1 min-w-0 w-full sm:order-2">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
               <Badge className={`${typeColors[lead.lead_type]} border font-medium px-2.5 py-0.5`}>
                 {typeLabels[lead.lead_type]}
               </Badge>
@@ -82,11 +82,11 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
               </div>
             </div>
             
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">
+            <h3 className="font-semibold text-slate-900 text-lg mb-3">
               {lead.first_name} {lead.last_name_initial}.
             </h3>
             
-            <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
+            <div className="flex flex-col gap-2 text-sm text-slate-600 mb-4 sm:mb-0">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
                 {(String(lead.city || '').toLowerCase() === 'unknown' || String(lead.state || '').toLowerCase() === 'unknown') 
@@ -106,8 +106,8 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
             </div>
           </div>
           
-          <div className="text-right flex flex-col items-end gap-3">
-            <div>
+          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 w-full sm:w-auto sm:order-3">
+            <div className="sm:text-right">
               <span className="text-2xl font-bold text-slate-900">${price.toFixed(2)}</span>
               <span className="text-xs text-slate-400 block">per lead</span>
             </div>
