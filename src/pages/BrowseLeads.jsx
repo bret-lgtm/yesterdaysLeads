@@ -216,6 +216,14 @@ export default function BrowseLeads() {
     );
   };
 
+  const handleSelectAll = () => {
+    if (selectedLeads.length === sortedLeads.length) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(sortedLeads);
+    }
+  };
+
   const handleQuantityAddToCart = async () => {
     const qty = parseInt(quantity);
     if (!qty || qty <= 0) return;
@@ -315,6 +323,17 @@ export default function BrowseLeads() {
           </p>
           
           <div className="flex items-center gap-3">
+            {/* Select All Button */}
+            {sortedLeads.length > 0 && (
+              <Button
+                onClick={handleSelectAll}
+                variant="outline"
+                className="rounded-xl border-slate-200"
+              >
+                {selectedLeads.length === sortedLeads.length ? 'Unselect All' : 'Select All'}
+              </Button>
+            )}
+
             {/* Quantity Selector */}
             <div className="flex items-center gap-2">
               <Input
