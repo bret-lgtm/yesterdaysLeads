@@ -402,7 +402,7 @@ export default function BrowseLeads() {
                       lead_type: lead.lead_type,
                       lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
                       state: lead.state,
-                      zip_code: lead.zip_code,
+                      zip_code: String(lead.zip_code || ''),
                       age_in_days: lead.age_in_days,
                       price
                     });
