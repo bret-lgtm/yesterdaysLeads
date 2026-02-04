@@ -99,8 +99,12 @@ export default function Pricing() {
                   </TableHeader>
                   <TableBody>
                     {leadTypesWithPricing.map((type) => (
-                      <TableRow key={type}>
-                        <TableCell className="font-medium whitespace-nowrap">{typeLabels[type]}</TableCell>
+                      <TableRow 
+                        key={type} 
+                        className="hover:bg-slate-50 cursor-pointer transition-colors"
+                        onClick={() => window.location.href = createPageUrl('BrowseLeads') + `?lead_type=${type}`}
+                      >
+                        <TableCell className="font-medium whitespace-nowrap text-slate-900">{typeLabels[type]}</TableCell>
                         <TableCell className="text-center">
                           <span className="text-base font-semibold text-slate-900">
                             {pricingByType[type].tier1 ? `$${pricingByType[type].tier1.toFixed(2)}` : '-'}
