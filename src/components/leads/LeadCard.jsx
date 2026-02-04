@@ -89,7 +89,9 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
             <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {lead.state?.toLowerCase() === 'unknown' ? lead.zip_code : `${lead.state} ${lead.zip_code}`}
+                {(lead.city?.toLowerCase() === 'unknown' || lead.state?.toLowerCase() === 'unknown') 
+                  ? 'Unknown' 
+                  : `${lead.state} ${lead.zip_code}`}
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
