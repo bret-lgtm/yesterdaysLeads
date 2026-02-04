@@ -90,7 +90,21 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
                 {(String(lead.city || '').toLowerCase() === 'unknown' || String(lead.state || '').toLowerCase() === 'unknown') 
-                  ? 'Unknown' 
+                  ? (
+                    <div className="flex items-center gap-1">
+                      Unknown
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Info className="w-3 h-3 text-emerald-600" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs font-medium">Leads with incomplete City/State are 50% Off!</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )
                   : `${lead.state} ${lead.zip_code}`}
               </div>
               <div className="flex items-center gap-2">

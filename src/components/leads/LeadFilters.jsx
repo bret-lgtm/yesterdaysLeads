@@ -78,10 +78,15 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All States</SelectItem>
+              <SelectItem value="Unknown">
+                <div className="flex items-center gap-2">
+                  Unknown
+                  <span className="text-xs text-emerald-600 font-medium">50% Off!</span>
+                </div>
+              </SelectItem>
               {US_STATES.map(s => (
                 <SelectItem key={s} value={s}>{s}</SelectItem>
               ))}
-              <SelectItem value="Unknown">Unknown</SelectItem>
             </SelectContent>
           </Select>
         </div>
