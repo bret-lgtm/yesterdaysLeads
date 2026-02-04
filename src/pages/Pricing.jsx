@@ -100,7 +100,11 @@ export default function Pricing() {
                   <TableBody>
                     {leadTypesWithPricing.map((type) => (
                       <TableRow key={type} className="hover:bg-slate-50 transition-colors">
-                        <TableCell className="font-medium whitespace-nowrap text-slate-900">{typeLabels[type]}</TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}`} className="text-slate-900 hover:text-emerald-600 transition-colors">
+                            {typeLabels[type]}
+                          </Link>
+                        </TableCell>
                         <TableCell className="text-center">
                           {pricingByType[type].tier1 ? (
                             <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=1-3`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
