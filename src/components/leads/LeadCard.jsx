@@ -89,7 +89,7 @@ export default function LeadCard({ lead, price, isSelected, onSelect, isInCart, 
             <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                {(lead.city?.toLowerCase() === 'unknown' || lead.state?.toLowerCase() === 'unknown') 
+                {(String(lead.city || '').toLowerCase() === 'unknown' || String(lead.state || '').toLowerCase() === 'unknown') 
                   ? 'Unknown' 
                   : `${lead.state} ${lead.zip_code}`}
               </div>
