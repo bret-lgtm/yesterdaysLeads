@@ -107,7 +107,7 @@ export default function Pricing() {
                         </TableCell>
                         <TableCell className="text-center">
                           {pricingByType[type].tier1 ? (
-                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=1-3`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=yesterday`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
                               ${pricingByType[type].tier1.toFixed(2)}
                             </Link>
                           ) : (
