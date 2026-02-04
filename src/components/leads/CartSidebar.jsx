@@ -2,13 +2,12 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ShoppingCart, X, Trash2, CreditCard, Tag } from "lucide-react";
+import { ShoppingCart, X, Trash2, CreditCard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onToggle, onRemoveAll }) {
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
-  const discountAmount = bulkDiscount > 0 ? subtotal * (bulkDiscount / 100) : 0;
-  const total = subtotal - discountAmount;
+  const total = subtotal;
 
   // Group by lead type, then by age
   const groupedItems = React.useMemo(() => {
@@ -134,15 +133,6 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
               {/* Footer */}
               {items.length > 0 && (
                 <div className="p-6 border-t border-slate-100 bg-slate-50/50">
-                  {bulkDiscount > 0 && (
-                    <div className="flex items-center justify-between mb-3 text-emerald-600">
-                      <div className="flex items-center gap-2">
-                        <Tag className="w-4 h-4" />
-                        <span className="text-sm font-medium">Bulk Discount ({bulkDiscount}%)</span>
-                      </div>
-                      <span className="font-medium">-${discountAmount.toFixed(2)}</span>
-                    </div>
-                  )}
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-slate-600">Total</span>
                     <span className="text-2xl font-bold text-slate-900">${total.toFixed(2)}</span>
