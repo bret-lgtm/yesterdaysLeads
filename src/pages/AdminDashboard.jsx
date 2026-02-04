@@ -25,10 +25,18 @@ export default function AdminDashboard() {
     queryFn: () => base44.auth.me()
   });
 
-  const { data: leads = [], isLoading: leadsLoading, refetch: refetchLeads } = useQuery({
-    queryKey: ['allLeads'],
-    queryFn: () => base44.entities.Lead.list()
+  const { data: sheetLeadsResponse, isLoading: leadsLoading, refetch: refetchLeads } = useQuery({
+    queryKey: ['sheetLeads'],
+    queryFn: async () => {
+      const response = await base44.functions.invoke('getLeadsFromSheets', {
+        filters: {},
+        include_last_names: true
+      });
+      return response.data;
+    }
   });
+
+  const leads = sheetLeadsResponse?.leads || [];
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ['allOrders'],
@@ -44,7 +52,7 @@ export default function AdminDashboard() {
   const totalLeadsSold = orders.reduce((sum, o) => sum + (o.lead_count || 0), 0);
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['allLeads'] });
+    queryClient.invalidateQueries({ queryKey: ['sheetLeads'] });
   };
 
   if (user?.role !== 'admin') {

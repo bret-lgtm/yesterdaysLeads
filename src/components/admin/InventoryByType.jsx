@@ -15,9 +15,7 @@ const colors = ['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#f59e0b', '#64748b'
 
 export default function InventoryByType({ leads }) {
   const byType = leads.reduce((acc, lead) => {
-    if (lead.status === 'available') {
-      acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
-    }
+    acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
     return acc;
   }, {});
 

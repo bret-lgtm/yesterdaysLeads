@@ -11,11 +11,9 @@ const ageRanges = [
 ];
 
 export default function InventoryByAge({ leads }) {
-  const availableLeads = leads.filter(l => l.status === 'available');
-  
   const data = ageRanges.map(range => {
-    const count = availableLeads.filter(lead => {
-      const age = Math.floor((new Date() - new Date(lead.upload_date)) / (1000 * 60 * 60 * 24));
+    const count = leads.filter(lead => {
+      const age = lead.age_in_days || 0;
       return age >= range.min && age <= range.max;
     }).length;
     return { name: range.label, value: count, color: range.color };
