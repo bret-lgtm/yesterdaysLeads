@@ -16,6 +16,11 @@ const DEFAULT_PRICING = {
 export function calculateLeadPrice(lead, pricingTiers = []) {
   const ageInDays = Math.max(1, lead.age_in_days || 1);
   
+  // Check if lead has Unknown city or state
+  const hasUnknownLocation = 
+    (lead.city && lead.city.toLowerCase() === 'unknown') || 
+    (lead.state && lead.state.toLowerCase() === 'unknown');
+  
   // Check for custom pricing tier
   const customTier = pricingTiers.find(tier => 
     tier.lead_type === lead.lead_type &&
@@ -23,29 +28,34 @@ export function calculateLeadPrice(lead, pricingTiers = []) {
     ageInDays <= tier.age_range_max
   );
 
+  let basePrice;
+
   if (customTier) {
-    return customTier.base_price;
+    basePrice = customTier.base_price;
+  } else {
+    // Default pricing logic
+    const typePrice = DEFAULT_PRICING[lead.lead_type] || DEFAULT_PRICING.auto;
+    
+    // Special pricing logic for retirement leads
+    if (lead.lead_type === 'retirement') {
+      if (ageInDays <= 3) basePrice = 29.00;
+      else if (ageInDays <= 14) basePrice = 19.00;
+      else if (ageInDays <= 30) basePrice = 14.00;
+      else if (ageInDays <= 90) basePrice = 9.00;
+      else basePrice = 4.50;
+    } else {
+      if (ageInDays <= 30) {
+        basePrice = typePrice.fresh;
+      } else if (ageInDays <= 90) {
+        basePrice = typePrice.base;
+      } else {
+        basePrice = typePrice.aged;
+      }
+    }
   }
 
-  // Default pricing logic
-  const typePrice = DEFAULT_PRICING[lead.lead_type] || DEFAULT_PRICING.auto;
-  
-  // Special pricing logic for retirement leads
-  if (lead.lead_type === 'retirement') {
-    if (ageInDays <= 3) return 29.00;
-    if (ageInDays <= 14) return 19.00;
-    if (ageInDays <= 30) return 14.00;
-    if (ageInDays <= 90) return 9.00;
-    return 4.50;
-  }
-  
-  if (ageInDays <= 30) {
-    return typePrice.fresh;
-  } else if (ageInDays <= 90) {
-    return typePrice.base;
-  } else {
-    return typePrice.aged;
-  }
+  // Apply 50% discount for Unknown location
+  return hasUnknownLocation ? basePrice * 0.5 : basePrice;
 }
 
 
