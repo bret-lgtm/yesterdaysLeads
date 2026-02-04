@@ -178,6 +178,27 @@ export default function Pricing() {
           </Card>
         </motion.div>
 
+        {/* Unknown Leads Info Box */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          <Card className="rounded-2xl border-amber-200 bg-amber-50 p-8 mb-12">
+            <div className="flex items-start gap-4">
+              <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <Badge className="bg-amber-600 text-white border-0 px-2 py-0.5 text-xs">50% OFF</Badge>
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900 mb-3">About Leads with Unknown States</h2>
+                <p className="text-slate-700 leading-relaxed">
+                  Leads with unknown City and State fields are the result of the prospect entering an incorrect or incomplete ZIP code, leaving the City and State fields blank. Due to the unconfirmed geographic information, we offer these leads at <span className="font-semibold text-amber-700">50% OFF</span> their standard price. The contact info is still verified—the price is just cut in half.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
         {/* CTA */}
         <div className="text-center">
           <Link to={createPageUrl('BrowseLeads')}>
