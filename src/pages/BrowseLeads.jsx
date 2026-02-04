@@ -25,7 +25,7 @@ export default function BrowseLeads() {
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortOption, setSortOption] = useState('default');
+  const [sortOption, setSortOption] = useState('most-popular');
   const [quantity, setQuantity] = useState('');
 
   const queryClient = useQueryClient();
@@ -68,6 +68,12 @@ export default function BrowseLeads() {
     queryFn: () => base44.entities.PricingTier.list()
   });
 
+  // Fetch order data to determine most popular lead types
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => base44.entities.Order.list()
+  });
+
   const cartLeadIds = cartItems.map(item => item.lead_id);
 
   // Helper function to get tier from age
@@ -90,11 +96,33 @@ export default function BrowseLeads() {
     return !soldInCurrentTier;
   });
 
+  // Calculate lead type popularity from orders
+  const leadTypePopularity = React.useMemo(() => {
+    const popularity = {};
+    orders.forEach(order => {
+      if (order.lead_data_snapshot) {
+        order.lead_data_snapshot.forEach(lead => {
+          const type = lead.lead_type;
+          if (type) {
+            popularity[type] = (popularity[type] || 0) + 1;
+          }
+        });
+      }
+    });
+    return popularity;
+  }, [orders]);
+
   // Apply sorting
   const sortedLeads = React.useMemo(() => {
     const sorted = [...filteredLeads];
     
-    if (sortOption === 'age-old-new') {
+    if (sortOption === 'most-popular') {
+      sorted.sort((a, b) => {
+        const popA = leadTypePopularity[a.lead_type] || 0;
+        const popB = leadTypePopularity[b.lead_type] || 0;
+        return popB - popA;
+      });
+    } else if (sortOption === 'age-old-new') {
       sorted.sort((a, b) => (b.age_in_days || 0) - (a.age_in_days || 0));
     } else if (sortOption === 'age-new-old') {
       sorted.sort((a, b) => (a.age_in_days || 0) - (b.age_in_days || 0));
@@ -113,7 +141,7 @@ export default function BrowseLeads() {
     }
     
     return sorted;
-  }, [filteredLeads, sortOption, pricingTiers]);
+  }, [filteredLeads, sortOption, pricingTiers, leadTypePopularity]);
 
   // Pagination
   const totalPages = Math.ceil(sortedLeads.length / ITEMS_PER_PAGE);
@@ -323,7 +351,7 @@ export default function BrowseLeads() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="most-popular">Most Popular</SelectItem>
                 <SelectItem value="age-old-new">Age: Old → New</SelectItem>
                 <SelectItem value="age-new-old">Age: New → Old</SelectItem>
                 <SelectItem value="price-low-high">Price: Low → High</SelectItem>
