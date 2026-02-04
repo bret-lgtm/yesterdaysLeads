@@ -25,6 +25,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { migrateLocalCartToDatabase } from '../components/cartMigration';
+import ChatWidget from '../components/chat/ChatWidget';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
@@ -241,6 +242,9 @@ export default function Layout({ children }) {
       <main>
         {children}
       </main>
+
+      {/* Chat Widget */}
+      <ChatWidget />
 
       {/* Footer */}
       <footer className="bg-emerald-700 border-t border-emerald-800 mt-auto">
