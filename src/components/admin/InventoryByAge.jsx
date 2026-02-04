@@ -3,11 +3,11 @@ import { Card } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 
 const ageRanges = [
-  { min: 0, max: 7, label: '0-7 days', color: '#10b981' },
-  { min: 8, max: 14, label: '8-14 days', color: '#3b82f6' },
-  { min: 15, max: 30, label: '15-30 days', color: '#f59e0b' },
-  { min: 31, max: 60, label: '31-60 days', color: '#f43f5e' },
-  { min: 61, max: Infinity, label: '60+ days', color: '#64748b' }
+  { min: 0, max: 3, label: 'Yesterday (72hrs)', color: '#10b981' },
+  { min: 4, max: 14, label: '4-14 Days', color: '#3b82f6' },
+  { min: 15, max: 30, label: '15-30 Days', color: '#f59e0b' },
+  { min: 31, max: 90, label: '31-90 Days', color: '#f43f5e' },
+  { min: 91, max: Infinity, label: '91+ Days', color: '#64748b' }
 ];
 
 export default function InventoryByAge({ leads }) {
