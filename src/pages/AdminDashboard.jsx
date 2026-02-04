@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import InventoryStats from '../components/admin/InventoryStats';
 import InventoryByType from '../components/admin/InventoryByType';
 import InventoryByAge from '../components/admin/InventoryByAge';
+import SoldByType from '../components/admin/SoldByType';
 import CSVUploader from '../components/admin/CSVUploader';
 import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
 import { Card } from "@/components/ui/card";
@@ -158,6 +159,9 @@ export default function AdminDashboard() {
                 <div className="grid lg:grid-cols-2 gap-6">
                   <InventoryByType leads={leads} />
                   <InventoryByAge leads={leads} />
+                </div>
+                <div className="grid lg:grid-cols-2 gap-6 mt-6">
+                  <SoldByType orders={orders} />
                 </div>
               </>
             )}

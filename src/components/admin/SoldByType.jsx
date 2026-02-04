@@ -24,13 +24,19 @@ const typeColors = {
   retirement: "#ef4444"
 };
 
-export default function InventoryByType({ leads }) {
-  const byType = leads.reduce((acc, lead) => {
-    acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
+export default function SoldByType({ orders }) {
+  const soldByType = orders.reduce((acc, order) => {
+    if (order.lead_data_snapshot && Array.isArray(order.lead_data_snapshot)) {
+      order.lead_data_snapshot.forEach(lead => {
+        if (lead.lead_type) {
+          acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
+        }
+      });
+    }
     return acc;
   }, {});
 
-  const data = Object.entries(byType).map(([type, count]) => ({
+  const data = Object.entries(soldByType).map(([type, count]) => ({
     type: typeLabels[type] || type,
     rawType: type,
     count
@@ -38,7 +44,7 @@ export default function InventoryByType({ leads }) {
 
   return (
     <Card className="p-6 rounded-2xl border-slate-200/60">
-      <h3 className="font-semibold text-slate-900 mb-4">Inventory by Type</h3>
+      <h3 className="font-semibold text-slate-900 mb-4">Sold by Type</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
