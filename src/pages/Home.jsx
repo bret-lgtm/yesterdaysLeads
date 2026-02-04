@@ -4,7 +4,6 @@ import { createPageUrl } from '@/utils';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { motion } from "framer-motion";
 import { 
   ArrowRight, 
@@ -13,11 +12,7 @@ import {
   Target,
   TrendingDown,
   Phone,
-  FileCheck,
-  HelpCircle,
-  Ban,
-  CheckCircle,
-  Users
+  FileCheck
 } from "lucide-react";
 
 const features = [
@@ -81,7 +76,7 @@ export default function Home() {
               Premium Aged Insurance Leads
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight mb-6">
-              Quality, Phone Verified Leads at
+              Phone Verified Leads at
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
                 Unbeatable Prices
               </span>
@@ -120,72 +115,6 @@ export default function Home() {
               </Link>
             ))}
           </motion.div>
-        </div>
-      </section>
-
-      {/* The Aged Lead Antidote Section */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-24">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-6">The Aged Lead Antidote</h2>
-          <div className="space-y-4 text-lg">
-            <p className="text-slate-700">
-              <span className="font-semibold text-red-600">The Problem:</span> Most vendors sell "recycled garbage"—data sold 10+ times, harvested from junk surveys, and riddled with disconnected numbers.
-            </p>
-            <p className="text-slate-700">
-              <span className="font-semibold text-emerald-700">Our Solution:</span> Yesterday's Leads provides high-intent, phone-verified data without the industry fluff.
-            </p>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">The Yesterday's Leads Difference</h3>
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-emerald-700" />
-              </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">Capped Distribution</h4>
-              <p className="text-slate-600">
-                We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.
-              </p>
-            </Card>
-
-            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-emerald-700" />
-              </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">Audit-Ready Compliance</h4>
-              <p className="text-slate-600">
-                No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.
-              </p>
-            </Card>
-
-            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                <CheckCircle className="w-6 h-6 text-emerald-700" />
-              </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">Phone-Verified Connectivity</h4>
-              <p className="text-slate-600">
-                We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.
-              </p>
-            </Card>
-
-            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
-              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                <Ban className="w-6 h-6 text-emerald-700" />
-              </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">Organic Intent Only</h4>
-              <p className="text-slate-600">
-                We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.
-              </p>
-            </Card>
-          </div>
-
-          <Card className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border-emerald-200 text-center">
-            <p className="text-xl font-bold text-emerald-700">
-              The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
-            </p>
-          </Card>
         </div>
       </section>
 
@@ -233,90 +162,6 @@ export default function Home() {
             </Button>
           </Link>
         </Card>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-24">
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <HelpCircle className="w-6 h-6 text-emerald-700" />
-            </div>
-            <h2 className="text-3xl font-bold text-slate-900">Frequently Asked Questions</h2>
-          </div>
-          <p className="text-slate-600">
-            Everything you need to know about our phone-verified aged leads
-          </p>
-        </div>
-
-        <Accordion type="single" collapsible className="space-y-4">
-          <AccordionItem value="item-1" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              What exactly makes your leads "Phone-Verified"?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              Unlike most aged lead vendors who sell raw, uncleaned data, we put our leads through a rigorous verification process to ensure the number is active and reachable. This eliminates the "disconnected number" nightmare and saves your dialer hours of dead air.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-2" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              How are leads priced?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              You can view our lead pricing on our 'Pricing' page, found{' '}
-              <Link to={createPageUrl('Pricing')} className="text-emerald-700 hover:text-emerald-800 underline font-medium">
-                here
-              </Link>
-              .
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-3" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              Why are "Unknown" leads half-price?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              These are high-quality leads where the prospect made a typo in their ZIP code, meaning we can't definitively map the City or State. The contact data and intent are still there—you're just getting a 50% discount for the extra bit of legwork to confirm their location.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-4" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              Are these leads compliant with TCPA regulations?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              Yes. We take compliance seriously so you don't have to worry about legal "landmines." Every lead in our system is sourced through TCPA-compliant channels with clear opt-in trails.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-5" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              How many other agents am I competing with?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              We hate "infinite reselling" as much as you do. We strictly cap the number of times a lead is distributed to ensure you actually have a fighting chance to close the deal.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-6" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              I'm tired of "Co-Reg" junk. Is this real intent?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              100%. We avoid the "free gift card" and "sweepstakes" traps that result in garbage data. Our leads come from legitimate insurance inquiries where the consumer actually expects a quote.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-7" className="border border-slate-200 rounded-2xl px-6 bg-white">
-            <AccordionTrigger className="text-left text-lg font-semibold text-slate-900 hover:no-underline py-6">
-              How do I see my leads after I've purchased?
-            </AccordionTrigger>
-            <AccordionContent className="text-slate-600 leading-relaxed pb-6">
-              No waiting around for emails or manual processing. As soon as your purchase is complete, your leads are instantly delivered to your "My Orders" tab. From there, you can view your data or export it directly into a CSV for easy upload into your dialer or CRM.
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </section>
     </div>
   );
