@@ -99,36 +99,52 @@ export default function Pricing() {
                   </TableHeader>
                   <TableBody>
                     {leadTypesWithPricing.map((type) => (
-                      <TableRow 
-                        key={type} 
-                        className="hover:bg-slate-50 cursor-pointer transition-colors"
-                        onClick={() => window.location.href = createPageUrl('BrowseLeads') + `?lead_type=${type}`}
-                      >
+                      <TableRow key={type} className="hover:bg-slate-50 transition-colors">
                         <TableCell className="font-medium whitespace-nowrap text-slate-900">{typeLabels[type]}</TableCell>
                         <TableCell className="text-center">
-                          <span className="text-base font-semibold text-slate-900">
-                            {pricingByType[type].tier1 ? `$${pricingByType[type].tier1.toFixed(2)}` : '-'}
-                          </span>
+                          {pricingByType[type].tier1 ? (
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=1-3`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                              ${pricingByType[type].tier1.toFixed(2)}
+                            </Link>
+                          ) : (
+                            <span className="text-base font-semibold text-slate-400">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="text-base font-semibold text-slate-900">
-                            {pricingByType[type].tier2 ? `$${pricingByType[type].tier2.toFixed(2)}` : '-'}
-                          </span>
+                          {pricingByType[type].tier2 ? (
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=4-14`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                              ${pricingByType[type].tier2.toFixed(2)}
+                            </Link>
+                          ) : (
+                            <span className="text-base font-semibold text-slate-400">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="text-base font-semibold text-slate-900">
-                            {pricingByType[type].tier3 ? `$${pricingByType[type].tier3.toFixed(2)}` : '-'}
-                          </span>
+                          {pricingByType[type].tier3 ? (
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=15-30`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                              ${pricingByType[type].tier3.toFixed(2)}
+                            </Link>
+                          ) : (
+                            <span className="text-base font-semibold text-slate-400">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="text-base font-semibold text-slate-900">
-                            {pricingByType[type].tier4 ? `$${pricingByType[type].tier4.toFixed(2)}` : '-'}
-                          </span>
+                          {pricingByType[type].tier4 ? (
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=31-90`} className="text-base font-semibold text-slate-900 hover:text-emerald-600 transition-colors">
+                              ${pricingByType[type].tier4.toFixed(2)}
+                            </Link>
+                          ) : (
+                            <span className="text-base font-semibold text-slate-400">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="text-base font-semibold text-emerald-600">
-                            {pricingByType[type].tier5 ? `$${pricingByType[type].tier5.toFixed(2)}` : '-'}
-                          </span>
+                          {pricingByType[type].tier5 ? (
+                            <Link to={createPageUrl('BrowseLeads') + `?lead_type=${type}&age_range=91-999`} className="text-base font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">
+                              ${pricingByType[type].tier5.toFixed(2)}
+                            </Link>
+                          ) : (
+                            <span className="text-base font-semibold text-slate-400">-</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
