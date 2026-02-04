@@ -120,7 +120,11 @@ export default function BrowseLeads() {
       sorted.sort((a, b) => {
         const popA = leadTypePopularity[a.lead_type] || 0;
         const popB = leadTypePopularity[b.lead_type] || 0;
-        return popB - popA;
+        if (popB !== popA) {
+          return popB - popA;
+        }
+        // Within same popularity, sort by age (newest first)
+        return (a.age_in_days || 0) - (b.age_in_days || 0);
       });
     } else if (sortOption === 'age-old-new') {
       sorted.sort((a, b) => (b.age_in_days || 0) - (a.age_in_days || 0));
