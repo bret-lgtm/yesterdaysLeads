@@ -120,6 +120,56 @@ export default function Home() {
         </div>
       </section>
 
+      {/* The Aged Lead Antidote Section */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 py-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-slate-900 mb-6">The Aged Lead Antidote</h2>
+          <div className="space-y-4 text-lg">
+            <p className="text-slate-700">
+              <span className="font-semibold text-red-600">The Problem:</span> Most vendors sell "recycled garbage"—data sold 10+ times, harvested from junk surveys, and riddled with disconnected numbers.
+            </p>
+            <p className="text-slate-700">
+              <span className="font-semibold text-emerald-700">Our Solution:</span> Yesterday's Leads provides high-intent, phone-verified data without the industry fluff.
+            </p>
+          </div>
+        </div>
+
+        <Card className="p-8 rounded-2xl border-slate-200 shadow-lg">
+          <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">The Yesterday's Leads Difference</h3>
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">Capped Distribution</h4>
+              <p className="text-slate-600">
+                We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">Audit-Ready Compliance</h4>
+              <p className="text-slate-600">
+                No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">Phone-Verified Connectivity</h4>
+              <p className="text-slate-600">
+                We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">Organic Intent Only</h4>
+              <p className="text-slate-600">
+                We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.
+              </p>
+            </div>
+          </div>
+          <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+            <p className="text-xl font-bold text-emerald-700">
+              The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
+            </p>
+          </div>
+        </Card>
+      </section>
+
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
         <div className="text-center mb-16">
