@@ -8,7 +8,9 @@ const typeLabels = {
   health: "Health",
   life: "Life",
   medicare: "Medicare",
-  final_expense: "Final Exp."
+  final_expense: "Final Exp.",
+  veteran_life: "Veteran Life",
+  retirement: "Retirement"
 };
 
 const colors = ['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6', '#f59e0b', '#64748b'];
