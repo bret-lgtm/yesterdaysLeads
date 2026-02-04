@@ -3,7 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, RotateCcw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Search, RotateCcw, Info } from "lucide-react";
 
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -102,7 +103,19 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Distance (miles)</Label>
+          <div className="flex items-center gap-1">
+            <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Distance (miles)</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Info className="w-3 h-3 text-slate-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Use this to expand on Zip Code</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <Input
             type="number"
             placeholder="Radius"
