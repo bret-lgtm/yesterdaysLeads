@@ -36,11 +36,19 @@ export default function SoldByType({ orders }) {
     return acc;
   }, {});
 
+  // Initialize all lead types with 0
+  const allTypes = ['auto', 'home', 'health', 'life', 'medicare', 'final_expense', 'veteran_life', 'retirement'];
+  allTypes.forEach(type => {
+    if (!soldByType[type]) {
+      soldByType[type] = 0;
+    }
+  });
+
   const data = Object.entries(soldByType).map(([type, count]) => ({
     type: typeLabels[type] || type,
     rawType: type,
     count
-  })).sort((a, b) => b.count - a.count);
+  }));
 
   return (
     <Card className="p-6 rounded-2xl border-slate-200/60">
