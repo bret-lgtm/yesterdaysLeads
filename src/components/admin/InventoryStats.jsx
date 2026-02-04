@@ -8,7 +8,22 @@ export default function InventoryStats({ leads }) {
   
   const avgAge = leads.length > 0 
     ? Math.round(leads.reduce((sum, l) => {
-        const age = Math.floor((new Date() - new Date(l.upload_date)) / (1000 * 60 * 60 * 24));
+        let age = l.age_in_days || 1;
+        
+        // Calculate from external_id if available
+        if (l.external_id && l.external_id.includes('-')) {
+          const dateStr = l.external_id.split('-')[0];
+          if (dateStr && dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const uploadDate = new Date(year, month, day);
+            if (!isNaN(uploadDate.getTime())) {
+              age = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+            }
+          }
+        }
+        
         return sum + age;
       }, 0) / leads.length)
     : 0;
