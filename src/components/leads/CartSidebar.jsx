@@ -5,7 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, X, Trash2, CreditCard, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onToggle, bulkDiscount, onRemoveAll }) {
+export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onToggle, onRemoveAll }) {
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   const discountAmount = bulkDiscount > 0 ? subtotal * (bulkDiscount / 100) : 0;
   const total = subtotal - discountAmount;

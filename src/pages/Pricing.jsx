@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { motion } from "framer-motion";
-import { BULK_DISCOUNTS } from '../components/pricing/PricingCalculator';
-import { ArrowRight, Check, Tag, Sparkles } from "lucide-react";
+import { ArrowRight, Check, Sparkles } from "lucide-react";
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 
@@ -70,7 +69,6 @@ export default function Pricing() {
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
             Pay less for aged leads. The older the lead, the lower the price.
-            Buy in bulk and save even more.
           </p>
         </div>
 
@@ -136,45 +134,6 @@ export default function Pricing() {
             ) : (
               <div className="p-8 text-center text-slate-500">No pricing tiers configured yet.</div>
             )}
-          </Card>
-        </motion.div>
-
-        {/* Bulk Discounts */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Card className="rounded-2xl border-slate-200/60 p-8 mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
-                <Tag className="w-5 h-5 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900">Bulk Discounts</h2>
-                <p className="text-slate-500 text-sm">Buy more, save more. Applied automatically at checkout.</p>
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-4 gap-4">
-              {BULK_DISCOUNTS.map((tier, i) => (
-                <div
-                  key={i}
-                  className={`p-4 rounded-xl border-2 text-center ${
-                    i === BULK_DISCOUNTS.length - 1
-                      ? 'border-emerald-200 bg-emerald-50'
-                      : 'border-slate-200 bg-white'
-                  }`}
-                >
-                  <p className="text-sm text-slate-500 mb-1">{tier.threshold}+ leads</p>
-                  <p className={`text-2xl font-bold ${
-                    i === BULK_DISCOUNTS.length - 1 ? 'text-emerald-600' : 'text-slate-900'
-                  }`}>
-                    {tier.discount}% off
-                  </p>
-                </div>
-              ))}
-            </div>
           </Card>
         </motion.div>
 

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
 import CartSidebar from '../components/leads/CartSidebar';
-import { calculateLeadPrice, calculateBulkDiscount } from '../components/pricing/PricingCalculator';
+import { calculateLeadPrice } from '../components/pricing/PricingCalculator';
 import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
 import { toast } from 'sonner';
@@ -253,8 +253,6 @@ export default function BrowseLeads() {
     }
   };
 
-  const bulkDiscount = calculateBulkDiscount(cartItems.length);
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -417,7 +415,6 @@ export default function BrowseLeads() {
         onCheckout={handleCheckout}
         isOpen={cartOpen}
         onToggle={() => setCartOpen(!cartOpen)}
-        bulkDiscount={bulkDiscount}
         onRemoveAll={handleRemoveAll}
       />
     </div>

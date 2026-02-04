@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { calculateBulkDiscount } from '../components/pricing/PricingCalculator';
+
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { 
@@ -64,9 +64,7 @@ export default function Checkout() {
 
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const bulkDiscount = calculateBulkDiscount(cartItems.length);
-  const discountAmount = subtotal * (bulkDiscount / 100);
-  const total = subtotal - discountAmount;
+  const total = subtotal;
 
   // Group by lead type, then by age
   const groupedItems = React.useMemo(() => {
@@ -301,16 +299,6 @@ export default function Checkout() {
                   <span className="text-slate-500">Subtotal ({cartItems.length} leads)</span>
                   <span className="text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
-
-                {bulkDiscount > 0 && (
-                  <div className="flex justify-between text-sm text-emerald-600">
-                    <div className="flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5" />
-                      <span>Bulk Discount ({bulkDiscount}%)</span>
-                    </div>
-                    <span>-${discountAmount.toFixed(2)}</span>
-                  </div>
-                )}
 
                 <Separator />
 
