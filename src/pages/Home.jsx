@@ -14,7 +14,10 @@ import {
   TrendingDown,
   Phone,
   FileCheck,
-  HelpCircle
+  HelpCircle,
+  Ban,
+  CheckCircle,
+  Users
 } from "lucide-react";
 
 const features = [
@@ -134,40 +137,56 @@ export default function Home() {
           </div>
         </div>
 
-        <Card className="p-8 rounded-2xl border-slate-200 shadow-lg">
-          <h3 className="text-2xl font-bold text-slate-900 mb-6 text-center">The Yesterday's Leads Difference</h3>
-          <div className="space-y-6">
-            <div>
+        <div>
+          <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">The Yesterday's Leads Difference</h3>
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-emerald-700" />
+              </div>
               <h4 className="text-lg font-semibold text-slate-900 mb-2">Capped Distribution</h4>
               <p className="text-slate-600">
                 We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.
               </p>
-            </div>
-            <div>
+            </Card>
+
+            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-emerald-700" />
+              </div>
               <h4 className="text-lg font-semibold text-slate-900 mb-2">Audit-Ready Compliance</h4>
               <p className="text-slate-600">
                 No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.
               </p>
-            </div>
-            <div>
+            </Card>
+
+            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <CheckCircle className="w-6 h-6 text-emerald-700" />
+              </div>
               <h4 className="text-lg font-semibold text-slate-900 mb-2">Phone-Verified Connectivity</h4>
               <p className="text-slate-600">
                 We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.
               </p>
-            </div>
-            <div>
+            </Card>
+
+            <Card className="p-6 rounded-2xl border-slate-200/60 hover:shadow-lg transition-shadow">
+              <div className="h-12 w-12 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Ban className="w-6 h-6 text-emerald-700" />
+              </div>
               <h4 className="text-lg font-semibold text-slate-900 mb-2">Organic Intent Only</h4>
               <p className="text-slate-600">
                 We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.
               </p>
-            </div>
+            </Card>
           </div>
-          <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+
+          <Card className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 to-white border-emerald-200 text-center">
             <p className="text-xl font-bold text-emerald-700">
               The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
             </p>
-          </div>
-        </Card>
+          </Card>
+        </div>
       </section>
 
       {/* Features Section */}
