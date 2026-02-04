@@ -217,10 +217,20 @@ export default function BrowseLeads() {
   };
 
   const handleSelectAll = () => {
-    if (selectedLeads.length === sortedLeads.length) {
-      setSelectedLeads([]);
+    const currentPageLeadIds = paginatedLeads.map(l => l.id);
+    const allCurrentPageSelected = paginatedLeads.every(lead => 
+      selectedLeads.find(l => l.id === lead.id)
+    );
+    
+    if (allCurrentPageSelected) {
+      // Unselect all leads on current page
+      setSelectedLeads(prev => prev.filter(l => !currentPageLeadIds.includes(l.id)));
     } else {
-      setSelectedLeads(sortedLeads);
+      // Select all leads on current page (keep selections from other pages)
+      const newSelections = paginatedLeads.filter(lead => 
+        !selectedLeads.find(l => l.id === lead.id)
+      );
+      setSelectedLeads(prev => [...prev, ...newSelections]);
     }
   };
 
@@ -324,13 +334,13 @@ export default function BrowseLeads() {
           
           <div className="flex items-center gap-3">
             {/* Select All Button */}
-            {sortedLeads.length > 0 && (
+            {paginatedLeads.length > 0 && (
               <Button
                 onClick={handleSelectAll}
                 variant="outline"
                 className="rounded-xl border-slate-200"
               >
-                {selectedLeads.length === sortedLeads.length ? 'Unselect All' : 'Select All'}
+                {paginatedLeads.every(lead => selectedLeads.find(l => l.id === lead.id)) ? 'Unselect Page' : 'Select Page'}
               </Button>
             )}
 
