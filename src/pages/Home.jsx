@@ -56,7 +56,9 @@ const leadTypes = [
   { name: "Home", value: "home", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },
   { name: "Auto", value: "auto", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
   { name: "Medicare", value: "medicare", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
-  { name: "Health", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" }
+  { name: "Health", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" },
+  { name: "Annuity", value: "annuity", color: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" },
+  { name: "Recruiting", value: "recruiting", color: "bg-teal-100 text-teal-700 hover:bg-teal-200" }
 ];
 
 export default function Home() {
@@ -76,7 +78,7 @@ export default function Home() {
               Premium Aged Insurance Leads
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight mb-6">
-              Phone Verified Leads at
+              Quality, Phone Verified Leads at
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
                 Unbeatable Prices
               </span>

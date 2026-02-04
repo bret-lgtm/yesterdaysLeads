@@ -22,7 +22,9 @@ const LEAD_TYPES = [
   { value: "home", label: "Home" },
   { value: "auto", label: "Auto" },
   { value: "medicare", label: "Medicare" },
-  { value: "health", label: "Health" }
+  { value: "health", label: "Health" },
+  { value: "annuity", label: "Annuity" },
+  { value: "recruiting", label: "Recruiting" }
 ];
 
 const AGE_RANGES = [
