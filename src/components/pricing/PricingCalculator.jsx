@@ -11,12 +11,7 @@ const DEFAULT_PRICING = {
   retirement: { base: 14.00, fresh: 29.00, aged: 4.50 }
 };
 
-const BULK_DISCOUNTS = [
-  { threshold: 100, discount: 5 },
-  { threshold: 250, discount: 10 },
-  { threshold: 500, discount: 15 },
-  { threshold: 1000, discount: 20 }
-];
+
 
 export function calculateLeadPrice(lead, pricingTiers = []) {
   const ageInDays = Math.max(1, lead.age_in_days || 1);
@@ -53,26 +48,14 @@ export function calculateLeadPrice(lead, pricingTiers = []) {
   }
 }
 
-export function calculateBulkDiscount(quantity) {
-  for (let i = BULK_DISCOUNTS.length - 1; i >= 0; i--) {
-    if (quantity >= BULK_DISCOUNTS[i].threshold) {
-      return BULK_DISCOUNTS[i].discount;
-    }
-  }
-  return 0;
-}
+
 
 export function calculateCartTotal(cartItems, pricingTiers = []) {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const discount = calculateBulkDiscount(cartItems.length);
-  const discountAmount = subtotal * (discount / 100);
-  const total = subtotal - discountAmount;
   
   return {
     subtotal,
-    discount,
-    discountAmount,
-    total,
+    total: subtotal,
     itemCount: cartItems.length
   };
 }
@@ -85,4 +68,4 @@ export function getAgeRange(ageInDays) {
   return '181+';
 }
 
-export { DEFAULT_PRICING, BULK_DISCOUNTS };
+export { DEFAULT_PRICING };
