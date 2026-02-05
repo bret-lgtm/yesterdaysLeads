@@ -59,7 +59,9 @@ const leadTypes = [
   { name: "Home", value: "home", color: "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" },
   { name: "Auto", value: "auto", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
   { name: "Medicare", value: "medicare", color: "bg-amber-100 text-amber-700 hover:bg-amber-200" },
-  { name: "Health", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" }
+  { name: "Health", value: "health", color: "bg-rose-100 text-rose-700 hover:bg-rose-200" },
+  { name: "Annuity", value: "annuity", color: "bg-indigo-100 text-indigo-700 hover:bg-indigo-200" },
+  { name: "Recruiting", value: "recruiting", color: "bg-teal-100 text-teal-700 hover:bg-teal-200" }
 ];
 
 export default function Home() {
@@ -79,7 +81,7 @@ export default function Home() {
               Premium Aged Insurance Leads
             </Badge>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight mb-6">
-              Quality, Phone Verified Leads at
+              Phone Verified Leads at
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400">
                 Unbeatable Prices
               </span>
@@ -118,6 +120,66 @@ export default function Home() {
               </Link>
             ))}
           </motion.div>
+        </div>
+      </section>
+
+      {/* The Aged Lead Antidote Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-4xl font-bold text-slate-900 mb-10 text-center">The Aged Lead Antidote</h2>
+          
+          <div className="text-center mb-12 space-y-4">
+            <p className="text-lg">
+              <span className="font-semibold text-red-600">The Problem:</span>{" "}
+              <span className="text-slate-700">Most vendors sell "recycled garbage"—data sold 10+ times, harvested from junk surveys, and riddled with disconnected numbers.</span>
+            </p>
+            <p className="text-lg">
+              <span className="font-semibold text-emerald-600">Our Solution:</span>{" "}
+              <span className="text-slate-700">Yesterday's Leads provides high-intent, phone-verified data without the industry fluff.</span>
+            </p>
+          </div>
+
+          <h3 className="text-3xl font-bold text-slate-900 mb-10 text-center">The Yesterday's Leads Difference</h3>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
+            <Card className="p-8 rounded-2xl border-slate-200/60 bg-white shadow-sm">
+              <div className="h-14 w-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Users className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h4 className="font-semibold text-slate-900 text-xl mb-3">Capped Distribution</h4>
+              <p className="text-slate-600">We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.</p>
+            </Card>
+            
+            <Card className="p-8 rounded-2xl border-slate-200/60 bg-white shadow-sm">
+              <div className="h-14 w-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Shield className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h4 className="font-semibold text-slate-900 text-xl mb-3">Audit-Ready Compliance</h4>
+              <p className="text-slate-600">No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.</p>
+            </Card>
+            
+            <Card className="p-8 rounded-2xl border-slate-200/60 bg-white shadow-sm">
+              <div className="h-14 w-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <CheckCircle className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h4 className="font-semibold text-slate-900 text-xl mb-3">Phone-Verified Connectivity</h4>
+              <p className="text-slate-600">We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.</p>
+            </Card>
+            
+            <Card className="p-8 rounded-2xl border-slate-200/60 bg-white shadow-sm">
+              <div className="h-14 w-14 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
+                <Ban className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h4 className="font-semibold text-slate-900 text-xl mb-3">Organic Intent Only</h4>
+              <p className="text-slate-600">We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.</p>
+            </Card>
+          </div>
+
+          <div className="bg-emerald-50/50 border border-emerald-200/50 rounded-2xl p-6 text-center">
+            <p className="text-xl font-semibold text-emerald-700">
+              The Bottom Line: Quality, Phone-Verified Leads at Unbeatable Prices.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -165,6 +227,53 @@ export default function Home() {
             </Button>
           </Link>
         </Card>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            Everything you need to know about our phone-verified aged leads
+          </p>
+        </div>
+
+        <div className="max-w-3xl mx-auto space-y-4">
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">What exactly makes your leads "Phone-Verified"?</h3>
+            <p className="text-slate-600">Every prospect must verify their phone number via SMS before they become a lead in our system. This ensures you're getting valid, working contact information—not disconnected numbers or fake data.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">How are leads priced?</h3>
+            <p className="text-slate-600">Our tiered pricing is based on lead age. Fresher leads (1-3 days old) command premium prices, while older leads (91+ days) are significantly discounted. This gives you flexibility to balance budget with freshness based on your business needs.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">Why are "Unknown" leads half-price?</h3>
+            <p className="text-slate-600">Some leads may have incomplete location data (city or state marked as "Unknown"). While the phone number and other details are verified, the reduced price reflects the missing geographic information. These can still be valuable prospects at a bargain price.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">Are these leads compliant with TCPA regulations?</h3>
+            <p className="text-slate-600">Yes. All leads are generated through compliant channels with proper consent. Every prospect has explicitly requested insurance information, giving you the legal foundation to make contact.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">How many other agents am I competing with?</h3>
+            <p className="text-slate-600">We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">I'm tired of "Co-Reg" junk. Is this real intent?</h3>
+            <p className="text-slate-600">Absolutely. We don't use co-registration tricks or "free gift card" bait. These are genuine prospects who actively requested insurance quotes through legitimate channels.</p>
+          </Card>
+
+          <Card className="p-6 rounded-2xl border-slate-200/60">
+            <h3 className="font-semibold text-slate-900 text-lg mb-2">How do I see my leads after I've purchased?</h3>
+            <p className="text-slate-600">After completing your purchase, you'll be redirected to a confirmation page where you can immediately download your leads in CSV format. You can also access all your past orders anytime from the "My Orders" page in your account.</p>
+          </Card>
+        </div>
       </section>
     </div>
   );
