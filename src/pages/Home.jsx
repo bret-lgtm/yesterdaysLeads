@@ -15,8 +15,15 @@ import {
   FileCheck,
   Users,
   CheckCircle,
-  Ban
+  Ban,
+  HelpCircle
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const features = [
   {
@@ -231,48 +238,83 @@ export default function Home() {
 
       {/* FAQ Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center">
+              <HelpCircle className="w-6 h-6 text-emerald-600" />
+            </div>
+            <h2 className="text-4xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          </div>
+          <p className="text-slate-600">
             Everything you need to know about our phone-verified aged leads
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto space-y-4">
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">What exactly makes your leads "Phone-Verified"?</h3>
-            <p className="text-slate-600">Every prospect must verify their phone number via SMS before they become a lead in our system. This ensures you're getting valid, working contact information—not disconnected numbers or fake data.</p>
-          </Card>
+        <div className="max-w-3xl mx-auto">
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="item-1" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                What exactly makes your leads "Phone-Verified"?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                Every prospect must verify their phone number via SMS before they become a lead in our system. This ensures you're getting valid, working contact information—not disconnected numbers or fake data.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How are leads priced?</h3>
-            <p className="text-slate-600">Our tiered pricing is based on lead age. Fresher leads (1-3 days old) command premium prices, while older leads (91+ days) are significantly discounted. This gives you flexibility to balance budget with freshness based on your business needs.</p>
-          </Card>
+            <AccordionItem value="item-2" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                How are leads priced?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                Our tiered pricing is based on lead age. Fresher leads (1-3 days old) command premium prices, while older leads (91+ days) are significantly discounted. This gives you flexibility to balance budget with freshness based on your business needs.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">Why are "Unknown" leads half-price?</h3>
-            <p className="text-slate-600">Some leads may have incomplete location data (city or state marked as "Unknown"). While the phone number and other details are verified, the reduced price reflects the missing geographic information. These can still be valuable prospects at a bargain price.</p>
-          </Card>
+            <AccordionItem value="item-3" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                Why are "Unknown" leads half-price?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                Some leads may have incomplete location data (city or state marked as "Unknown"). While the phone number and other details are verified, the reduced price reflects the missing geographic information. These can still be valuable prospects at a bargain price.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">Are these leads compliant with TCPA regulations?</h3>
-            <p className="text-slate-600">Yes. All leads are generated through compliant channels with proper consent. Every prospect has explicitly requested insurance information, giving you the legal foundation to make contact.</p>
-          </Card>
+            <AccordionItem value="item-4" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                Are these leads compliant with TCPA regulations?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                Yes. All leads are generated through compliant channels with proper consent. Every prospect has explicitly requested insurance information, giving you the legal foundation to make contact.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How many other agents am I competing with?</h3>
-            <p className="text-slate-600">We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.</p>
-          </Card>
+            <AccordionItem value="item-5" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                How many other agents am I competing with?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">I'm tired of "Co-Reg" junk. Is this real intent?</h3>
-            <p className="text-slate-600">Absolutely. We don't use co-registration tricks or "free gift card" bait. These are genuine prospects who actively requested insurance quotes through legitimate channels.</p>
-          </Card>
+            <AccordionItem value="item-6" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                I'm tired of "Co-Reg" junk. Is this real intent?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                Absolutely. We don't use co-registration tricks or "free gift card" bait. These are genuine prospects who actively requested insurance quotes through legitimate channels.
+              </AccordionContent>
+            </AccordionItem>
 
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How do I see my leads after I've purchased?</h3>
-            <p className="text-slate-600">After completing your purchase, you'll be redirected to a confirmation page where you can immediately download your leads in CSV format. You can also access all your past orders anytime from the "My Orders" page in your account.</p>
-          </Card>
+            <AccordionItem value="item-7" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                How do I see my leads after I've purchased?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                After completing your purchase, you'll be redirected to a confirmation page where you can immediately download your leads in CSV format. You can also access all your past orders anytime from the "My Orders" page in your account.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </section>
     </div>
