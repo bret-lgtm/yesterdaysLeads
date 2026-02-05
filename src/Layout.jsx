@@ -24,8 +24,8 @@ import {
   Home,
   DollarSign
 } from "lucide-react";
-import { migrateLocalCartToDatabase } from '../components/cartMigration';
-import ChatWidget from '../components/chat/ChatWidget';
+import { migrateLocalCartToDatabase } from './components/cartMigration';
+import ChatWidget from './components/chat/ChatWidget';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
