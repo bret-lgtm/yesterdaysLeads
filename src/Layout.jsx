@@ -255,9 +255,17 @@ export default function Layout({ children }) {
               alt="Yesterday's Leads"
               className="h-8 w-auto"
             />
-            <p className="text-sm text-white">
-              © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
-            </p>
+            <div className="flex items-center gap-6">
+              <Link 
+                to={createPageUrl('Support')} 
+                className="text-sm text-white hover:text-white/80 transition-colors"
+              >
+                Support
+              </Link>
+              <p className="text-sm text-white">
+                © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </footer>
