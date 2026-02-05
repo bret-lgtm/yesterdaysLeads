@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://lead-flow-15e8500b.base44.app/api/:path*"
+    }
+  ]
+}
