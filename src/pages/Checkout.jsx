@@ -24,12 +24,14 @@ import {
   Download,
   Trash2
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Checkout() {
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -84,7 +86,12 @@ export default function Checkout() {
   }, [cartItems]);
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0 || !termsAccepted) {
+      if (!termsAccepted) {
+        toast.error('Please accept the terms to continue');
+      }
+      return;
+    }
 
     setProcessing(true);
 
@@ -308,10 +315,33 @@ export default function Checkout() {
                 </div>
               </div>
 
+              {/* Terms Checkbox */}
+              <div className="mt-6 space-y-3">
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <Checkbox 
+                    id="terms-checkbox"
+                    checked={termsAccepted}
+                    onCheckedChange={setTermsAccepted}
+                    className="mt-1"
+                  />
+                  <div>
+                    <label 
+                      htmlFor="terms-checkbox" 
+                      className="text-sm text-slate-700 leading-relaxed cursor-pointer"
+                    >
+                      I understand that these are aged, non-exclusive insurance leads, which may have been previously sold, contacted, or resold, and are provided as is with no guarantees of performance or compliance.
+                    </label>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Buyer is solely responsible for TCPA compliance, consent verification, and lawful outreach.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Button
                 onClick={handleCheckout}
-                disabled={cartItems.length === 0 || processing}
-                className="w-full h-12 mt-6 rounded-xl bg-slate-900 hover:bg-slate-800"
+                disabled={cartItems.length === 0 || processing || !termsAccepted}
+                className="w-full h-12 mt-6 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-50"
               >
                 {processing ? (
                   <>
