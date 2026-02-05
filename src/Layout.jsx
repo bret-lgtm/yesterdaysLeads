@@ -263,6 +263,12 @@ export default function Layout({ children }) {
                 Support
               </Link>
               <Link 
+                to={createPageUrl('PrivacyPolicy')} 
+                className="text-sm text-white hover:text-white/80 transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link 
                 to={createPageUrl('TermsOfService')} 
                 className="text-sm text-white hover:text-white/80 transition-colors"
               >
