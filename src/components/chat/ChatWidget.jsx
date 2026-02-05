@@ -134,7 +134,7 @@ export default function ChatWidget() {
                 placeholder="Type your message..."
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 disabled={isLoading}
                 className="flex-1 rounded-xl border-slate-200"
               />
