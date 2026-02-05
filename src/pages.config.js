@@ -55,6 +55,7 @@ import Home from './pages/Home';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
 import Support from './pages/Support';
+import TermsOfService from './pages/TermsOfService';
 import __Layout from './Layout.jsx';
 
 
@@ -67,6 +68,7 @@ export const PAGES = {
     "MyOrders": MyOrders,
     "Pricing": Pricing,
     "Support": Support,
+    "TermsOfService": TermsOfService,
 }
 
 export const pagesConfig = {

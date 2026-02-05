@@ -262,6 +262,12 @@ export default function Layout({ children }) {
               >
                 Support
               </Link>
+              <Link 
+                to={createPageUrl('TermsOfService')} 
+                className="text-sm text-white hover:text-white/80 transition-colors"
+              >
+                Terms of Service
+              </Link>
               <p className="text-sm text-white">
                 © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
               </p>
