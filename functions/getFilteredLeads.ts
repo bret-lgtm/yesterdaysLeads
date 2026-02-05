@@ -22,7 +22,9 @@ Deno.serve(async (req) => {
       medicare: '757044649',
       final_expense: '387991684',
       veteran_life: '1401332567',
-      retirement: '712013125'
+      retirement: '712013125',
+      annuity: '409761548',
+      recruiting: '1894668336'
     };
 
     // Determine which sheets to query
