@@ -290,10 +290,10 @@ export default function Home() {
 
             <AccordionItem value="item-5" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
               <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
-                How many other agents am I competing with?
+                How many times is a lead sold?
               </AccordionTrigger>
               <AccordionContent className="text-slate-600 pb-5">
-                We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.
+                Only once per pricing tier. We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.
               </AccordionContent>
             </AccordionItem>
 
