@@ -57,6 +57,7 @@ import Pricing from './pages/Pricing';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import DoNotSell from './pages/DoNotSell';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +72,7 @@ export const PAGES = {
     "Support": Support,
     "TermsOfService": TermsOfService,
     "PrivacyPolicy": PrivacyPolicy,
+    "DoNotSell": DoNotSell,
 }
 
 export const pagesConfig = {

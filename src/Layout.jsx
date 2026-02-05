@@ -255,7 +255,7 @@ export default function Layout({ children }) {
               alt="Yesterday's Leads"
               className="h-8 w-auto"
             />
-            <div className="flex items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
               <Link 
                 to={createPageUrl('Support')} 
                 className="text-sm text-white hover:text-white/80 transition-colors"
@@ -273,6 +273,12 @@ export default function Layout({ children }) {
                 className="text-sm text-white hover:text-white/80 transition-colors"
               >
                 Terms of Service
+              </Link>
+              <Link 
+                to={createPageUrl('DoNotSell')} 
+                className="text-sm text-white hover:text-white/80 transition-colors"
+              >
+                Do Not Sell or Share My Personal Information
               </Link>
               <p className="text-sm text-white">
                 © {new Date().getFullYear()} Yesterday's Leads. All rights reserved.
