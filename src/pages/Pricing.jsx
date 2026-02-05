@@ -18,10 +18,12 @@ const typeLabels = {
   home: "Home",
   auto: "Auto",
   medicare: "Medicare",
-  health: "Health"
+  health: "Health",
+  annuity: "Annuity",
+  recruiting: "Recruiting"
 };
 
-const leadTypeOrder = ['final_expense', 'life', 'veteran_life', 'retirement', 'home', 'auto', 'medicare', 'health'];
+const leadTypeOrder = ['final_expense', 'life', 'veteran_life', 'retirement', 'home', 'auto', 'medicare', 'health', 'annuity', 'recruiting'];
 
 export default function Pricing() {
   const { data: pricingTiers = [], isLoading } = useQuery({
