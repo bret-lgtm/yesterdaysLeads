@@ -12,7 +12,10 @@ import {
   Target,
   TrendingDown,
   Phone,
-  FileCheck
+  FileCheck,
+  Users,
+  CheckCircle,
+  Ban
 } from "lucide-react";
 
 const features = [
@@ -118,48 +121,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* The Aged Lead Antidote Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-slate-900 mb-6 text-center">The Aged Lead Antidote</h2>
-          
-          <div className="space-y-6 mb-12">
-            <div>
-              <h3 className="font-semibold text-slate-900 text-lg mb-2">The Problem: Most vendors sell "recycled garbage"—data sold 10+ times, harvested from junk surveys, and riddled with disconnected numbers.</h3>
-              <p className="text-slate-600">Our Solution: Yesterday's Leads provides high-intent, phone-verified data without the industry fluff.</p>
-            </div>
-          </div>
-
-          <h3 className="text-2xl font-bold text-slate-900 mb-8 text-center">The Yesterday's Leads Difference</h3>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="p-6 rounded-2xl border-slate-200/60">
-              <h4 className="font-semibold text-slate-900 text-lg mb-2">Capped Distribution</h4>
-              <p className="text-slate-600">We stop the "Infinite Resale." Unlike competitors who sell leads into oblivion, we strictly limit distribution to protect your ROI.</p>
-            </Card>
-            
-            <Card className="p-6 rounded-2xl border-slate-200/60">
-              <h4 className="font-semibold text-slate-900 text-lg mb-2">Audit-Ready Compliance</h4>
-              <p className="text-slate-600">No more TCPA nightmares. Every lead is 100% compliant, allowing you to dial with confidence.</p>
-            </Card>
-            
-            <Card className="p-6 rounded-2xl border-slate-200/60">
-              <h4 className="font-semibold text-slate-900 text-lg mb-2">Phone-Verified Connectivity</h4>
-              <p className="text-slate-600">We scrub and verify every number. Stop wasting hours on "disconnected" tones and start talking to live prospects.</p>
-            </Card>
-            
-            <Card className="p-6 rounded-2xl border-slate-200/60">
-              <h4 className="font-semibold text-slate-900 text-lg mb-2">Organic Intent Only</h4>
-              <p className="text-slate-600">We banish "Garbage Data." No co-reg traps or "free gift card" click-bait—just real people who actually requested a quote.</p>
-            </Card>
-          </div>
-
-          <p className="text-center text-xl font-semibold text-slate-900 mt-12">
-            The Bottom Line: Phone-Verified Leads at Unbeatable Prices.
-          </p>
-        </div>
-      </section>
-
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
         <div className="text-center mb-16">
@@ -204,53 +165,6 @@ export default function Home() {
             </Button>
           </Link>
         </Card>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-24">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Frequently Asked Questions</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">
-            Everything you need to know about our phone-verified aged leads
-          </p>
-        </div>
-
-        <div className="max-w-3xl mx-auto space-y-4">
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">What exactly makes your leads "Phone-Verified"?</h3>
-            <p className="text-slate-600">Every prospect must verify their phone number via SMS before they become a lead in our system. This ensures you're getting valid, working contact information—not disconnected numbers or fake data.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How are leads priced?</h3>
-            <p className="text-slate-600">Our tiered pricing is based on lead age. Fresher leads (1-3 days old) command premium prices, while older leads (91+ days) are significantly discounted. This gives you flexibility to balance budget with freshness based on your business needs.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">Why are "Unknown" leads half-price?</h3>
-            <p className="text-slate-600">Some leads may have incomplete location data (city or state marked as "Unknown"). While the phone number and other details are verified, the reduced price reflects the missing geographic information. These can still be valuable prospects at a bargain price.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">Are these leads compliant with TCPA regulations?</h3>
-            <p className="text-slate-600">Yes. All leads are generated through compliant channels with proper consent. Every prospect has explicitly requested insurance information, giving you the legal foundation to make contact.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How many other agents am I competing with?</h3>
-            <p className="text-slate-600">We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">I'm tired of "Co-Reg" junk. Is this real intent?</h3>
-            <p className="text-slate-600">Absolutely. We don't use co-registration tricks or "free gift card" bait. These are genuine prospects who actively requested insurance quotes through legitimate channels.</p>
-          </Card>
-
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <h3 className="font-semibold text-slate-900 text-lg mb-2">How do I see my leads after I've purchased?</h3>
-            <p className="text-slate-600">After completing your purchase, you'll be redirected to a confirmation page where you can immediately download your leads in CSV format. You can also access all your past orders anytime from the "My Orders" page in your account.</p>
-          </Card>
-        </div>
       </section>
     </div>
   );
