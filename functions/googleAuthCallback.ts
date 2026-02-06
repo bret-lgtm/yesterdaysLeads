@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
 
     const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
     const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
-    const redirectUri = `${Deno.env.get('APP_URL')}/api/auth/callback`;
+    const redirectUri = `${url.origin}/api/functions/googleAuthCallback`;
 
     // Exchange code for tokens
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -45,23 +45,31 @@ Deno.serve(async (req) => {
       return new Response('Failed to get user email', { status: 400 });
     }
 
-    // Create Base44 client and handle user
+    // Initialize Base44 client
     const base44 = createClientFromRequest(req);
     
-    // Check if user exists, if not invite them
+    // Check if user exists, if not create them
+    let user;
     try {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
-        // Invite new user
-        await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
+        // Create new user
+        user = await base44.asServiceRole.entities.User.create({
+          email: userInfo.email,
+          full_name: userInfo.name || userInfo.email,
+          role: 'user'
+        });
+      } else {
+        user = existingUsers[0];
       }
     } catch (error) {
-      console.error('Error checking/creating user:', error);
+      console.error('Error handling user:', error);
+      return new Response(`User creation failed: ${error.message}`, { status: 500 });
     }
 
-    // Create auth token for the user
-    const authToken = await base44.asServiceRole.auth.createTokenForUser(userInfo.email);
+    // Create session token
+    const sessionToken = await base44.asServiceRole.auth.signIn(userInfo.email);
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
@@ -74,12 +82,12 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Redirect with token
+    // Redirect with auth cookie
     return new Response(null, {
       status: 302,
       headers: {
         'Location': redirectUrl,
-        'Set-Cookie': `base44_auth_token=${authToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+        'Set-Cookie': `base44_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
       }
     });
     

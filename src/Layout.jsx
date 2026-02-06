@@ -196,8 +196,8 @@ export default function Layout({ children }) {
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <DropdownMenuItem
                       onClick={() => {
-                        const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
-                        const redirectUri = `${window.location.origin}/api/auth/callback`;
+                        const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
+                        const redirectUri = `${window.location.origin}/api/functions/googleAuthCallback`;
                         const state = JSON.stringify({ from_url: window.location.href });
                         const scope = 'openid email profile';
                         
