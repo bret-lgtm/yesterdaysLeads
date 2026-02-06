@@ -196,7 +196,10 @@ export default function Layout({ children }) {
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <DropdownMenuItem
                       onClick={() => {
-                        base44.auth.redirectToLogin(window.location.pathname);
+                        const appId = '697a2f6ba7fe7cab15e8500b';
+                        const currentUrl = window.location.href;
+                        const authUrl = `https://api.base44.com/auth/apps/${appId}/authorize?from_url=${encodeURIComponent(currentUrl)}`;
+                        window.location.href = authUrl;
                       }}
                       className="cursor-pointer"
                     >
