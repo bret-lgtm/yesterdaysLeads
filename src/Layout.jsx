@@ -196,7 +196,10 @@ export default function Layout({ children }) {
                     }
 
                     const redirectUri = 'https://yesterdaysleads.com/api/apps/auth/callback';
-                    const state = JSON.stringify({ from_url: 'https://yesterdaysleads.com' });
+                    const state = JSON.stringify({ 
+                      from_url: 'https://yesterdaysleads.com',
+                      app_id: '697a2f6ba7fe7cab15e8500b' // Add app_id to the state
+                    });
 
                     const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(state)}`;
 
