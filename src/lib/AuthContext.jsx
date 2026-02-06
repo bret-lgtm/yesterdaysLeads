@@ -123,10 +123,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const navigateToLogin = () => {
-  // We remove window.location.href and let the platform 
-  // determine the return path based on the registered domain.
-  base44.auth.redirectToLogin(); 
+const navigateToLogin = () => {
+  // Manually point to the Base44 auth server to avoid the Vercel 404
+  window.location.href = `https://lead-flow-15e8500b.base44.app/login?from_url=${window.location.origin}`;
 };
 
   return (
