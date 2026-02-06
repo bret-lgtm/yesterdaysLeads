@@ -1,14 +1,16 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+import { createClient } from "@base44/sdk";
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
-
-//Create a client with authentication required
 export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
+  // Use your actual App ID
+  appId: "697a2f6ba7fe7cab15e8500b", 
+  
+  // 1. Point to your Vercel /api rewrite instead of the direct Base44 URL
+  // This helps with "Same-Origin" cookie policies
+  baseUrl: "/api", 
+
+  // 2. This is the crucial setting for the 401 error.
+  // It tells the browser to include cookies in cross-site requests.
+  axiosConfig: {
+    withCredentials: true 
+  }
 });
