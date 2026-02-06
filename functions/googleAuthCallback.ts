@@ -31,7 +31,9 @@ Deno.serve(async (req) => {
     
     if (!tokens.access_token) {
       console.error('Token exchange failed:', tokens);
-      return new Response('Failed to get access token', { status: 400 });
+      console.error('Redirect URI used:', redirectUri);
+      console.error('Client ID:', clientId);
+      return new Response(`Failed to get access token: ${JSON.stringify(tokens)}`, { status: 400 });
     }
 
     // Get user info from Google
