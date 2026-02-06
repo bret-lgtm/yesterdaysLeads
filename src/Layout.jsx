@@ -196,21 +196,7 @@ export default function Layout({ children }) {
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <DropdownMenuItem
                       onClick={() => {
-                        const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-                        if (!googleClientId) {
-                          console.error("VITE_GOOGLE_CLIENT_ID is not set.");
-                          return;
-                        }
-
-                        const redirectUri = 'https://yesterdaysleads.com/api/apps/auth/callback';
-                        const state = JSON.stringify({
-                          domain: 'https://yesterdaysleads.com',
-                          from_url: 'https://yesterdaysleads.com',
-                          app_id: '697a2f6ba7fe7cab15e8500b'
-                        });
-
-                        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(state)}`;
-                        window.location.href = googleAuthUrl;
+                        base44.auth.redirectToLogin(window.location.pathname);
                       }}
                       className="cursor-pointer"
                     >

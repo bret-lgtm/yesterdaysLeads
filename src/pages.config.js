@@ -51,13 +51,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import BrowseLeads from './pages/BrowseLeads';
 import Checkout from './pages/Checkout';
 import CheckoutSuccess from './pages/CheckoutSuccess';
+import DoNotSell from './pages/DoNotSell';
 import Home from './pages/Home';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import DoNotSell from './pages/DoNotSell';
+import LoginPage from './pages/LoginPage';
 import __Layout from './Layout.jsx';
 
 
@@ -66,13 +67,14 @@ export const PAGES = {
     "BrowseLeads": BrowseLeads,
     "Checkout": Checkout,
     "CheckoutSuccess": CheckoutSuccess,
+    "DoNotSell": DoNotSell,
     "Home": Home,
     "MyOrders": MyOrders,
     "Pricing": Pricing,
+    "PrivacyPolicy": PrivacyPolicy,
     "Support": Support,
     "TermsOfService": TermsOfService,
-    "PrivacyPolicy": PrivacyPolicy,
-    "DoNotSell": DoNotSell,
+    "LoginPage": LoginPage,
 }
 
 export const pagesConfig = {
