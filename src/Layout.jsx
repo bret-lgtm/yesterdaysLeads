@@ -196,9 +196,12 @@ export default function Layout({ children }) {
                   <DropdownMenuContent align="end" className="w-56 rounded-xl">
                     <DropdownMenuItem
                       onClick={() => {
-                        const appId = '697a2f6ba7fe7cab15e8500b';
-                        const currentUrl = window.location.href;
-                        const authUrl = `https://api.base44.com/auth/apps/${appId}/authorize?from_url=${encodeURIComponent(currentUrl)}`;
+                        const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                        const redirectUri = `${window.location.origin}/api/auth/callback`;
+                        const state = JSON.stringify({ from_url: window.location.href });
+                        const scope = 'openid email profile';
+                        
+                        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
                         window.location.href = authUrl;
                       }}
                       className="cursor-pointer"
