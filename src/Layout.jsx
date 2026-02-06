@@ -188,10 +188,19 @@ export default function Layout({ children }) {
                 </DropdownMenu>
               ) : (
                 <Button 
-                  onClick={() => {
-                    const authHost = import.meta.env.VITE_BASE44_AUTH_URL || 'https://lead-flow-15e8500b.base44.app';
-                    const fromUrl = 'https://yesterdaysleads.com'; // Or dynamically window.location.origin
-                    window.location.href = `${authHost}/login?from_url=${encodeURIComponent(fromUrl)}`;
+                  onClick={() => {                    
+                    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+                    if (!googleClientId) {
+                      console.error("VITE_GOOGLE_CLIENT_ID is not set.");
+                      return;
+                    }
+
+                    const redirectUri = 'https://yesterdaysleads.com/api/apps/auth/callback';
+                    const state = JSON.stringify({ from_url: 'https://yesterdaysleads.com' });
+
+                    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile&state=${encodeURIComponent(state)}`;
+
+                    window.location.href = googleAuthUrl;
                   }}
                   className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
                 >
