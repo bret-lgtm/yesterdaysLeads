@@ -124,8 +124,9 @@ export const AuthProvider = ({ children }) => {
   };
 
 const navigateToLogin = () => {
-  // Manually point to the Base44 auth server to avoid the Vercel 404
-  window.location.href = `https://lead-flow-15e8500b.base44.app/login?from_url=${window.location.origin}`;
+  // Use the environment variable for the auth host to avoid hardcoding.
+  const authHost = import.meta.env.VITE_BASE44_AUTH_URL || 'https://lead-flow-15e8500b.base44.app';
+  window.location.href = `${authHost}/login?from_url=${encodeURIComponent(window.location.origin)}`;
 };
 
   return (

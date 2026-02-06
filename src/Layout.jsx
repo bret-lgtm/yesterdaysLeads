@@ -189,8 +189,9 @@ export default function Layout({ children }) {
               ) : (
                 <Button 
                   onClick={() => {
-                    const fromUrl = 'https://yesterdaysleads.com';
-                    window.location.href = `https://lead-flow-15e8500b.base44.app/login?from_url=${encodeURIComponent(fromUrl)}`;
+                    const authHost = import.meta.env.VITE_BASE44_AUTH_URL || 'https://lead-flow-15e8500b.base44.app';
+                    const fromUrl = 'https://yesterdaysleads.com'; // Or dynamically window.location.origin
+                    window.location.href = `${authHost}/login?from_url=${encodeURIComponent(fromUrl)}`;
                   }}
                   className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
                 >
