@@ -188,7 +188,10 @@ export default function Layout({ children }) {
                 </DropdownMenu>
               ) : (
                 <Button 
-                  onClick={() => base44.auth.redirectToLogin()}
+                  onClick={() => {
+                    const fromUrl = window.location.origin;
+                    window.location.href = `https://lead-flow-15e8500b.base44.app/login?from_url=${encodeURIComponent(fromUrl)}`;
+                  }}
                   className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
                 >
                   Sign In
