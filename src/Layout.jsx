@@ -55,6 +55,26 @@ export default function Layout({ children }) {
     }
   }, [user?.email]);
 
+  // Handle Google OAuth callback success
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleAuth = urlParams.get('google_auth');
+    const type = urlParams.get('type');
+    const email = urlParams.get('email');
+    
+    if (googleAuth === 'success' && email) {
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+      
+      if (type === 'new') {
+        alert(`Welcome! We've sent a login link to ${email}. Please check your email to complete sign in.`);
+      } else {
+        // Existing user - trigger magic link
+        base44.auth.redirectToLogin();
+      }
+    }
+  }, []);
+
   // Track localStorage cart count for anonymous users
   React.useEffect(() => {
     const updateLocalCount = () => {
