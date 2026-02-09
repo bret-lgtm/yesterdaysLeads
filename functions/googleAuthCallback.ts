@@ -70,13 +70,15 @@ Deno.serve(async (req) => {
       return new Response(`User creation failed: ${error.message}`, { status: 500 });
     }
 
-    // Ensure user exists or is invited
-    try {
-      await base44.users.inviteUser(userInfo.email, 'user');
-    } catch (e) {
-      // User might already exist, that's fine
-      console.log('User invite skipped:', e.message);
-    }
+    // Create JWT token for session (simple approach for exported app)
+    const sessionData = {
+      email: userInfo.email,
+      name: userInfo.name || userInfo.email,
+      timestamp: Date.now()
+    };
+    
+    // Base64 encode the session data
+    const sessionToken = btoa(JSON.stringify(sessionData));
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
@@ -89,20 +91,13 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Store Google auth info and redirect to complete login
-    return new Response(`
-      <html>
-        <body>
-          <script>
-            sessionStorage.setItem('google_oauth_email', '${userInfo.email}');
-            sessionStorage.setItem('google_oauth_name', '${userInfo.name || userInfo.email}');
-            window.location.href = '${redirectUrl}?google_auth=success';
-          </script>
-        </body>
-      </html>
-    `, {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
+    // Set cookie and redirect
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': redirectUrl,
+        'Set-Cookie': `google_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+      }
     });
     
   } catch (error) {
