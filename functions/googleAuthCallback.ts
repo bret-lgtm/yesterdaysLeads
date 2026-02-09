@@ -70,8 +70,9 @@ Deno.serve(async (req) => {
       return new Response(`User creation failed: ${error.message}`, { status: 500 });
     }
 
-    // Create session token using service role
-    const sessionToken = await base44.asServiceRole.users.createSessionToken(userInfo.email);
+    // Use Base44's invite system to create authenticated session
+    // Invite will create user if not exists and return a login URL
+    const inviteResult = await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
@@ -84,13 +85,20 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Redirect with auth cookie
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': redirectUrl,
-        'Set-Cookie': `base44_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
-      }
+    // Store Google auth info and redirect to complete login
+    return new Response(`
+      <html>
+        <body>
+          <script>
+            sessionStorage.setItem('google_oauth_email', '${userInfo.email}');
+            sessionStorage.setItem('google_oauth_name', '${userInfo.name || userInfo.email}');
+            window.location.href = '${redirectUrl}?google_auth=success';
+          </script>
+        </body>
+      </html>
+    `, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
     });
     
   } catch (error) {
