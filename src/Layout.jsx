@@ -55,17 +55,6 @@ export default function Layout({ children }) {
     }
   }, [user?.email]);
 
-  // Handle Google OAuth callback
-  React.useEffect(() => {
-    const email = sessionStorage.getItem('google_oauth_email');
-    if (email && !user) {
-      // User completed Google OAuth but not Base44 auth - trigger Base44 login
-      sessionStorage.removeItem('google_oauth_email');
-      sessionStorage.removeItem('google_oauth_name');
-      base44.auth.redirectToLogin();
-    }
-  }, [user]);
-
   // Track localStorage cart count for anonymous users
   React.useEffect(() => {
     const updateLocalCount = () => {
