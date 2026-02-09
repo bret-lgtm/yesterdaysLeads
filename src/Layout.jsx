@@ -55,24 +55,6 @@ export default function Layout({ children }) {
     }
   }, [user?.email]);
 
-  // Complete Google OAuth by triggering Base44 magic link
-  React.useEffect(() => {
-    const googleAuthComplete = sessionStorage.getItem('google_oauth_complete');
-    const email = sessionStorage.getItem('google_oauth_email');
-    
-    if (googleAuthComplete === 'true' && email && !user) {
-      // Clear flags
-      sessionStorage.removeItem('google_oauth_complete');
-      sessionStorage.removeItem('google_oauth_email');
-      sessionStorage.removeItem('google_oauth_name');
-      
-      // Trigger Base44 passwordless login
-      base44.auth.signInWithMagicLink(email).catch(err => {
-        console.error('Magic link failed:', err);
-      });
-    }
-  }, [user]);
-
   // Track localStorage cart count for anonymous users
   React.useEffect(() => {
     const updateLocalCount = () => {
