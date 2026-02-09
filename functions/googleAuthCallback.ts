@@ -55,8 +55,10 @@ Deno.serve(async (req) => {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
-        // Invite new user (this creates them in Base44)
+        console.log('Creating new user via invite:', userInfo.email);
         await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
+      } else {
+        console.log('User already exists:', userInfo.email);
       }
     } catch (error) {
       console.error('Error ensuring user exists:', error);
@@ -74,14 +76,22 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Redirect to Base44 login with email pre-filled
-    const loginUrl = `/login?email=${encodeURIComponent(userInfo.email)}&next=${encodeURIComponent(redirectUrl)}`;
-    
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': loginUrl
-      }
+    // Store OAuth info in sessionStorage and redirect to trigger Base44 auth
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Signing in...</title></head>
+        <body>
+          <script>
+            sessionStorage.setItem('google_oauth_email', '${userInfo.email}');
+            sessionStorage.setItem('google_oauth_name', '${userInfo.name || userInfo.email}');
+            window.location.href = '${redirectUrl}';
+          </script>
+        </body>
+      </html>
+    `, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
     });
     
   } catch (error) {
