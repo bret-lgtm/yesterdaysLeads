@@ -51,40 +51,19 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Check if user exists in Base44, if not invite them
-    let userId;
     try {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
         console.log('Inviting new user:', userInfo.email);
         await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
-        
-        // Wait a moment for user to be created, then fetch
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        const newUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
-        if (newUsers.length > 0) {
-          userId = newUsers[0].id;
-          console.log('User created with ID:', userId);
-        } else {
-          throw new Error('User was invited but not found');
-        }
+        console.log('User invited successfully');
       } else {
         console.log('User already exists:', userInfo.email);
-        userId = existingUsers[0].id;
       }
     } catch (error) {
       console.error('Error handling user:', error);
       return new Response(`User setup failed: ${error.message}`, { status: 500 });
-    }
-    
-    // Create Base44 session token
-    let sessionToken;
-    try {
-      sessionToken = await base44.asServiceRole.auth.createSessionToken(userId);
-      console.log('Created session token for user:', userId);
-    } catch (error) {
-      console.error('Error creating session token:', error);
-      return new Response(`Session token creation failed: ${error.message}`, { status: 500 });
     }
     
     // Parse state to get redirect URL
@@ -98,12 +77,14 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Set Base44 session cookie and redirect
+    // Redirect to Base44's magic link authentication
+    const appUrl = Deno.env.get('APP_URL') || 'https://yesterdaysleads.com';
+    const magicLinkUrl = `https://lead-flow-15e8500b.base44.app/api/auth/magic-link?email=${encodeURIComponent(userInfo.email)}&next=${encodeURIComponent(redirectUrl)}`;
+    
     return new Response(null, {
       status: 302,
       headers: {
-        'Location': redirectUrl,
-        'Set-Cookie': `base44_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000; Domain=.yesterdaysleads.com`
+        'Location': magicLinkUrl
       }
     });
     
