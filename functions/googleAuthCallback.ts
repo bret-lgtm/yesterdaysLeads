@@ -70,9 +70,13 @@ Deno.serve(async (req) => {
       return new Response(`User creation failed: ${error.message}`, { status: 500 });
     }
 
-    // Use Base44's invite system to create authenticated session
-    // Invite will create user if not exists and return a login URL
-    const inviteResult = await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
+    // Ensure user exists or is invited
+    try {
+      await base44.users.inviteUser(userInfo.email, 'user');
+    } catch (e) {
+      // User might already exist, that's fine
+      console.log('User invite skipped:', e.message);
+    }
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
