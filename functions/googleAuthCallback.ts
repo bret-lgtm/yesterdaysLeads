@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
       return new Response(`User creation failed: ${error.message}`, { status: 500 });
     }
 
-    // Create session token
-    const sessionToken = await base44.asServiceRole.auth.signIn(userInfo.email);
+    // Create session token using service role
+    const sessionToken = await base44.asServiceRole.users.createSessionToken(userInfo.email);
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
