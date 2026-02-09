@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     // Create session token using service role
-    const sessionToken = await base44.asServiceRole.auth.createSession(userInfo.email);
+    const sessionToken = await base44.asServiceRole.users.createSessionToken(userInfo.email);
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
