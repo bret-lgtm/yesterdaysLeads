@@ -53,12 +53,12 @@ import Checkout from './pages/Checkout';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import DoNotSell from './pages/DoNotSell';
 import Home from './pages/Home';
+import LoginPage from './pages/LoginPage';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
-import LoginPage from './pages/LoginPage';
 import __Layout from './Layout.jsx';
 
 
@@ -69,12 +69,12 @@ export const PAGES = {
     "CheckoutSuccess": CheckoutSuccess,
     "DoNotSell": DoNotSell,
     "Home": Home,
+    "LoginPage": LoginPage,
     "MyOrders": MyOrders,
     "Pricing": Pricing,
     "PrivacyPolicy": PrivacyPolicy,
     "Support": Support,
     "TermsOfService": TermsOfService,
-    "LoginPage": LoginPage,
 }
 
 export const pagesConfig = {
