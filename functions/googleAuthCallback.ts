@@ -76,14 +76,22 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Redirect to custom login page with email pre-filled
-    const loginPageUrl = `${redirectUrl.includes('yesterdaysleads.com') ? '' : 'https://yesterdaysleads.com'}/LoginPage?email=${encodeURIComponent(userInfo.email)}&next=${encodeURIComponent(redirectUrl)}`;
-    
-    return new Response(null, {
-      status: 302,
-      headers: {
-        'Location': loginPageUrl
-      }
+    // Store OAuth info in sessionStorage and redirect to trigger Base44 auth
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+        <head><title>Signing in...</title></head>
+        <body>
+          <script>
+            sessionStorage.setItem('google_oauth_email', '${userInfo.email}');
+            sessionStorage.setItem('google_oauth_name', '${userInfo.name || userInfo.email}');
+            window.location.href = '${redirectUrl}';
+          </script>
+        </body>
+      </html>
+    `, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
     });
     
   } catch (error) {
