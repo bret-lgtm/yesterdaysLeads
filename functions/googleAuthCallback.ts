@@ -51,15 +51,17 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Check if user exists in Base44, if not invite them
+    let userExists = false;
     try {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
         console.log('Inviting new user:', userInfo.email);
         await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
-        console.log('User invited successfully');
+        console.log('User invited - they will receive welcome email');
       } else {
         console.log('User already exists:', userInfo.email);
+        userExists = true;
       }
     } catch (error) {
       console.error('Error handling user:', error);
@@ -77,14 +79,14 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Redirect to Base44's magic link authentication
-    const appUrl = Deno.env.get('APP_URL') || 'https://yesterdaysleads.com';
-    const magicLinkUrl = `https://lead-flow-15e8500b.base44.app/api/auth/magic-link?email=${encodeURIComponent(userInfo.email)}&next=${encodeURIComponent(redirectUrl)}`;
+    // Redirect back to app with message
+    const messageParam = userExists ? 'existing' : 'new';
+    const finalUrl = `${redirectUrl}${redirectUrl.includes('?') ? '&' : '?'}google_auth=success&type=${messageParam}&email=${encodeURIComponent(userInfo.email)}`;
     
     return new Response(null, {
       status: 302,
       headers: {
-        'Location': magicLinkUrl
+        'Location': finalUrl
       }
     });
     
