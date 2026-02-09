@@ -51,18 +51,33 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     
     // Check if user exists, if not invite them
+    let userId;
     try {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
         console.log('Creating new user via invite:', userInfo.email);
         await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
+        // Fetch the newly created user
+        const newUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
+        userId = newUsers[0]?.id;
       } else {
         console.log('User already exists:', userInfo.email);
+        userId = existingUsers[0].id;
       }
     } catch (error) {
       console.error('Error ensuring user exists:', error);
       return new Response(`User setup failed: ${error.message}`, { status: 500 });
+    }
+    
+    // Create Base44 session token
+    let sessionToken;
+    try {
+      sessionToken = await base44.asServiceRole.auth.createSessionToken(userId);
+      console.log('Session token created for user:', userId);
+    } catch (error) {
+      console.error('Error creating session token:', error);
+      return new Response(`Session creation failed: ${error.message}`, { status: 500 });
     }
     
     // Parse state to get redirect URL
@@ -76,22 +91,13 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Store OAuth info in sessionStorage and redirect to trigger Base44 auth
-    return new Response(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Signing in...</title></head>
-        <body>
-          <script>
-            sessionStorage.setItem('google_oauth_email', '${userInfo.email}');
-            sessionStorage.setItem('google_oauth_name', '${userInfo.name || userInfo.email}');
-            window.location.href = '${redirectUrl}';
-          </script>
-        </body>
-      </html>
-    `, {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' }
+    // Set session cookie and redirect
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': redirectUrl,
+        'Set-Cookie': `base44_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+      }
     });
     
   } catch (error) {
