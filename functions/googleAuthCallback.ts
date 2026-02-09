@@ -50,35 +50,18 @@ Deno.serve(async (req) => {
     // Initialize Base44 client
     const base44 = createClientFromRequest(req);
     
-    // Check if user exists, if not create them
-    let user;
+    // Check if user exists, if not invite them
     try {
       const existingUsers = await base44.asServiceRole.entities.User.filter({ email: userInfo.email });
       
       if (existingUsers.length === 0) {
-        // Create new user
-        user = await base44.asServiceRole.entities.User.create({
-          email: userInfo.email,
-          full_name: userInfo.name || userInfo.email,
-          role: 'user'
-        });
-      } else {
-        user = existingUsers[0];
+        // Invite new user (this creates them in Base44)
+        await base44.asServiceRole.users.inviteUser(userInfo.email, 'user');
       }
     } catch (error) {
-      console.error('Error handling user:', error);
-      return new Response(`User creation failed: ${error.message}`, { status: 500 });
+      console.error('Error ensuring user exists:', error);
+      return new Response(`User setup failed: ${error.message}`, { status: 500 });
     }
-
-    // Create JWT token for session (simple approach for exported app)
-    const sessionData = {
-      email: userInfo.email,
-      name: userInfo.name || userInfo.email,
-      timestamp: Date.now()
-    };
-    
-    // Base64 encode the session data
-    const sessionToken = btoa(JSON.stringify(sessionData));
     
     // Parse state to get redirect URL
     let redirectUrl = '/';
@@ -91,12 +74,13 @@ Deno.serve(async (req) => {
       console.error('Failed to parse state:', e);
     }
 
-    // Set cookie and redirect
+    // Redirect to Base44 login with email pre-filled
+    const loginUrl = `/login?email=${encodeURIComponent(userInfo.email)}&next=${encodeURIComponent(redirectUrl)}`;
+    
     return new Response(null, {
       status: 302,
       headers: {
-        'Location': redirectUrl,
-        'Set-Cookie': `google_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`
+        'Location': loginUrl
       }
     });
     
