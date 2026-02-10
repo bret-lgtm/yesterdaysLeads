@@ -55,25 +55,7 @@ export default function Layout({ children }) {
     }
   }, [user?.email]);
 
-  // Handle Google OAuth callback success
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const googleAuth = urlParams.get('google_auth');
-    const type = urlParams.get('type');
-    const email = urlParams.get('email');
-    
-    if (googleAuth === 'success' && email) {
-      // Clean up URL
-      window.history.replaceState({}, '', window.location.pathname);
-      
-      if (type === 'new') {
-        alert(`Welcome! We've sent a login link to ${email}. Please check your email to complete sign in.`);
-      } else {
-        // Existing user - trigger magic link
-        base44.auth.redirectToLogin();
-      }
-    }
-  }, []);
+
 
   // Track localStorage cart count for anonymous users
   React.useEffect(() => {
@@ -207,34 +189,12 @@ export default function Layout({ children }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg">
-                      Sign In
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 rounded-xl">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        const clientId = import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID;
-                        const redirectUri = `${window.location.origin}/api/functions/googleAuthCallback`;
-                        const state = JSON.stringify({ from_url: window.location.href });
-                        const scope = 'openid email profile';
-                        
-                        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${encodeURIComponent(state)}`;
-                        window.location.href = authUrl;
-                      }}
-                      className="cursor-pointer"
-                    >
-                      Continue with Google
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/login" className="cursor-pointer">
-                        Sign in with Email
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button 
+                  onClick={() => base44.auth.redirectToLogin()}
+                  className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
+                >
+                  Sign In
+                </Button>
               )}
 
               {/* Mobile Menu Toggle */}
