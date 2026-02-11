@@ -1,45 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function SignIn() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    // Get the redirect URL from query params
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromUrl = urlParams.get('from_url') || '/';
     
-    if (!email) {
-      toast.error('Please enter your email');
-      return;
-    }
-
-    setLoading(true);
-    
-    try {
-      // Get the redirect URL from query params
-      const urlParams = new URLSearchParams(window.location.search);
-      const fromUrl = urlParams.get('from_url') || window.location.origin + '/';
-      
-      // Use Base44's built-in magic link authentication
-      await base44.auth.sendMagicLink(email, fromUrl);
-      
-      setEmailSent(true);
-      toast.success('Check your email for the login link!');
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error.message || 'Failed to send login link');
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Redirect to Base44's built-in login
+    base44.auth.redirectToLogin(fromUrl);
+  }, []);
 
   if (emailSent) {
     return (

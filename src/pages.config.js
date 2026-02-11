@@ -57,9 +57,9 @@ import LoginPage from './pages/LoginPage';
 import MyOrders from './pages/MyOrders';
 import Pricing from './pages/Pricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import SignIn from './pages/SignIn';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
-import SignIn from './pages/SignIn';
 import __Layout from './Layout.jsx';
 
 
@@ -74,9 +74,9 @@ export const PAGES = {
     "MyOrders": MyOrders,
     "Pricing": Pricing,
     "PrivacyPolicy": PrivacyPolicy,
+    "SignIn": SignIn,
     "Support": Support,
     "TermsOfService": TermsOfService,
-    "SignIn": SignIn,
 }
 
 export const pagesConfig = {
