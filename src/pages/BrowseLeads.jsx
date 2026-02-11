@@ -22,7 +22,7 @@ export default function BrowseLeads() {
   const urlLeadType = urlParams.get('lead_type');
   const urlAgeRange = urlParams.get('age_range');
   
-  const [filters, setFilters] = useState({ age_range: urlAgeRange || 'all', lead_type: urlLeadType || 'all' });
+  const [filters, setFilters] = useState({ age_range: urlAgeRange || 'all', lead_type: urlLeadType || 'all', states: [] });
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -321,7 +321,7 @@ export default function BrowseLeads() {
             setCurrentPage(1);
           }}
           onReset={() => {
-            setFilters({ age_range: 'all', lead_type: 'all' });
+            setFilters({ age_range: 'all', lead_type: 'all', states: [] });
             setCurrentPage(1);
           }}
         />

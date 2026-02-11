@@ -4,7 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, RotateCcw, Info } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, RotateCcw, Info, X, Check } from "lucide-react";
 
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -75,23 +77,92 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
 
         <div className="space-y-2">
           <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">State</Label>
-          <Select value={filters.state || "all"} onValueChange={(v) => handleChange('state', v)}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200">
-              <SelectValue placeholder="All States" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All States</SelectItem>
-              <SelectItem value="Unknown">
-                <div className="flex items-center gap-2">
-                  Unknown
-                  <span className="text-xs text-emerald-600 font-medium">50% Off!</span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-11 w-full rounded-xl border-slate-200 justify-start font-normal">
+                {filters.states?.length > 0 ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm">{filters.states.length} selected</span>
+                    {filters.states.slice(0, 3).map(state => (
+                      <Badge key={state} variant="secondary" className="text-xs">
+                        {state}
+                      </Badge>
+                    ))}
+                    {filters.states.length > 3 && (
+                      <span className="text-xs text-slate-500">+{filters.states.length - 3}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-slate-500">All States</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0" align="start">
+              <div className="p-3 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm">Select States</span>
+                  {filters.states?.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange('states', [])}
+                      className="h-7 text-xs"
+                    >
+                      Clear all
+                    </Button>
+                  )}
                 </div>
-              </SelectItem>
-              {US_STATES.map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              </div>
+              <div className="p-3 max-h-64 overflow-y-auto">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => {
+                      const selected = filters.states || [];
+                      if (selected.includes('Unknown')) {
+                        handleChange('states', selected.filter(s => s !== 'Unknown'));
+                      } else {
+                        handleChange('states', [...selected, 'Unknown']);
+                      }
+                    }}
+                    className={`p-2 text-sm rounded-lg border transition-colors ${
+                      (filters.states || []).includes('Unknown')
+                        ? 'bg-emerald-50 border-emerald-600 text-emerald-900'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>Unknown</span>
+                      {(filters.states || []).includes('Unknown') && <Check className="w-3 h-3" />}
+                    </div>
+                    <span className="text-xs text-emerald-600 font-medium">50% Off!</span>
+                  </button>
+                  {US_STATES.map(state => (
+                    <button
+                      key={state}
+                      onClick={() => {
+                        const selected = filters.states || [];
+                        if (selected.includes(state)) {
+                          handleChange('states', selected.filter(s => s !== state));
+                        } else {
+                          handleChange('states', [...selected, state]);
+                        }
+                      }}
+                      className={`p-2 text-sm rounded-lg border transition-colors ${
+                        (filters.states || []).includes(state)
+                          ? 'bg-emerald-50 border-emerald-600 text-emerald-900'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{state}</span>
+                        {(filters.states || []).includes(state) && <Check className="w-3 h-3" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-2">
