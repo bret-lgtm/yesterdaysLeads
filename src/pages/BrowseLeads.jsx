@@ -51,7 +51,9 @@ export default function BrowseLeads() {
     queryKey: ['filteredLeads', JSON.stringify(filters)],
     queryFn: async () => {
       try {
+        console.log('Fetching leads with filters:', filters);
         const response = await base44.functions.invoke('getFilteredLeads', { filters });
+        console.log('Received leads:', response.data?.leads?.length);
         return response.data?.leads || [];
       } catch (err) {
         console.error('Failed to load leads');
