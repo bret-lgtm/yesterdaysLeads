@@ -59,7 +59,6 @@ import Pricing from './pages/Pricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
-import OldLoginPage from './pages/OldLoginPage';
 import __Layout from './Layout.jsx';
 
 
@@ -76,7 +75,6 @@ export const PAGES = {
     "PrivacyPolicy": PrivacyPolicy,
     "Support": Support,
     "TermsOfService": TermsOfService,
-    "OldLoginPage": OldLoginPage,
 }
 
 export const pagesConfig = {
