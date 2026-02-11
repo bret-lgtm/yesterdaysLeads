@@ -26,14 +26,10 @@ export default function SignIn() {
     try {
       // Get the redirect URL from query params
       const urlParams = new URLSearchParams(window.location.search);
-      const fromUrl = urlParams.get('from_url') || window.location.origin;
+      const fromUrl = urlParams.get('from_url') || window.location.origin + '/';
       
-      // Send magic link email
-      await base44.integrations.Core.SendEmail({
-        to: email,
-        subject: "Sign in to Yesterday's Leads",
-        body: `Click here to sign in: ${window.location.origin}/api/auth/magic-link?email=${encodeURIComponent(email)}&next=${encodeURIComponent(fromUrl)}`
-      });
+      // Use Base44's built-in magic link authentication
+      await base44.auth.sendMagicLink(email, fromUrl);
       
       setEmailSent(true);
       toast.success('Check your email for the login link!');
