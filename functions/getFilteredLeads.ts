@@ -123,8 +123,12 @@ Deno.serve(async (req) => {
 
     // State filter - support both single state and multiple states
     if (filters.states && filters.states.length > 0) {
+      console.log(`Filtering by states: ${JSON.stringify(filters.states)}`);
+      const beforeCount = filtered.length;
       filtered = filtered.filter(lead => filters.states.includes(lead.state));
+      console.log(`After state filter: ${filtered.length} (filtered from ${beforeCount})`);
     } else if (filters.state && filters.state !== 'all') {
+      console.log(`Filtering by single state: ${filters.state}`);
       filtered = filtered.filter(lead => lead.state === filters.state);
     }
 
