@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Search, RotateCcw, Info, X, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, RotateCcw, Info } from "lucide-react";
 
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
@@ -114,50 +115,39 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
                 </div>
               </div>
               <div className="p-3 max-h-64 overflow-y-auto">
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      const selected = filters.states || [];
-                      if (selected.includes('Unknown')) {
-                        handleChange('states', selected.filter(s => s !== 'Unknown'));
-                      } else {
-                        handleChange('states', [...selected, 'Unknown']);
-                      }
-                    }}
-                    className={`p-2 text-sm rounded-lg border transition-colors ${
-                      (filters.states || []).includes('Unknown')
-                        ? 'bg-emerald-50 border-emerald-600 text-emerald-900'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>Unknown</span>
-                      {(filters.states || []).includes('Unknown') && <Check className="w-3 h-3" />}
-                    </div>
-                    <span className="text-xs text-emerald-600 font-medium">50% Off!</span>
-                  </button>
-                  {US_STATES.map(state => (
-                    <button
-                      key={state}
-                      onClick={() => {
+                <div className="space-y-1">
+                  <label className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                    <Checkbox
+                      checked={(filters.states || []).includes('Unknown')}
+                      onCheckedChange={(checked) => {
                         const selected = filters.states || [];
-                        if (selected.includes(state)) {
-                          handleChange('states', selected.filter(s => s !== state));
+                        if (checked) {
+                          handleChange('states', [...selected, 'Unknown']);
                         } else {
-                          handleChange('states', [...selected, state]);
+                          handleChange('states', selected.filter(s => s !== 'Unknown'));
                         }
                       }}
-                      className={`p-2 text-sm rounded-lg border transition-colors ${
-                        (filters.states || []).includes(state)
-                          ? 'bg-emerald-50 border-emerald-600 text-emerald-900'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{state}</span>
-                        {(filters.states || []).includes(state) && <Check className="w-3 h-3" />}
-                      </div>
-                    </button>
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">Unknown</span>
+                      <span className="text-xs text-emerald-600 font-medium">50% Off!</span>
+                    </div>
+                  </label>
+                  {US_STATES.map(state => (
+                    <label key={state} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                      <Checkbox
+                        checked={(filters.states || []).includes(state)}
+                        onCheckedChange={(checked) => {
+                          const selected = filters.states || [];
+                          if (checked) {
+                            handleChange('states', [...selected, state]);
+                          } else {
+                            handleChange('states', selected.filter(s => s !== state));
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{state}</span>
+                    </label>
                   ))}
                 </div>
               </div>
