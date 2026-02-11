@@ -190,7 +190,7 @@ export default function Layout({ children }) {
                 </DropdownMenu>
               ) : (
                 <Button 
-                  onClick={() => navigate(createPageUrl('Login') + `?from_url=${encodeURIComponent(window.location.href)}`)}
+                  onClick={() => navigate(createPageUrl('SignIn') + `?from_url=${encodeURIComponent(window.location.href)}`)}
                   className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
                 >
                   Sign In
