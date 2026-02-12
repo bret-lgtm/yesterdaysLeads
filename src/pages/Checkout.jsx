@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -30,6 +31,7 @@ export default function Checkout() {
   const [processing, setProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -308,10 +310,29 @@ export default function Checkout() {
                 </div>
               </div>
 
+              <div className="flex items-start gap-3 mt-6 mb-4">
+                <Checkbox
+                  id="terms"
+                  checked={agreedToTerms}
+                  onCheckedChange={setAgreedToTerms}
+                  className="mt-1"
+                />
+                <label htmlFor="terms" className="text-sm text-slate-600 cursor-pointer">
+                  I agree to the{' '}
+                  <Link to={createPageUrl('TermsOfService')} className="text-emerald-600 hover:underline" target="_blank">
+                    Terms of Service
+                  </Link>
+                  {' '}and{' '}
+                  <Link to={createPageUrl('PrivacyPolicy')} className="text-emerald-600 hover:underline" target="_blank">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+
               <Button
                 onClick={handleCheckout}
-                disabled={cartItems.length === 0 || processing}
-                className="w-full h-12 mt-6 rounded-xl bg-slate-900 hover:bg-slate-800"
+                disabled={cartItems.length === 0 || processing || !agreedToTerms}
+                className="w-full h-12 rounded-xl bg-slate-900 hover:bg-slate-800"
               >
                 {processing ? (
                   <>
