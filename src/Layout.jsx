@@ -189,11 +189,12 @@ export default function Layout({ children }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Link to={createPageUrl('LoginPage')}>
-                  <Button className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg">
-                    Sign In
-                  </Button>
-                </Link>
+                <Button 
+                  onClick={() => base44.auth.redirectToLogin(window.location.href)}
+                  className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
+                >
+                  Sign In
+                </Button>
               )}
 
               {/* Mobile Menu Toggle */}
