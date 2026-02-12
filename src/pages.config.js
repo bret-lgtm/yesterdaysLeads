@@ -55,11 +55,11 @@ import DoNotSell from './pages/DoNotSell';
 import Home from './pages/Home';
 import LoginPage from './pages/LoginPage';
 import MyOrders from './pages/MyOrders';
+import OldLoginPage from './pages/OldLoginPage';
 import Pricing from './pages/Pricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Support from './pages/Support';
 import TermsOfService from './pages/TermsOfService';
-import OldLoginPage from './pages/OldLoginPage';
 import __Layout from './Layout.jsx';
 
 
@@ -72,11 +72,11 @@ export const PAGES = {
     "Home": Home,
     "LoginPage": LoginPage,
     "MyOrders": MyOrders,
+    "OldLoginPage": OldLoginPage,
     "Pricing": Pricing,
     "PrivacyPolicy": PrivacyPolicy,
     "Support": Support,
     "TermsOfService": TermsOfService,
-    "OldLoginPage": OldLoginPage,
 }
 
 export const pagesConfig = {

@@ -189,17 +189,11 @@ export default function Layout({ children }) {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button 
-                  onClick={async () => {
-                    const response = await base44.functions.invoke('getGoogleAuthUrl', { 
-                      fromUrl: window.location.href 
-                    });
-                    window.location.href = response.data.url;
-                  }}
-                  className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg"
-                >
-                  Sign In
-                </Button>
+                <Link to={createPageUrl('LoginPage')}>
+                  <Button className="rounded-xl bg-white text-emerald-700 hover:bg-white/90 shadow-lg">
+                    Sign In
+                  </Button>
+                </Link>
               )}
 
               {/* Mobile Menu Toggle */}
