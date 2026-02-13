@@ -2,17 +2,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import Stripe from 'npm:stripe';
 
 Deno.serve(async (req) => {
-  const stripe = new Stripe(Deno.env.get("STRIPE_TEST_SECRET_KEY"), {
+  const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), {
     apiVersion: '2023-10-16'
   });
-  console.log('Webhook using Stripe key:', Deno.env.get("STRIPE_TEST_SECRET_KEY")?.substring(0, 7));
-  console.log('Webhook secret available:', !!Deno.env.get('STRIPE_TEST_WEBHOOK_SECRET'));
+  console.log('Webhook using Stripe key:', Deno.env.get("STRIPE_SECRET_KEY")?.substring(0, 7));
+  console.log('Webhook secret available:', !!Deno.env.get('STRIPE_WEBHOOK_SECRET'));
   const base44 = createClientFromRequest(req);
   
   try {
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
-    const webhookSecret = Deno.env.get('STRIPE_TEST_WEBHOOK_SECRET');
+    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
 
     if (!webhookSecret) {
       console.error('STRIPE_WEBHOOK_SECRET not set');
