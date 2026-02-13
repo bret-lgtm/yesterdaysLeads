@@ -34,6 +34,16 @@ Deno.serve(async (req) => {
     const successUrl = `${appUrl}/CheckoutSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/Checkout`;
 
+    // Store cart data in the session's client_reference_id
+    const cartData = {
+      cartItems: cartItems.map(item => ({
+        id: item.id,
+        lead_id: item.lead_id,
+        age_in_days: item.age_in_days
+      })),
+      userEmail: user?.email || customerEmail
+    };
+    
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -42,6 +52,7 @@ Deno.serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: user?.email || customerEmail,
+      client_reference_id: Buffer.from(JSON.stringify(cartData)).toString('base64'),
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,

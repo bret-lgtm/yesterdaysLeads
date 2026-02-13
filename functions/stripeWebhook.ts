@@ -35,28 +35,32 @@ Deno.serve(async (req) => {
 
       console.log('Processing completed checkout:', session.id);
 
-      // Extract data from metadata
-      const userEmail = metadata.user_email;
-      const cartItemIds = metadata.cart_item_ids.split(',').filter(id => id.trim());
+      // Extract cart data from client_reference_id
+      let cartData;
+      try {
+        const decoded = Buffer.from(session.client_reference_id, 'base64').toString('utf-8');
+        cartData = JSON.parse(decoded);
+      } catch (err) {
+        console.error('Failed to decode cart data:', err);
+        return Response.json({ error: 'Invalid cart data' }, { status: 400 });
+      }
 
-      console.log('User email from metadata:', userEmail);
-      console.log('Cart item IDs to fetch:', cartItemIds);
+      const userEmail = cartData.userEmail;
+      const cartItemData = cartData.cartItems;
 
-      // Fetch cart items
+      console.log('User email:', userEmail);
+      console.log('Cart items count:', cartItemData.length);
+
+      // Fetch full cart items from database
       const cartItems = [];
-      for (const id of cartItemIds) {
+      for (const itemData of cartItemData) {
         try {
-          console.log(`Attempting to fetch cart item with ID: ${id}`);
-          const item = await base44.asServiceRole.entities.CartItem.get(id);
+          const item = await base44.asServiceRole.entities.CartItem.get(itemData.id);
           if (item) {
-            console.log(`Successfully fetched cart item ${id}`);
             cartItems.push(item);
-          } else {
-            console.log(`Cart item ${id} returned null`);
           }
         } catch (err) {
-          console.error(`Error fetching cart item ${id}:`, err);
-          console.warn(`Could not fetch cart item ${id}:`, err.message);
+          console.warn(`Could not fetch cart item ${itemData.id}:`, err.message);
         }
       }
 
@@ -134,11 +138,11 @@ Deno.serve(async (req) => {
       }
 
       // Clear cart items
-      for (const cartItemId of cartItemIds) {
+      for (const itemData of cartItemData) {
         try {
-          await base44.asServiceRole.entities.CartItem.delete(cartItemId);
+          await base44.asServiceRole.entities.CartItem.delete(itemData.id);
         } catch (err) {
-          console.warn(`Could not delete cart item ${cartItemId}:`, err.message);
+          console.warn(`Could not delete cart item ${itemData.id}:`, err.message);
         }
       }
 
