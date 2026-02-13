@@ -3,10 +3,10 @@ import Stripe from 'npm:stripe';
 
 Deno.serve(async (req) => {
   try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), {
+    const stripe = new Stripe(Deno.env.get("STRIPE_TEST_SECRET_KEY"), {
       apiVersion: '2023-10-16'
     });
-    console.log('Using Stripe key:', Deno.env.get("STRIPE_SECRET_KEY")?.substring(0, 7));
+    console.log('Using Stripe key:', Deno.env.get("STRIPE_TEST_SECRET_KEY")?.substring(0, 7));
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
 
