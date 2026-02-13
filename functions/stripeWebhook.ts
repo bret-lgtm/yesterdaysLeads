@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
       // Extract cart data from client_reference_id
       let cartData;
       try {
-        const decoded = Buffer.from(session.client_reference_id, 'base64').toString('utf-8');
+        const decoded = atob(session.client_reference_id);
         cartData = JSON.parse(decoded);
       } catch (err) {
         console.error('Failed to decode cart data:', err);

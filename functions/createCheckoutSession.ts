@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: user?.email || customerEmail,
-      client_reference_id: Buffer.from(JSON.stringify(cartData)).toString('base64'),
+      client_reference_id: btoa(JSON.stringify(cartData)),
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
