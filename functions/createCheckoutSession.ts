@@ -34,15 +34,21 @@ Deno.serve(async (req) => {
     const successUrl = `${appUrl}/CheckoutSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/Checkout`;
 
-    // Store cart data in the session's client_reference_id
-    const cartData = {
-      cartItems: cartItems.map(item => ({
+    // Create a temporary order record to store cart data
+    const tempOrder = await base44.asServiceRole.entities.Order.create({
+      customer_id: 'pending',
+      customer_email: user?.email || customerEmail,
+      total_price: cartItems.reduce((sum, item) => sum + item.price, 0),
+      lead_count: cartItems.length,
+      stripe_transaction_id: 'pending',
+      leads_purchased: cartItems.map(item => item.lead_id),
+      lead_data_snapshot: cartItems.map(item => ({
         id: item.id,
         lead_id: item.lead_id,
         age_in_days: item.age_in_days
       })),
-      userEmail: user?.email || customerEmail
-    };
+      status: 'pending'
+    });
     
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -52,11 +58,12 @@ Deno.serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: user?.email || customerEmail,
-      client_reference_id: btoa(JSON.stringify(cartData)),
+      client_reference_id: tempOrder.id,
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
-        lead_count: cartItems.length.toString()
+        lead_count: cartItems.length.toString(),
+        temp_order_id: tempOrder.id
       }
     });
 

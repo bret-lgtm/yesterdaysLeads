@@ -35,18 +35,19 @@ Deno.serve(async (req) => {
 
       console.log('Processing completed checkout:', session.id);
 
-      // Extract cart data from client_reference_id
-      let cartData;
-      try {
-        const decoded = atob(session.client_reference_id);
-        cartData = JSON.parse(decoded);
-      } catch (err) {
-        console.error('Failed to decode cart data:', err);
-        return Response.json({ error: 'Invalid cart data' }, { status: 400 });
+      // Get temp order ID from client_reference_id
+      const tempOrderId = session.client_reference_id;
+      console.log('Temp order ID:', tempOrderId);
+
+      // Fetch the temporary order
+      const tempOrder = await base44.asServiceRole.entities.Order.get(tempOrderId);
+      if (!tempOrder) {
+        console.error('Temp order not found:', tempOrderId);
+        return Response.json({ error: 'Order not found' }, { status: 404 });
       }
 
-      const userEmail = cartData.userEmail;
-      const cartItemData = cartData.cartItems;
+      const userEmail = tempOrder.customer_email;
+      const cartItemData = tempOrder.lead_data_snapshot;
 
       console.log('User email:', userEmail);
       console.log('Cart items count:', cartItemData.length);
@@ -104,6 +105,9 @@ Deno.serve(async (req) => {
       });
 
       console.log('Order created:', order.id);
+
+      // Delete the temporary order
+      await base44.asServiceRole.entities.Order.delete(tempOrderId);
 
       // Create lead suppression records for tier-based suppression
       // Determine tier for each lead based on age
