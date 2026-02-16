@@ -123,9 +123,19 @@ Deno.serve(async (req) => {
         });
         completeLeadData = sheetsResponse.data.leads || [];
         console.log('Complete lead data fetched:', completeLeadData.length);
+        console.log('Sample lead data:', JSON.stringify(completeLeadData[0] || {}));
       } catch (err) {
-        console.error('Failed to fetch complete lead data, using cart data:', err.message);
-        completeLeadData = cartItemData;
+        console.error('Failed to fetch complete lead data:', err.message);
+        // Fallback: try to get basic cart data
+        completeLeadData = cartItems.map(item => ({
+          lead_id: item.lead_id,
+          lead_type: item.lead_type,
+          lead_name: item.lead_name,
+          state: item.state,
+          zip_code: item.zip_code,
+          age_in_days: item.age_in_days,
+          price: item.price
+        }));
       }
 
       console.log('Session total:', session.amount_total / 100);
