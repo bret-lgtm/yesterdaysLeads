@@ -6,6 +6,8 @@ Deno.serve(async (req) => {
     
     const { lead_id, tier } = await req.json();
 
+    console.log(`[updateSheetTierStatus] Received request - lead_id: ${lead_id}, tier: ${tier}`);
+
     if (!lead_id || !tier) {
       return Response.json({ error: 'lead_id and tier are required' }, { status: 400 });
     }
