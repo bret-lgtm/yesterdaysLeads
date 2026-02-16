@@ -131,13 +131,16 @@ Deno.serve(async (req) => {
 
         // Update the Google Sheet tier status
         try {
-          await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
+          const sheetUpdateResponse = await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
             lead_id: cartItem.lead_id,
             tier: tier
           });
-          console.log(`Updated sheet for lead ${cartItem.lead_id}, ${tier} to Sold`);
+          console.log(`Sheet update response for ${cartItem.lead_id} (${tier}):`, JSON.stringify(sheetUpdateResponse.data));
+          if (!sheetUpdateResponse.data?.success) {
+            console.error(`Sheet update failed for ${cartItem.lead_id}:`, sheetUpdateResponse.data?.error);
+          }
         } catch (err) {
-          console.error(`Failed to update sheet for ${cartItem.lead_id}:`, err.message);
+          console.error(`Failed to update sheet for ${cartItem.lead_id}:`, err.message, err.stack);
         }
       }
 
