@@ -59,6 +59,18 @@ Deno.serve(async (req) => {
       let tempOrder;
       try {
         tempOrder = await base44.asServiceRole.entities.Order.get(tempOrderId);
+        
+        // Check if temp order is already being processed (status changed from 'pending')
+        if (tempOrder.status !== 'pending') {
+          console.log('Temp order already processed, status:', tempOrder.status);
+          return Response.json({ received: true, message: 'Order already being processed' });
+        }
+        
+        // Immediately update status to prevent duplicate processing
+        await base44.asServiceRole.entities.Order.update(tempOrderId, { 
+          status: 'processing' 
+        });
+        
       } catch (err) {
         console.error('Temp order not found:', tempOrderId, 'Error:', err.message);
         console.log('Session data:', JSON.stringify(session, null, 2));
