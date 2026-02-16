@@ -22,8 +22,12 @@ Deno.serve(async (req) => {
 
     // Parse lead_id to get lead type and row index
     // Format: leadType_rowIndex (e.g., "life_0", "auto_5")
-    const [leadType, rowIndex] = lead_id.split('_');
-    const rowNumber = parseInt(rowIndex) + 2; // +1 for header row, +1 for 0-based index
+    const parts = lead_id.split('_');
+    const leadType = parts.slice(0, -1).join('_'); // Handle multi-word types like "final_expense"
+    const rowIndex = parseInt(parts[parts.length - 1]);
+    const rowNumber = rowIndex + 2; // +1 for header row, +1 for 0-based index
+    
+    console.log(`[updateSheetTierStatus] Parsed - leadType: ${leadType}, rowIndex: ${rowIndex}, rowNumber: ${rowNumber}`);
 
     // Map lead types to sheet IDs
     const sheetIds = {
