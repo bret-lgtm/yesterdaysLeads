@@ -33,7 +33,10 @@ export default function MyOrders() {
   });
 
   const downloadCSV = (order) => {
-    if (!order.lead_data_snapshot) return;
+    if (!order.lead_data_snapshot || order.lead_data_snapshot.length === 0) {
+      console.error('No lead data available for order:', order.id);
+      return;
+    }
 
     // Group leads by type
     const leadsByType = {};
