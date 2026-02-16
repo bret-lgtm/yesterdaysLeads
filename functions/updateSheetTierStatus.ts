@@ -58,7 +58,9 @@ Deno.serve(async (req) => {
     );
 
     if (!sheetMetaResponse.ok) {
-      return Response.json({ error: 'Failed to fetch sheet metadata' }, { status: 500 });
+      const errorText = await sheetMetaResponse.text();
+      console.error(`[updateSheetTierStatus] Failed to fetch sheet metadata:`, errorText);
+      return Response.json({ error: 'Failed to fetch sheet metadata', details: errorText }, { status: 500 });
     }
 
     const sheetMeta = await sheetMetaResponse.json();
