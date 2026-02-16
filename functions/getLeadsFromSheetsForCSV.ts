@@ -78,7 +78,10 @@ Deno.serve(async (req) => {
     lead_ids.forEach(id => {
       for (const type of leadTypeOrder) {
         if (id.startsWith(type + '_')) {
-          const rowIndex = parseInt(id.split('_')[1]);
+          // Extract row index - handle multi-word types like "veteran_life"
+          const parts = id.split('_');
+          const typeParts = type.split('_').length;
+          const rowIndex = parseInt(parts[typeParts]);
           if (!leadsByType[type]) leadsByType[type] = [];
           leadsByType[type].push(rowIndex);
           break;
