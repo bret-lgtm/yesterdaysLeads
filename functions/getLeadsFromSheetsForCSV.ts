@@ -112,22 +112,25 @@ Deno.serve(async (req) => {
         const headerData = await headerResponse.json();
         const headers = headerData.values?.[0] || [];
 
-        // Fetch each specific row
-        for (const rowIndex of rowIndices) {
-          const rowNumber = rowIndex + 2; // +2 for header and 0-based index
-          const rowResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A${rowNumber}:Z${rowNumber}`)}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              }
+        // Fetch all data rows at once
+        const maxRow = Math.max(...rowIndices) + 2;
+        const dataResponse = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A2:Z${maxRow}`)}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
             }
-          );
+          }
+        );
 
-          if (!rowResponse.ok) continue;
-          const rowData = await rowResponse.json();
-          const row = rowData.values?.[0];
+        if (!dataResponse.ok) continue;
+        const allData = await dataResponse.json();
+        const allRows = allData.values || [];
+
+        // Process only the specific rows we need
+        for (const rowIndex of rowIndices) {
+          const row = allRows[rowIndex]; // rowIndex already accounts for 0-based array
           
           if (!row) continue;
 
