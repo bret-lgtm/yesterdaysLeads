@@ -70,8 +70,11 @@ Deno.serve(async (req) => {
 
     const sheetName = sheetMap[sheetId];
     if (!sheetName) {
+      console.error(`[updateSheetTierStatus] Sheet not found for sheetId: ${sheetId}`);
       return Response.json({ error: 'Sheet not found' }, { status: 404 });
     }
+    
+    console.log(`[updateSheetTierStatus] Sheet name: ${sheetName}`);
 
     // Map tier to column letter (tier_1 = column O, tier_2 = column P, etc.)
     const tierColumns = {
