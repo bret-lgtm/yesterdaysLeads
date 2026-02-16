@@ -165,7 +165,7 @@ export default function MyOrders() {
                       <Button
                         onClick={() => downloadCSV(order)}
                         disabled={!order.lead_data_snapshot || order.lead_data_snapshot.length === 0 || order.status !== 'completed'}
-                        className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
                       >
                         <Download className="w-4 h-4 mr-2" />
                         CSV
