@@ -35,19 +35,25 @@ Deno.serve(async (req) => {
 
       console.log('Processing completed checkout:', session.id);
 
-      // Check if order already exists for this payment_intent (prevent duplicate processing)
+      // Get temp order ID from metadata (fallback to client_reference_id)
+      const tempOrderId = metadata.temp_order_id || session.client_reference_id;
+      console.log('Temp order ID:', tempOrderId);
+
+      // Check if order already exists for this payment_intent or session (prevent duplicate processing)
       const existingOrders = await base44.asServiceRole.entities.Order.filter({ 
         stripe_transaction_id: session.payment_intent 
       });
       
       if (existingOrders.length > 0) {
         console.log('Order already processed for payment_intent:', session.payment_intent);
+        // Clean up temp order if it still exists
+        try {
+          await base44.asServiceRole.entities.Order.delete(tempOrderId);
+        } catch (err) {
+          console.log('Temp order already deleted or not found');
+        }
         return Response.json({ received: true, message: 'Already processed' });
       }
-
-      // Get temp order ID from metadata (fallback to client_reference_id)
-      const tempOrderId = metadata.temp_order_id || session.client_reference_id;
-      console.log('Temp order ID:', tempOrderId);
 
       // Fetch the temporary order
       let tempOrder;
