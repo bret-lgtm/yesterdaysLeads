@@ -42,15 +42,35 @@ export default function MyOrders() {
     enabled: !!user?.email
   });
 
-  const downloadCSV = (order) => {
-    if (!order.lead_data_snapshot || order.lead_data_snapshot.length === 0) {
-      console.error('No lead data available for order:', order.id);
-      return;
+  const downloadCSV = async (order) => {
+    let leadData = order.lead_data_snapshot;
+
+    // If no snapshot data, fetch it from Google Sheets
+    if (!leadData || leadData.length === 0) {
+      if (!order.leads_purchased || order.leads_purchased.length === 0) {
+        console.error('No lead IDs available for order:', order.id);
+        return;
+      }
+
+      try {
+        const response = await base44.functions.invoke('getLeadsFromSheetsForCSV', {
+          lead_ids: order.leads_purchased
+        });
+        leadData = response.data.leads;
+
+        if (!leadData || leadData.length === 0) {
+          console.error('Failed to fetch lead data for order:', order.id);
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching lead data:', error);
+        return;
+      }
     }
 
     // Group leads by type
     const leadsByType = {};
-    order.lead_data_snapshot.forEach(lead => {
+    leadData.forEach(lead => {
       const type = lead.lead_type || 'unknown';
       if (!leadsByType[type]) {
         leadsByType[type] = [];
@@ -174,7 +194,7 @@ export default function MyOrders() {
                       </div>
                       <Button
                         onClick={() => downloadCSV(order)}
-                        disabled={!order.lead_data_snapshot || order.lead_data_snapshot.length === 0 || order.status !== 'completed'}
+                        disabled={order.status !== 'completed'}
                         className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
                       >
                         <Download className="w-4 h-4 mr-2" />
