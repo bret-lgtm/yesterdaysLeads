@@ -84,20 +84,27 @@ Deno.serve(async (req) => {
 
       // Fetch complete lead data from Google Sheets for CSV
       const leadIds = cartItems.map(item => item.lead_id);
-      const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { 
-        lead_ids: leadIds
-      });
-      const completeLeadData = sheetsResponse.data.leads || [];
+      let completeLeadData = [];
+      
+      try {
+        const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { 
+          lead_ids: leadIds
+        });
+        completeLeadData = sheetsResponse.data.leads || [];
+        console.log('Complete lead data fetched:', completeLeadData.length);
+      } catch (err) {
+        console.error('Failed to fetch complete lead data, using cart data:', err.message);
+        completeLeadData = cartItemData;
+      }
 
-      console.log('Complete lead data count:', completeLeadData.length);
       console.log('Session total:', session.amount_total / 100);
 
-      // Create order
+      // Create order - use cartItems.length for accurate lead count
       const order = await base44.asServiceRole.entities.Order.create({
         customer_id: customer.id,
         customer_email: userEmail,
         total_price: session.amount_total / 100, // Convert from cents
-        lead_count: completeLeadData.length,
+        lead_count: cartItems.length,
         stripe_transaction_id: session.payment_intent,
         leads_purchased: cartItems.map(item => item.lead_id),
         lead_data_snapshot: completeLeadData,
