@@ -112,10 +112,14 @@ Deno.serve(async (req) => {
         const headerData = await headerResponse.json();
         const headers = headerData.values?.[0] || [];
 
-        // Fetch all data rows at once
-        const maxRow = Math.max(...rowIndices) + 2;
-        const dataResponse = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A2:Z${maxRow}`)}`,
+        // Build batch request for specific rows
+        const ranges = rowIndices.map(rowIndex => {
+          const rowNumber = rowIndex + 2;
+          return `'${sheetName}'!A${rowNumber}:Z${rowNumber}`;
+        });
+
+        const batchResponse = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}`,
           {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -124,13 +128,14 @@ Deno.serve(async (req) => {
           }
         );
 
-        if (!dataResponse.ok) continue;
-        const allData = await dataResponse.json();
-        const allRows = allData.values || [];
+        if (!batchResponse.ok) continue;
+        const batchData = await batchResponse.json();
+        const valueRanges = batchData.valueRanges || [];
 
-        // Process only the specific rows we need
-        for (const rowIndex of rowIndices) {
-          const row = allRows[rowIndex]; // rowIndex already accounts for 0-based array
+        // Process each row from the batch
+        for (let i = 0; i < rowIndices.length; i++) {
+          const rowIndex = rowIndices[i];
+          const row = valueRanges[i]?.values?.[0];
           
           if (!row) continue;
 
