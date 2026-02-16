@@ -50,7 +50,11 @@ export default function AdminDashboard() {
   });
 
   const totalRevenue = orders.reduce((sum, o) => sum + (o.total_price || 0), 0);
-  const totalLeadsSold = orders.reduce((sum, o) => sum + (o.lead_count || 0), 0);
+  const totalLeadsSold = orders.reduce((sum, o) => {
+    // Count from lead_data_snapshot array for accuracy
+    const count = o.lead_data_snapshot?.length || o.leads_purchased?.length || o.lead_count || 0;
+    return sum + count;
+  }, 0);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['sheetLeads'] });
