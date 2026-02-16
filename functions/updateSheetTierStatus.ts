@@ -113,7 +113,13 @@ Deno.serve(async (req) => {
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
       console.error(`[updateSheetTierStatus] Failed to update sheet:`, errorText);
-      return Response.json({ error: 'Failed to update sheet', details: errorText }, { status: 500 });
+      // Return success:false instead of error status to prevent webhook from failing
+      return Response.json({ 
+        success: false, 
+        error: 'Failed to update sheet', 
+        details: errorText,
+        range: range
+      });
     }
 
     const result = await updateResponse.json();
