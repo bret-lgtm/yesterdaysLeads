@@ -78,20 +78,60 @@ Deno.serve(async (req) => {
     
     console.log(`[updateSheetTierStatus] Sheet name: ${sheetName}`);
 
-    // Map tier to column letter (tier_1 = column O, tier_2 = column P, etc.)
-    const tierColumns = {
-      tier1: 'O',
-      tier2: 'P',
-      tier3: 'Q',
-      tier4: 'R',
-      tier5: 'S'
+    // Map tier to column index (tier_1 = column O = 15, tier_2 = column P = 16, etc.)
+    const tierColumnIndices = {
+      tier1: 15, // Column O
+      tier2: 16, // Column P
+      tier3: 17, // Column Q
+      tier4: 18, // Column R
+      tier5: 19  // Column S
     };
 
-    const columnLetter = tierColumns[tier];
-    if (!columnLetter) {
+    const columnIndex = tierColumnIndices[tier];
+    if (!columnIndex) {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }
 
+    // Check if sheet has enough columns, if not, add them
+    const sheetProperties = sheetMeta.sheets?.find(s => s.properties.sheetId.toString() === sheetId);
+    const currentColumnCount = sheetProperties?.properties?.gridProperties?.columnCount || 0;
+    
+    console.log(`[updateSheetTierStatus] Current columns: ${currentColumnCount}, needed: ${columnIndex + 1}`);
+
+    if (currentColumnCount < columnIndex + 1) {
+      console.log(`[updateSheetTierStatus] Adding columns to sheet...`);
+      
+      const addColumnsResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            requests: [{
+              appendDimension: {
+                sheetId: parseInt(sheetId),
+                dimension: 'COLUMNS',
+                length: (columnIndex + 1) - currentColumnCount
+              }
+            }]
+          })
+        }
+      );
+
+      if (!addColumnsResponse.ok) {
+        const errorText = await addColumnsResponse.text();
+        console.error(`[updateSheetTierStatus] Failed to add columns:`, errorText);
+      } else {
+        console.log(`[updateSheetTierStatus] Successfully added columns`);
+      }
+    }
+
+    // Convert column index to letter
+    const columnLetter = String.fromCharCode(65 + columnIndex - 1);
+    
     // Update the cell
     const range = `'${sheetName}'!${columnLetter}${rowNumber}`;
     console.log(`[updateSheetTierStatus] Updating range: ${range}`);
