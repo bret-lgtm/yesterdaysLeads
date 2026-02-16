@@ -20,7 +20,17 @@ import {
 export default function MyOrders() {
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
-    queryFn: () => base44.auth.me()
+    queryFn: async () => {
+      try {
+        return await base44.auth.me();
+      } catch (error) {
+        if (error.response?.status === 401) {
+          base44.auth.redirectToLogin(window.location.href);
+          return null;
+        }
+        throw error;
+      }
+    }
   });
 
   const { data: orders = [], isLoading } = useQuery({
