@@ -293,7 +293,7 @@ export default function Home() {
                 How many times is a lead sold?
               </AccordionTrigger>
               <AccordionContent className="text-slate-600 pb-5">
-                Only once per pricing tier. We practice strict distribution caps. Unlike other vendors who sell the same lead dozens of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.
+                Only once per pricing tier. We practice strict distribution caps. Unlike other vendors who sell the same lead thousands of times, we limit how many times each lead is sold to preserve its value and your competitive advantage.
               </AccordionContent>
             </AccordionItem>
 
