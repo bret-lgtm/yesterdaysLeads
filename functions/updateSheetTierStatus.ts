@@ -92,6 +92,8 @@ Deno.serve(async (req) => {
 
     // Update the cell
     const range = `'${sheetName}'!${columnLetter}${rowNumber}`;
+    console.log(`[updateSheetTierStatus] Updating range: ${range}`);
+    
     const updateResponse = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
       {
@@ -108,13 +110,17 @@ Deno.serve(async (req) => {
 
     if (!updateResponse.ok) {
       const errorText = await updateResponse.text();
-      console.error('Failed to update sheet:', errorText);
-      return Response.json({ error: 'Failed to update sheet' }, { status: 500 });
+      console.error(`[updateSheetTierStatus] Failed to update sheet:`, errorText);
+      return Response.json({ error: 'Failed to update sheet', details: errorText }, { status: 500 });
     }
+
+    const result = await updateResponse.json();
+    console.log(`[updateSheetTierStatus] Update successful:`, JSON.stringify(result));
 
     return Response.json({ 
       success: true,
-      message: `Updated ${leadType} lead row ${rowNumber}, ${tier} to Sold`
+      message: `Updated ${leadType} lead row ${rowNumber}, ${tier} to Sold`,
+      range: range
     });
 
   } catch (error) {
