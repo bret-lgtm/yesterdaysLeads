@@ -113,6 +113,17 @@ Deno.serve(async (req) => {
 
       console.log('Order created:', order.id);
 
+      // Track lead purchase completion
+      await base44.analytics.track({
+        eventName: 'lead_purchase_completed',
+        properties: {
+          order_id: order.id,
+          lead_count: cartItems.length,
+          total_price: session.amount_total / 100,
+          customer_email: userEmail
+        }
+      });
+
       // Delete the temporary order
       await base44.asServiceRole.entities.Order.delete(tempOrderId);
 
