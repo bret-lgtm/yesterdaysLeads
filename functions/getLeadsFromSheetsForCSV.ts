@@ -73,23 +73,30 @@ Deno.serve(async (req) => {
     console.log('Sheet map:', JSON.stringify(sheetMap));
     console.log('Sheets to query:', sheetsToQuery);
 
-    // Fetch data from each sheet
-    for (const leadType of sheetsToQuery) {
+    // Group lead_ids by lead type and get specific row numbers
+    const leadsByType = {};
+    lead_ids.forEach(id => {
+      for (const type of leadTypeOrder) {
+        if (id.startsWith(type + '_')) {
+          const rowIndex = parseInt(id.split('_')[1]);
+          if (!leadsByType[type]) leadsByType[type] = [];
+          leadsByType[type].push(rowIndex);
+          break;
+        }
+      }
+    });
+
+    // Fetch only the header row and specific rows for each sheet
+    for (const [leadType, rowIndices] of Object.entries(leadsByType)) {
       try {
         const sheetId = sheetIds[leadType];
         const sheetName = sheetMap[sheetId];
         
-        console.log(`Processing ${leadType}: sheetId=${sheetId}, sheetName=${sheetName}`);
-        
-        if (!sheetName) {
-          console.log(`No sheet name found for ${leadType}`);
-          continue;
-        }
-      
-        const range = `'${sheetName}'!A:Z`;
-      
-        const response = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
+        if (!sheetName) continue;
+
+        // Get header row first
+        const headerResponse = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A1:Z1`)}`,
           {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -98,29 +105,36 @@ Deno.serve(async (req) => {
           }
         );
 
-        if (!response.ok) {
-          continue;
-        }
+        if (!headerResponse.ok) continue;
+        const headerData = await headerResponse.json();
+        const headers = headerData.values?.[0] || [];
 
-        const data = await response.json();
-        const rows = data.values || [];
+        // Fetch each specific row
+        for (const rowIndex of rowIndices) {
+          const rowNumber = rowIndex + 2; // +2 for header and 0-based index
+          const rowResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A${rowNumber}:Z${rowNumber}`)}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
 
-        if (rows.length < 2) {
-          continue;
-        }
+          if (!rowResponse.ok) continue;
+          const rowData = await rowResponse.json();
+          const row = rowData.values?.[0];
+          
+          if (!row) continue;
 
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
-
-        // Convert rows to objects
-        const leads = dataRows.map((row, index) => {
           const lead = {};
           headers.forEach((header, i) => {
             const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
             lead[cleanHeader] = row[i] || '';
           });
 
-          lead.id = `${leadType}_${index}`;
+          lead.id = `${leadType}_${rowIndex}`;
           lead.lead_type = leadType;
 
           // Calculate age_in_days from external_id
@@ -148,17 +162,14 @@ Deno.serve(async (req) => {
           delete lead.tier_4;
           delete lead.tier_5;
 
-          return lead;
-        });
-
-        allLeads = allLeads.concat(leads);
+          allLeads.push(lead);
+        }
       } catch (error) {
         console.error(`Error processing ${leadType}:`, error.message);
       }
     }
 
-    // Filter to only requested lead IDs
-    const filteredLeads = allLeads.filter(lead => lead_ids.includes(lead.id));
+    const filteredLeads = allLeads;
 
     return Response.json({
       success: true,
