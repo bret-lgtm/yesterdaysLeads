@@ -35,12 +35,23 @@ Deno.serve(async (req) => {
 
       console.log('Processing completed checkout:', session.id);
 
-      // Get temp order ID from client_reference_id
-      const tempOrderId = session.client_reference_id;
+      // Get temp order ID from metadata (fallback to client_reference_id)
+      const tempOrderId = metadata.temp_order_id || session.client_reference_id;
       console.log('Temp order ID:', tempOrderId);
+      console.log('Session metadata:', JSON.stringify(metadata));
 
-      // Fetch the temporary order
-      const tempOrder = await base44.asServiceRole.entities.Order.get(tempOrderId);
+      // Fetch the temporary order with error handling
+      let tempOrder;
+      try {
+        tempOrder = await base44.asServiceRole.entities.Order.get(tempOrderId);
+      } catch (err) {
+        console.error('Failed to fetch temp order:', tempOrderId, err.message);
+        // Try to find by stripe session or other means
+        const allOrders = await base44.asServiceRole.entities.Order.filter({ status: 'pending' });
+        console.log('Found pending orders:', allOrders.length);
+        return Response.json({ error: 'Temp order not found', tempOrderId }, { status: 404 });
+      }
+      
       if (!tempOrder) {
         console.error('Temp order not found:', tempOrderId);
         return Response.json({ error: 'Order not found' }, { status: 404 });
