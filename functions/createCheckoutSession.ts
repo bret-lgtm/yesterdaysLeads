@@ -104,7 +104,35 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create Stripe checkout session for paid orders
+    // Create temporary order and Stripe session for paid orders
+    const tempOrder = await base44.asServiceRole.entities.Order.create({
+      customer_id: 'pending',
+      customer_email: user?.email || customerEmail,
+      total_price: subtotal,
+      lead_count: cartItems.length,
+      stripe_transaction_id: 'pending',
+      leads_purchased: cartItems.map(item => item.lead_id),
+      lead_data_snapshot: cartItems,
+      status: 'pending'
+    });
+
+    const checkoutConfig = {
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      customer_email: user?.email || customerEmail,
+      client_reference_id: tempOrder.id,
+      metadata: {
+        base44_app_id: Deno.env.get("BASE44_APP_ID"),
+        user_email: user?.email || customerEmail,
+        lead_count: cartItems.length.toString(),
+        temp_order_id: tempOrder.id
+      },
+      allow_promotion_codes: true
+    };
+
     let session;
     try {
       session = await stripe.checkout.sessions.create(checkoutConfig);
