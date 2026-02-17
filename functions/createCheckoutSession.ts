@@ -114,39 +114,6 @@ Deno.serve(async (req) => {
     // Calculate final total
     const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
 
-    // If total is free, create order directly without Stripe
-    if (finalTotal <= 0) {
-      const freeOrder = await base44.asServiceRole.entities.Order.create({
-        customer_id: 'free_customer',
-        customer_email: user?.email || customerEmail,
-        total_price: 0,
-        lead_count: cartItems.length,
-        stripe_transaction_id: 'free_order',
-        leads_purchased: cartItems.map(item => item.lead_id),
-        lead_data_snapshot: cartItems.map(item => ({
-          id: item.id,
-          lead_id: item.lead_id,
-          age_in_days: item.age_in_days
-        })),
-        status: 'completed'
-      });
-
-      // Clean up cart items and temporary order
-      if (tempOrder?.id) {
-        await base44.asServiceRole.entities.Order.delete(tempOrder.id).catch(() => null);
-      }
-
-      return Response.json({ 
-        sessionId: null,
-        url: null,
-        discountInfo,
-        subtotal,
-        finalTotal,
-        freeOrder: true,
-        orderId: freeOrder.id
-      });
-    }
-
     // Create Stripe checkout session for paid orders
     let session;
     try {
