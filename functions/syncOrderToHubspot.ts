@@ -125,10 +125,10 @@ Deno.serve(async (req) => {
 
     const dealData = await dealResponse.json();
     const dealId = dealData.id;
-    console.log('Created deal:', dealId);
+    console.log('Created deal:', dealId, 'for contact:', contactId);
 
-    // Step 4: Associate contact with deal
-    console.log('Associating contact with deal...');
+    // Step 3: Associate contact with deal
+    console.log('Associating contact', contactId, 'with deal', dealId);
     const assocResponse = await fetch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}/associations/contacts/${contactId}/3`, {
       method: 'PUT',
       headers: {
