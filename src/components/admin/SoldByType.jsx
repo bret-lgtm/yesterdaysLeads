@@ -96,7 +96,13 @@ export default function SoldByType({ orders }) {
           <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis type="number" tick={{ fill: '#94a3b8', fontSize: 12 }} />
-            <YAxis dataKey="type" type="category" tick={{ fill: '#64748b', fontSize: 12 }} width={70} />
+            <YAxis 
+              dataKey="type" 
+              type="category" 
+              tick={{ fill: '#64748b', fontSize: 12 }} 
+              width={90}
+              interval={0}
+            />
             <Tooltip
               contentStyle={{
                 backgroundColor: 'white',
