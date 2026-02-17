@@ -9,8 +9,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Find the first completed order
-    const completedOrders = await base44.asServiceRole.entities.Order.filter({ status: 'completed' }, null, 1);
+    // Find the first completed order (oldest by created_date)
+    const completedOrders = await base44.asServiceRole.entities.Order.filter({ status: 'completed' }, 'created_date', 1);
     const firstOrder = completedOrders[0];
 
     if (!firstOrder) {
