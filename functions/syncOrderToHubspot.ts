@@ -19,18 +19,6 @@ Deno.serve(async (req) => {
     // Extract customer info from order
     const email = orderData.customer_email;
     const leadCount = orderData.lead_count;
-    
-    // Get customer name from Customer entity
-    let firstName = '';
-    let lastName = '';
-    
-    const customers = await base44.asServiceRole.entities.Customer.filter({ email });
-    if (customers.length > 0) {
-      const fullName = customers[0].full_name || '';
-      const nameParts = fullName.split(' ');
-      firstName = nameParts[0] || '';
-      lastName = nameParts.slice(1).join(' ') || '';
-    }
 
     // Step 1: Create or update contact in HubSpot
     let contactId;
