@@ -80,26 +80,6 @@ Deno.serve(async (req) => {
     // Calculate final total
     const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
 
-    // Build checkout session config
-    const checkoutConfig = {
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      customer_email: user?.email || customerEmail,
-      client_reference_id: tempOrder.id,
-      metadata: {
-        base44_app_id: Deno.env.get("BASE44_APP_ID"),
-        user_email: user?.email || customerEmail,
-        lead_count: cartItems.length.toString(),
-        temp_order_id: tempOrder.id
-      },
-      allow_promotion_codes: true
-    };
-
-    // Keep allow_promotion_codes so users can apply the coupon manually if needed
-
     // If total is free, create order directly without Stripe
     if (finalTotal <= 0) {
       const freeOrder = await base44.asServiceRole.entities.Order.create({
