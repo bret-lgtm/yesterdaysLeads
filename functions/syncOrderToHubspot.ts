@@ -11,8 +11,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing order data' }, { status: 400 });
     }
 
-    // Get HubSpot access token
+    // Get HubSpot access token using service role
+    console.log('Getting HubSpot access token...');
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('hubspot');
+    console.log('Access token obtained');
 
     // Extract customer info from order
     const email = orderData.customer_email;
