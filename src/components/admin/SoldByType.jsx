@@ -86,7 +86,7 @@ export default function SoldByType({ orders }) {
     type: typeLabels[type] || type,
     rawType: type,
     count
-  }));
+  })).sort((a, b) => b.count - a.count);
 
   return (
     <Card className="p-6 rounded-2xl border-slate-200/60">
