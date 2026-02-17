@@ -6,15 +6,28 @@ Deno.serve(async (req) => {
       apiVersion: '2023-10-16'
     });
 
-    const coupon = await stripe.coupons.create({
-      percent_off: 100,
-      duration: 'once',
-      id: 'mercedes'
+    // Get or create the coupon
+    let coupon;
+    try {
+      coupon = await stripe.coupons.retrieve('mercedes');
+    } catch {
+      coupon = await stripe.coupons.create({
+        percent_off: 100,
+        duration: 'once',
+        id: 'mercedes'
+      });
+    }
+
+    // Create a promotion code for the coupon
+    const promo = await stripe.promotionCodes.create({
+      coupon: coupon.id,
+      code: 'mercedes'
     });
 
     return Response.json({ 
       success: true,
-      coupon: coupon
+      coupon: coupon,
+      promoCode: promo
     });
   } catch (error) {
     return Response.json({ 
