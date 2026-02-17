@@ -115,17 +115,31 @@ Deno.serve(async (req) => {
       })
     });
 
+    if (!dealResponse.ok) {
+      const errorData = await dealResponse.json();
+      console.error('Deal creation failed:', dealResponse.status, errorData);
+      throw new Error(`Deal creation failed: ${errorData.message || dealResponse.statusText}`);
+    }
+
     const dealData = await dealResponse.json();
     const dealId = dealData.id;
+    console.log('Created deal:', dealId);
 
     // Step 4: Associate contact with deal
-    await fetch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}/associations/contacts/${contactId}/3`, {
+    console.log('Associating contact with deal...');
+    const assocResponse = await fetch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}/associations/contacts/${contactId}/3`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
+
+    if (!assocResponse.ok) {
+      console.error('Association failed:', assocResponse.status);
+    } else {
+      console.log('Association successful');
+    }
 
     return Response.json({ 
       success: true, 
