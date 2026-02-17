@@ -99,8 +99,8 @@ Deno.serve(async (req) => {
         properties: {
           dealname: dealName,
           amount: orderData.total_price,
-          dealstage: closedWonStage.id,
-          pipeline: '1076939'
+          dealstage: closedWonStageId,
+          pipeline: pipelineId
         }
       })
     });
