@@ -30,7 +30,12 @@ Deno.serve(async (req) => {
     }));
 
     // Get app URL for redirect
-    const appUrl = req.headers.get('origin') || req.headers.get('referer');
+    let appUrl = req.headers.get('origin') || req.headers.get('referer') || Deno.env.get('APP_URL');
+    if (!appUrl) {
+      return Response.json({ error: 'Invalid app configuration' }, { status: 500 });
+    }
+    // Remove trailing slash and path
+    appUrl = appUrl.split('?')[0];
     const successUrl = `${appUrl}/CheckoutSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/Checkout`;
 
@@ -75,7 +80,24 @@ Deno.serve(async (req) => {
     }
 
     // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create(checkoutConfig);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create(checkoutConfig);
+    } catch (stripeError) {
+      // If coupon is invalid, try again without it
+      if (couponCode && stripeError.type === 'StripeInvalidRequestError') {
+        console.error('Invalid coupon code:', couponCode);
+        delete checkoutConfig.discounts;
+        session = await stripe.checkout.sessions.create(checkoutConfig);
+        // Return success but notify about invalid coupon
+        return Response.json({ 
+          sessionId: session.id,
+          url: session.url,
+          warning: 'Coupon code was invalid and was not applied'
+        });
+      }
+      throw stripeError;
+    }
 
     return Response.json({ 
       sessionId: session.id,
