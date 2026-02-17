@@ -24,7 +24,10 @@ const typeColors = {
   medicare: "#f59e0b",
   final_expense: "#06b6d4",
   veteran_life: "#f97316",
-  retirement: "#ef4444"
+  retirement: "#ef4444",
+  annuity: "#a855f7",
+  recruiting: "#22d3ee",
+  unknown: "#94a3b8"
 };
 
 export default function SoldByType({ orders }) {
