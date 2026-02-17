@@ -167,6 +167,16 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Sync to HubSpot
+      try {
+        await base44.asServiceRole.functions.invoke('syncOrderToHubspot', {
+          orderData: order
+        });
+      } catch (hubspotError) {
+        console.error('Failed to sync to HubSpot:', hubspotError);
+        // Don't fail the webhook if HubSpot sync fails
+      }
+
       // Delete the temporary order
       await base44.asServiceRole.entities.Order.delete(tempOrderId);
 
