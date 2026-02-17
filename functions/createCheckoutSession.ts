@@ -72,11 +72,33 @@ Deno.serve(async (req) => {
       }
     };
 
-    // Add discount if coupon code provided
+    // Validate and get discount info if coupon code provided
+    let discountInfo = null;
     if (couponCode) {
-      checkoutConfig.discounts = [{
-        coupon: couponCode
-      }];
+      try {
+        const coupon = await stripe.coupons.retrieve(couponCode);
+        if (coupon && coupon.valid) {
+          if (coupon.percent_off) {
+            discountInfo = {
+              type: 'percent',
+              value: coupon.percent_off,
+              amount: Math.round(subtotal * coupon.percent_off / 100 * 100) / 100
+            };
+          } else if (coupon.amount_off) {
+            discountInfo = {
+              type: 'fixed',
+              value: coupon.amount_off / 100,
+              amount: coupon.amount_off / 100
+            };
+          }
+          checkoutConfig.discounts = [{
+            coupon: couponCode
+          }];
+        }
+      } catch (couponError) {
+        console.error('Invalid coupon code:', couponCode);
+        // Continue without coupon - will be handled as invalid
+      }
     }
 
     // Create Stripe checkout session
@@ -86,7 +108,7 @@ Deno.serve(async (req) => {
     } catch (stripeError) {
       // If coupon is invalid, try again without it
       if (couponCode && stripeError.type === 'StripeInvalidRequestError') {
-        console.error('Invalid coupon code:', couponCode);
+        console.error('Coupon validation failed:', couponCode);
         delete checkoutConfig.discounts;
         session = await stripe.checkout.sessions.create(checkoutConfig);
         // Return success but notify about invalid coupon
@@ -99,9 +121,16 @@ Deno.serve(async (req) => {
       throw stripeError;
     }
 
+    // Calculate final total
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+    const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
+
     return Response.json({ 
       sessionId: session.id,
-      url: session.url 
+      url: session.url,
+      discountInfo,
+      subtotal,
+      finalTotal
     });
 
   } catch (error) {
