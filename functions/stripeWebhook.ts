@@ -83,21 +83,20 @@ Deno.serve(async (req) => {
       console.log('User email:', userEmail);
       console.log('Cart items count:', cartItemData.length);
 
-      // Fetch full cart items from database
-      const cartItems = [];
-      for (const itemData of cartItemData) {
-        try {
-          const item = await base44.asServiceRole.entities.CartItem.get(itemData.id);
-          if (item) {
-            cartItems.push(item);
-          }
-        } catch (err) {
-          console.warn(`Could not fetch cart item ${itemData.id}:`, err.message);
-        }
-      }
+      // Use cart item data directly from snapshot
+      const cartItems = cartItemData.map(item => ({
+        id: item.id,
+        lead_id: item.lead_id,
+        lead_type: item.lead_type,
+        lead_name: item.lead_name,
+        state: item.state,
+        zip_code: item.zip_code,
+        age_in_days: item.age_in_days,
+        price: item.price
+      }));
 
       console.log('Cart items count:', cartItems.length);
-      console.log('Cart items fetched:', cartItems.map(c => ({id: c.id, lead_id: c.lead_id})));
+      console.log('Cart items:', cartItems.map(c => ({id: c.id, lead_id: c.lead_id})));
 
       // Get or create customer record
       let customer = (await base44.asServiceRole.entities.Customer.filter({ email: userEmail }))[0];
