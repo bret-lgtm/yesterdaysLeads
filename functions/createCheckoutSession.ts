@@ -110,14 +110,7 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true
     };
 
-    // Add coupon directly to line items if we have discount info
-    if (discountInfo && couponCode) {
-      // Remove allow_promotion_codes and use direct discount instead
-      delete checkoutConfig.allow_promotion_codes;
-      checkoutConfig.discounts = [{
-        coupon: 'mercedes'
-      }];
-    }
+    // Keep allow_promotion_codes so users can apply the coupon manually if needed
 
     // If total is free, create order directly without Stripe
     if (finalTotal <= 0) {
