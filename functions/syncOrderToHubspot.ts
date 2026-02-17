@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
     }
 
     // Step 2: Get the "Cody Aksins" pipeline and find closedwon stage
+    console.log('Fetching HubSpot pipelines...');
     const pipelinesResponse = await fetch('https://api.hubapi.com/crm/v3/pipelines/deals', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -96,17 +97,25 @@ Deno.serve(async (req) => {
     });
     
     const pipelinesData = await pipelinesResponse.json();
+    console.log('Pipelines data:', JSON.stringify(pipelinesData));
+    
     const codyPipeline = pipelinesData.results.find(p => p.label === 'Cody Aksins');
     
     if (!codyPipeline) {
+      console.error('Available pipelines:', pipelinesData.results.map(p => p.label));
       throw new Error('Cody Aksins pipeline not found');
     }
+    
+    console.log('Cody Aksins pipeline found:', codyPipeline.id);
     
     const closedWonStage = codyPipeline.stages.find(s => s.label.toLowerCase().includes('closed won') || s.label.toLowerCase() === 'closedwon');
     
     if (!closedWonStage) {
+      console.error('Available stages:', codyPipeline.stages.map(s => s.label));
       throw new Error('Closed Won stage not found in Cody Aksins pipeline');
     }
+    
+    console.log('Closed Won stage found:', closedWonStage.id);
 
     // Step 3: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
