@@ -59,36 +59,39 @@ export default function OrdersList({ orders, customers }) {
       leadsByType[type].push(lead);
     });
 
-    Object.entries(leadsByType).forEach(([type, leads]) => {
-      const allKeys = new Set();
-      leads.forEach(lead => {
-        Object.keys(lead).forEach(key => allKeys.add(key));
-      });
-      
-      const headers = Array.from(allKeys).filter(key => 
-        !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
-      );
+    const entries = Object.entries(leadsByType);
+    entries.forEach(([type, leads], index) => {
+      setTimeout(() => {
+        const allKeys = new Set();
+        leads.forEach(lead => {
+          Object.keys(lead).forEach(key => allKeys.add(key));
+        });
+        
+        const headers = Array.from(allKeys).filter(key => 
+          !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
+        );
 
-      const rows = leads.map(lead => 
-        headers.map(header => {
-          const value = lead[header];
-          if (value === null || value === undefined) return '';
-          const str = String(value);
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        })
-      );
+        const rows = leads.map(lead => 
+          headers.map(header => {
+            const value = lead[header];
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          })
+        );
 
-      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `leads-${type}-order-${order.id}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `leads-${type}-order-${order.id}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }, index * 300);
     });
   };
 
