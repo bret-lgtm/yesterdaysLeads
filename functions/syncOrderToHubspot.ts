@@ -105,11 +105,17 @@ Deno.serve(async (req) => {
     const pipelinesData = await pipelinesResponse.json();
     console.log('Pipelines data:', JSON.stringify(pipelinesData));
     
-    const codyPipeline = pipelinesData.results.find(p => p.label === 'Cody Aksins');
+    // Try to find "Cody Aksins" pipeline, fallback to default pipeline
+    let codyPipeline = pipelinesData.results.find(p => p.label === 'Cody Aksins');
     
     if (!codyPipeline) {
-      console.error('Available pipelines:', pipelinesData.results.map(p => p.label));
-      throw new Error('Cody Aksins pipeline not found');
+      console.log('Available pipelines:', pipelinesData.results.map(p => ({label: p.label, id: p.id})));
+      console.log('Cody Aksins pipeline not found, using default pipeline');
+      // Use the first pipeline as default
+      codyPipeline = pipelinesData.results[0];
+      if (!codyPipeline) {
+        throw new Error('No pipelines available in HubSpot');
+      }
     }
     
     console.log('Cody Aksins pipeline found:', codyPipeline.id);
