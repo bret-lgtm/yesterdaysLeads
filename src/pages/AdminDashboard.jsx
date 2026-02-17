@@ -7,6 +7,7 @@ import InventoryByAge from '../components/admin/InventoryByAge';
 import SoldByType from '../components/admin/SoldByType';
 import CSVUploader from '../components/admin/CSVUploader';
 import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
+import OrdersList from '../components/admin/OrdersList';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +16,8 @@ import {
   Upload, 
   RefreshCw,
   DollarSign,
-  Users
+  Users,
+  ShoppingBag
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -142,6 +144,10 @@ export default function AdminDashboard() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Manage
             </TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              Orders
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="space-y-6">
@@ -181,6 +187,18 @@ export default function AdminDashboard() {
             <div className="max-w-xl">
               <BulkStatusUpdate leads={leads} onUpdate={handleRefresh} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="orders">
+            {ordersLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-32 rounded-2xl" />
+                ))}
+              </div>
+            ) : (
+              <OrdersList orders={orders} />
+            )}
           </TabsContent>
         </Tabs>
       </div>
