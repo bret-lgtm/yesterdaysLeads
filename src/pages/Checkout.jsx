@@ -33,6 +33,7 @@ export default function Checkout() {
   const [completedOrder, setCompletedOrder] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [couponCode, setCouponCode] = useState('');
+  const [discountInfo, setDiscountInfo] = useState(null);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -67,7 +68,8 @@ export default function Checkout() {
 
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const total = subtotal;
+  const discountAmount = discountInfo?.amount || 0;
+  const total = subtotal - discountAmount;
 
   // Group by lead type, then by age
   const groupedItems = React.useMemo(() => {
@@ -101,6 +103,9 @@ export default function Checkout() {
       if (response.data.url) {
         if (response.data.warning) {
           toast.error('Invalid coupon code. Proceeding to checkout without discount.');
+        }
+        if (response.data.discountInfo) {
+          setDiscountInfo(response.data.discountInfo);
         }
         window.location.href = response.data.url;
       } else {
@@ -306,6 +311,15 @@ export default function Checkout() {
                   <span className="text-slate-500">Subtotal ({cartItems.length} leads)</span>
                   <span className="text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
+
+                {discountInfo && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-emerald-600 font-medium">
+                      {discountInfo.type === 'percent' ? `Discount (${discountInfo.value}%)` : 'Discount'}
+                    </span>
+                    <span className="text-emerald-600 font-medium">-${discountInfo.amount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 <Separator />
 
