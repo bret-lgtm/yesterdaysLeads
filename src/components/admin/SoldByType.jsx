@@ -32,6 +32,15 @@ export default function SoldByType({ orders }) {
           acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
         }
       });
+    } else if (order.leads_purchased && Array.isArray(order.leads_purchased)) {
+      // Fallback: parse lead type from lead IDs
+      order.leads_purchased.forEach(leadId => {
+        const parts = leadId.split('_');
+        const leadType = parts.slice(0, -1).join('_');
+        if (leadType) {
+          acc[leadType] = (acc[leadType] || 0) + 1;
+        }
+      });
     }
     return acc;
   }, {});
