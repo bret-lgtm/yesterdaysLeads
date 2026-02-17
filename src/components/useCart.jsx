@@ -87,6 +87,13 @@ export function useCart(user) {
 
   // Unified add to cart
   const addToCart = async (item) => {
+    // Check if lead is already in cart
+    const isAlreadyInCart = cartItems.some(cartItem => cartItem.lead_id === item.lead_id);
+    if (isAlreadyInCart) {
+      toast.error('This lead is already in your cart');
+      return;
+    }
+    
     if (user) {
       await addToDbCartMutation.mutateAsync(item);
     } else {
