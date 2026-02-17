@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true, 
       contactId, 
-      dealId,
+      dealId: dealId || null,
       dealName 
     });
 
