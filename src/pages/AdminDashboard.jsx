@@ -51,7 +51,8 @@ export default function AdminDashboard() {
     queryFn: () => base44.entities.Customer.list()
   });
 
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.total_price || 0), 0);
+  const completedOrders = orders.filter(o => o.status === 'completed' && o.stripe_transaction_id);
+  const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.total_price || 0), 0);
   const totalLeadsSold = orders.reduce((sum, o) => {
     // Count from lead_data_snapshot array for accuracy
     const count = o.lead_data_snapshot?.length || o.leads_purchased?.length || o.lead_count || 0;
