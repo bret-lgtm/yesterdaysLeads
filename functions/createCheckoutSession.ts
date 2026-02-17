@@ -16,8 +16,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
+    // Deduplicate cart items by lead_id
+    const uniqueLeadIds = new Set();
+    const deduplicatedItems = cartItems.filter(item => {
+      if (uniqueLeadIds.has(item.lead_id)) {
+        return false;
+      }
+      uniqueLeadIds.add(item.lead_id);
+      return true;
+    });
+
+    if (deduplicatedItems.length !== cartItems.length) {
+      console.log(`Deduplicated cart: ${cartItems.length} items -> ${deduplicatedItems.length} items`);
+    }
+
     // Create line items for Stripe
-    const lineItems = cartItems.map(item => ({
+    const lineItems = deduplicatedItems.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -38,11 +52,11 @@ Deno.serve(async (req) => {
     const tempOrder = await base44.asServiceRole.entities.Order.create({
       customer_id: 'pending',
       customer_email: user?.email || customerEmail,
-      total_price: cartItems.reduce((sum, item) => sum + item.price, 0),
-      lead_count: cartItems.length,
+      total_price: deduplicatedItems.reduce((sum, item) => sum + item.price, 0),
+      lead_count: deduplicatedItems.length,
       stripe_transaction_id: 'pending',
-      leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems.map(item => ({
+      leads_purchased: deduplicatedItems.map(item => item.lead_id),
+      lead_data_snapshot: deduplicatedItems.map(item => ({
         id: item.id,
         lead_id: item.lead_id,
         age_in_days: item.age_in_days
@@ -62,7 +76,7 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
-        lead_count: cartItems.length.toString(),
+        lead_count: deduplicatedItems.length.toString(),
         temp_order_id: tempOrder.id
       }
     });
