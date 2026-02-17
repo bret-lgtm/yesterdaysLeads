@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
 
-    const { cartItems, customerEmail } = await req.json();
+    const { cartItems, customerEmail, couponCode } = await req.json();
 
     if (!cartItems || cartItems.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
       status: 'pending'
     });
     
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Build checkout session config
+    const checkoutConfig = {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
@@ -65,7 +65,17 @@ Deno.serve(async (req) => {
         lead_count: cartItems.length.toString(),
         temp_order_id: tempOrder.id
       }
-    });
+    };
+
+    // Add discount if coupon code provided
+    if (couponCode) {
+      checkoutConfig.discounts = [{
+        coupon: couponCode
+      }];
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create(checkoutConfig);
 
     return Response.json({ 
       sessionId: session.id,
