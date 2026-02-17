@@ -114,8 +114,9 @@ Deno.serve(async (req) => {
         const headerData = await headerResponse.json();
         const headers = headerData.values?.[0] || [];
 
-        // Build batch request for specific rows
-        const ranges = rowIndices.map(rowIndex => {
+        // Build batch request for specific rows (deduplicate)
+        const uniqueRowIndices = [...new Set(rowIndices)];
+        const ranges = uniqueRowIndices.map(rowIndex => {
           const rowNumber = rowIndex + 2;
           return `'${sheetName}'!A${rowNumber}:Z${rowNumber}`;
         });
@@ -135,8 +136,8 @@ Deno.serve(async (req) => {
         const valueRanges = batchData.valueRanges || [];
 
         // Process each row from the batch
-        for (let i = 0; i < rowIndices.length; i++) {
-          const rowIndex = rowIndices[i];
+        for (let i = 0; i < uniqueRowIndices.length; i++) {
+          const rowIndex = uniqueRowIndices[i];
           const row = valueRanges[i]?.values?.[0];
           
           if (!row) continue;
