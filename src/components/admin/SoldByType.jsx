@@ -75,7 +75,7 @@ export default function SoldByType({ orders }) {
   console.log('Final soldByType:', soldByType);
 
   // Initialize all lead types with 0
-  const allTypes = ['auto', 'home', 'health', 'life', 'medicare', 'final_expense', 'veteran_life', 'retirement'];
+  const allTypes = ['auto', 'home', 'health', 'life', 'medicare', 'final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting'];
   allTypes.forEach(type => {
     if (!soldByType[type]) {
       soldByType[type] = 0;
