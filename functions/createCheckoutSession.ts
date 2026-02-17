@@ -123,6 +123,35 @@ Deno.serve(async (req) => {
       }];
     }
 
+    // If total is free, create order directly without Stripe
+    if (finalTotal <= 0) {
+      const freeOrder = await base44.asServiceRole.entities.Order.create({
+        customer_id: 'free_customer',
+        customer_email: user?.email || customerEmail,
+        total_price: 0,
+        lead_count: cartItems.length,
+        stripe_transaction_id: 'free_order',
+        leads_purchased: cartItems.map(item => item.lead_id),
+        lead_data_snapshot: cartItems,
+        status: 'completed'
+      });
+
+      // Clean up temporary order
+      if (tempOrder?.id) {
+        await base44.asServiceRole.entities.Order.delete(tempOrder.id).catch(() => null);
+      }
+
+      return Response.json({ 
+        sessionId: null,
+        url: null,
+        discountInfo,
+        subtotal,
+        finalTotal,
+        freeOrder: true,
+        orderId: freeOrder.id
+      });
+    }
+
     // Create Stripe checkout session for paid orders
     let session;
     try {
