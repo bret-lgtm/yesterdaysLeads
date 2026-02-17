@@ -124,6 +124,35 @@ export default function OrdersList({ orders, customers }) {
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <Input
+            placeholder="Search by customer name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 rounded-xl"
+          />
+        </div>
+        <Button
+          onClick={() => setShowPending(!showPending)}
+          variant={showPending ? "default" : "outline"}
+          className={`rounded-xl whitespace-nowrap ${
+            showPending 
+              ? 'bg-slate-900 hover:bg-slate-800' 
+              : 'border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          {showPending ? 'All Orders' : 'Show Pending'}
+        </Button>
+      </div>
+
+      {filteredOrders.length === 0 && (
+        <div className="text-center py-8 text-slate-500">
+          <p>No orders found</p>
+        </div>
+      )}
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
         <Input
