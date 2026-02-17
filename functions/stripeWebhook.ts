@@ -115,12 +115,25 @@ Deno.serve(async (req) => {
       // Fetch complete lead data from Google Sheets for CSV
       const leadIds = cartItems.map(item => item.lead_id);
       let completeLeadData = [];
-      
+
       try {
         const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { 
           lead_ids: leadIds
         });
         completeLeadData = sheetsResponse.data.leads || [];
+
+        // Filter out system fields before storing snapshot
+        completeLeadData = completeLeadData.map(lead => {
+          const filtered = {};
+          Object.entries(lead).forEach(([key, value]) => {
+            // Exclude system/internal fields
+            if (!['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)) {
+              filtered[key] = value;
+            }
+          });
+          return filtered;
+        });
+
         console.log('Complete lead data fetched:', completeLeadData.length);
         console.log('Sample lead data:', JSON.stringify(completeLeadData[0] || {}));
       } catch (err) {

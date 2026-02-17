@@ -85,7 +85,7 @@ export default function CheckoutSuccess() {
       
       // Exclude internal fields and convert to array
       const headers = Array.from(allKeys).filter(key => 
-        !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
+        !['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)
       );
 
       // Generate rows with all fields

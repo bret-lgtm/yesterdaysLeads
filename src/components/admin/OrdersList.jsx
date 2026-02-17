@@ -93,7 +93,7 @@ export default function OrdersList({ orders, customers }) {
         });
         
         const headers = Array.from(allKeys).filter(key => 
-          !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
+          !['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)
         );
 
         const rows = leads.map(lead => 
