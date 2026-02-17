@@ -93,11 +93,6 @@ Deno.serve(async (req) => {
         status: 'completed'
       });
 
-      // Clean up temporary order
-      if (tempOrder?.id) {
-        await base44.asServiceRole.entities.Order.delete(tempOrder.id).catch(() => null);
-      }
-
       return Response.json({ 
         sessionId: null,
         url: null,
