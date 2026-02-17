@@ -20,66 +20,46 @@ Deno.serve(async (req) => {
     const email = orderData.customer_email;
     const leadCount = orderData.lead_count;
 
-    // Step 1: Create or update contact in HubSpot
+    // Step 1: Get or create contact in HubSpot by email
+    console.log('Looking up contact:', email);
     let contactId;
     
-    // Search for existing contact by email
-    console.log('Searching for contact:', email);
-    const searchResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
-      method: 'POST',
+    const searchResponse = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${encodeURIComponent(email)}?idProperty=email`, {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filterGroups: [{
-          filters: [{
-            propertyName: 'email',
-            operator: 'EQ',
-            value: email
-          }]
-        }]
-      })
+        'Authorization': `Bearer ${accessToken}`
+      }
     });
 
-    const searchData = await searchResponse.json();
-    
-    if (!searchResponse.ok) {
-      console.error('Contact search failed:', searchResponse.status, JSON.stringify(searchData));
-      throw new Error(`Contact search failed: ${searchData.message || searchResponse.statusText}`);
-    }
-
-    if (searchData.results && searchData.results.length > 0) {
-      // Contact exists, use it directly without updating
-      contactId = searchData.results[0].id;
-      console.log('Using existing contact:', contactId);
-    } else {
+    if (searchResponse.ok) {
+      const contactData = await searchResponse.json();
+      contactId = contactData.id;
+      console.log('Found existing contact:', contactId);
+    } else if (searchResponse.status === 404) {
       // Create new contact
-      const createPayload = { properties: { email } };
-      if (firstName) createPayload.properties.firstname = firstName;
-      if (lastName) createPayload.properties.lastname = lastName;
-
+      console.log('Creating new contact');
       const createResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(createPayload)
+        body: JSON.stringify({
+          properties: { email }
+        })
       });
 
       if (!createResponse.ok) {
         const errorData = await createResponse.json();
-        console.error('Contact creation failed:', createResponse.status, errorData);
-        throw new Error(`Contact creation failed: ${errorData.message || createResponse.statusText}`);
+        console.error('Contact creation failed:', errorData);
+        throw new Error(`Contact creation failed: ${errorData.message}`);
       }
 
       const createData = await createResponse.json();
       contactId = createData.id;
       console.log('Created contact:', contactId);
-    }
-
-    console.log('Using contact:', contactId);
+    } else {
+      const errorData = await searchResponse.json();
+      throw new Error(`Contact lookup failed: ${errorData.message}`);
     }
 
     // Use the Cody Aksins pipeline with closedwon stage
