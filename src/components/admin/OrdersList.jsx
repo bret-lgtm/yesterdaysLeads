@@ -50,9 +50,23 @@ export default function OrdersList({ orders, customers }) {
       }
     }
 
+    console.log('All lead data:', leadData);
+    
     const leadsByType = {};
     leadData.forEach(lead => {
-      const type = lead.lead_type || 'unknown';
+      // Try to get lead_type from the lead object, fallback to parsing from lead_id
+      let type = lead.lead_type || lead.leadType || lead.type;
+      
+      if (!type && lead.lead_id) {
+        // Parse from lead_id format like "final_expense_12345" or "annuity_67890"
+        const parts = String(lead.lead_id).split('_');
+        if (parts.length >= 2) {
+          type = parts.slice(0, -1).join('_');
+        }
+      }
+      
+      type = type || 'unknown';
+      
       if (!leadsByType[type]) {
         leadsByType[type] = [];
       }
