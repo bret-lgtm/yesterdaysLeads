@@ -9,31 +9,39 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Find the first completed order (oldest by created_date)
-    const completedOrders = await base44.asServiceRole.entities.Order.filter({ status: 'completed' }, 'created_date', 1);
-    const firstOrder = completedOrders[0];
+    // Fetch all completed orders
+    const completedOrders = await base44.asServiceRole.entities.Order.filter({ status: 'completed' }, 'created_date', 1000);
 
-    if (!firstOrder) {
-      return Response.json({ message: 'No completed orders found to process.' });
+    if (!completedOrders.length) {
+      return Response.json({ message: 'No completed orders found.' });
     }
 
-    console.log(`Processing order: ${firstOrder.id}`);
+    console.log(`Processing ${completedOrders.length} completed orders...`);
 
-    // Invoke the HubSpot sync function
-    const hubspotResponse = await base44.asServiceRole.functions.invoke('syncOrderToHubspot', {
-      orderData: firstOrder
-    });
+    const results = [];
+    for (const order of completedOrders) {
+      try {
+        console.log(`Syncing order ${order.id} for ${order.customer_email}`);
+        const hubspotResponse = await base44.asServiceRole.functions.invoke('syncOrderToHubspot', {
+          orderData: order
+        });
+        results.push({ orderId: order.id, status: 'success', hubspotResult: hubspotResponse.data });
+      } catch (err) {
+        console.error(`Failed to sync order ${order.id}:`, err.message);
+        results.push({ orderId: order.id, status: 'failed', error: err.message });
+      }
+    }
 
-    console.log('HubSpot sync response:', hubspotResponse.data);
+    const succeeded = results.filter(r => r.status === 'success').length;
+    const failed = results.filter(r => r.status === 'failed').length;
 
     return Response.json({
-      message: 'Successfully processed the first completed order for HubSpot sync.',
-      orderId: firstOrder.id,
-      hubspotResult: hubspotResponse.data
+      message: `Processed ${completedOrders.length} orders: ${succeeded} succeeded, ${failed} failed.`,
+      results
     });
 
   } catch (error) {
-    console.error('Error processing first completed order:', error);
+    console.error('Error processing orders:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
