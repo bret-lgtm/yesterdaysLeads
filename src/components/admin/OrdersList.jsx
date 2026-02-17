@@ -1,13 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { motion } from "framer-motion";
-import { FileText, Download, Calendar } from "lucide-react";
+import { FileText, Download, Calendar, Search } from "lucide-react";
 
-export default function OrdersList({ orders }) {
+export default function OrdersList({ orders, customers }) {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const customerMap = {};
+  customers.forEach(customer => {
+    customerMap[customer.email] = customer;
+  });
+
+  const filteredOrders = orders.filter(order => {
+    const customer = customerMap[order.customer_email];
+    const customerName = customer?.full_name || '';
+    const customerEmail = order.customer_email || '';
+    
+    const query = searchQuery.toLowerCase();
+    return customerName.toLowerCase().includes(query) || 
+           customerEmail.toLowerCase().includes(query);
+  });
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
 
@@ -77,7 +94,17 @@ export default function OrdersList({ orders }) {
 
   return (
     <div className="space-y-4">
-      {orders.map((order, index) => (
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Input
+          placeholder="Search by customer name or email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 rounded-xl"
+        />
+      </div>
+
+      {filteredOrders.map((order, index) => (
         <motion.div
           key={order.id}
           initial={{ opacity: 0, y: 10 }}
@@ -104,6 +131,9 @@ export default function OrdersList({ orders }) {
                     </Badge>
                   </div>
                   <p className="font-semibold text-slate-900">
+                    {customerMap[order.customer_email]?.full_name || 'Unknown Customer'}
+                  </p>
+                  <p className="text-sm text-slate-500">
                     {order.customer_email}
                   </p>
                   <p className="text-sm text-slate-600">

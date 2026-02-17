@@ -197,7 +197,7 @@ export default function AdminDashboard() {
                 ))}
               </div>
             ) : (
-              <OrdersList orders={orders} />
+              <OrdersList orders={orders} customers={customers} />
             )}
           </TabsContent>
         </Tabs>
