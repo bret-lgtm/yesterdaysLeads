@@ -32,6 +32,7 @@ export default function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -93,7 +94,8 @@ export default function Checkout() {
     try {
       const response = await base44.functions.invoke('createCheckoutSession', {
         cartItems,
-        customerEmail: user?.email
+        customerEmail: user?.email,
+        couponCode: couponCode || undefined
       });
 
       if (response.data.url) {
@@ -308,6 +310,21 @@ export default function Checkout() {
                   <span className="font-medium text-slate-900">Total</span>
                   <span className="text-2xl font-bold text-slate-900">${total.toFixed(2)}</span>
                 </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <Label htmlFor="coupon" className="text-sm font-medium text-slate-900 mb-2 block">
+                  <Tag className="w-4 h-4 inline mr-2" />
+                  Coupon Code (Optional)
+                </Label>
+                <Input
+                  id="coupon"
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  className="rounded-xl border-slate-200"
+                />
               </div>
 
               <div className="flex items-start gap-3 mt-6 mb-4">
