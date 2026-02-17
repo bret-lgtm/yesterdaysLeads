@@ -28,7 +28,11 @@ export default function OrdersList({ orders, customers }) {
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
 
-    if (!leadData || leadData.length === 0) {
+    // Check if snapshot data is incomplete (missing key fields like first_name, email, phone)
+    const isIncompleteSnapshot = leadData && leadData.length > 0 && 
+      leadData[0] && !leadData[0].first_name && !leadData[0].email && !leadData[0].phone;
+
+    if (!leadData || leadData.length === 0 || isIncompleteSnapshot) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
