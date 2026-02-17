@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
 
     // Use the Cody Aksins pipeline - stage 20220580 is the final/closed stage
     const pipelineId = '1076939';
-    const closedWonStageId = '20220580';
+    const closedWonStageId = '1076940';
 
     // Step 2: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
