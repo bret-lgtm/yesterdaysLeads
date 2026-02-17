@@ -62,8 +62,9 @@ Deno.serve(async (req) => {
     }
 
     if (searchData.results && searchData.results.length > 0) {
-      // Contact exists, use it
+      // Contact exists, use it directly without updating
       contactId = searchData.results[0].id;
+      console.log('Using existing contact:', contactId);
     } else {
       // Create new contact
       const createPayload = { properties: { email } };
