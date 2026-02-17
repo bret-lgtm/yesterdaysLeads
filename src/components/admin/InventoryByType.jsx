@@ -10,7 +10,9 @@ const typeLabels = {
   medicare: "Medicare",
   final_expense: "Final Exp.",
   veteran_life: "Vet Life",
-  retirement: "Retirement"
+  retirement: "Retirement",
+  annuity: "Annuity",
+  recruiting: "Recruiting"
 };
 
 const typeColors = {
@@ -21,7 +23,9 @@ const typeColors = {
   medicare: "#f59e0b",
   final_expense: "#06b6d4",
   veteran_life: "#f97316",
-  retirement: "#ef4444"
+  retirement: "#ef4444",
+  annuity: "#a855f7",
+  recruiting: "#22d3ee"
 };
 
 export default function InventoryByType({ leads }) {
