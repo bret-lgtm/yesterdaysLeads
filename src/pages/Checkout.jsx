@@ -99,6 +99,9 @@ export default function Checkout() {
       });
 
       if (response.data.url) {
+        if (response.data.warning) {
+          toast.error(response.data.warning);
+        }
         window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL returned');
