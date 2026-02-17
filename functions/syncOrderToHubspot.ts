@@ -62,9 +62,9 @@ Deno.serve(async (req) => {
       throw new Error(`Contact lookup failed: ${errorData.message}`);
     }
 
-    // Use the Cody Aksins pipeline with closedwon stage
+    // Use the Cody Aksins pipeline - stage 20220580 is the final/closed stage
     const pipelineId = '1076939';
-    const closedWonStageId = '160837376'; // closedwon stage ID from HubSpot
+    const closedWonStageId = '20220580';
 
     // Step 2: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
