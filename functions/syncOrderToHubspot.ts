@@ -79,8 +79,18 @@ Deno.serve(async (req) => {
         body: JSON.stringify(createPayload)
       });
 
+      if (!createResponse.ok) {
+        const errorData = await createResponse.json();
+        console.error('Contact creation failed:', createResponse.status, errorData);
+        throw new Error(`Contact creation failed: ${errorData.message || createResponse.statusText}`);
+      }
+
       const createData = await createResponse.json();
       contactId = createData.id;
+      console.log('Created contact:', contactId);
+    }
+
+    console.log('Using contact:', contactId);
     }
 
     // Use the Cody Aksins pipeline with closedwon stage
