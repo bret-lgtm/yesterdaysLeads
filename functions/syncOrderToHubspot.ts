@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
     let contactId;
     
     // Search for existing contact by email
+    console.log('Searching for contact:', email);
     const searchResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts/search', {
       method: 'POST',
       headers: {
@@ -51,6 +52,11 @@ Deno.serve(async (req) => {
     });
 
     const searchData = await searchResponse.json();
+    
+    if (!searchResponse.ok) {
+      console.error('Contact search failed:', searchResponse.status, JSON.stringify(searchData));
+      throw new Error(`Contact search failed: ${searchData.message || searchResponse.statusText}`);
+    }
 
     if (searchData.results && searchData.results.length > 0) {
       // Contact exists, update it
