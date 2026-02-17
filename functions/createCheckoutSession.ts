@@ -55,6 +55,41 @@ Deno.serve(async (req) => {
       status: 'pending'
     });
     
+    // Validate and get discount info if coupon code provided
+    let discountInfo = null;
+    if (couponCode) {
+      try {
+        // Look up promotion codes by coupon code name
+        const promos = await stripe.promotionCodes.list({ 
+          code: couponCode,
+          limit: 1,
+          active: true
+        });
+
+        if (promos.data.length > 0) {
+          const promo = promos.data[0];
+          const coupon = promo.coupon;
+          
+          if (coupon.percent_off) {
+            discountInfo = {
+              type: 'percent',
+              value: coupon.percent_off,
+              amount: Math.round(subtotal * coupon.percent_off / 100 * 100) / 100
+            };
+          } else if (coupon.amount_off) {
+            discountInfo = {
+              type: 'fixed',
+              value: coupon.amount_off / 100,
+              amount: coupon.amount_off / 100
+            };
+          }
+        }
+      } catch (couponError) {
+        console.error('Invalid coupon code:', couponCode, couponError.message);
+        // Continue without coupon
+      }
+    }
+
     // Build checkout session config
     const checkoutConfig = {
       payment_method_types: ['card'],
@@ -69,37 +104,9 @@ Deno.serve(async (req) => {
         user_email: user?.email || customerEmail,
         lead_count: cartItems.length.toString(),
         temp_order_id: tempOrder.id
-      }
+      },
+      allow_promotion_codes: true
     };
-
-    // Validate and get discount info if coupon code provided
-    let discountInfo = null;
-    if (couponCode) {
-      try {
-        const coupon = await stripe.coupons.retrieve(couponCode);
-        if (coupon && coupon.valid) {
-          if (coupon.percent_off) {
-            discountInfo = {
-              type: 'percent',
-              value: coupon.percent_off,
-              amount: Math.round(subtotal * coupon.percent_off / 100 * 100) / 100
-            };
-          } else if (coupon.amount_off) {
-            discountInfo = {
-              type: 'fixed',
-              value: coupon.amount_off / 100,
-              amount: coupon.amount_off / 100
-            };
-          }
-          checkoutConfig.discounts = [{
-            coupon: couponCode
-          }];
-        }
-      } catch (couponError) {
-        console.error('Invalid coupon code:', couponCode);
-        // Continue without coupon - will be handled as invalid
-      }
-    }
 
     // Calculate final total
     const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
