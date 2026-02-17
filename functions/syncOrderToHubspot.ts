@@ -3,6 +3,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Parse request body
     const { orderData } = await req.json();
 
     if (!orderData || !orderData.customer_email) {
