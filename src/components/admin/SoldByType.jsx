@@ -10,7 +10,10 @@ const typeLabels = {
   medicare: "Medicare",
   final_expense: "Final Exp.",
   veteran_life: "Vet Life",
-  retirement: "Retirement"
+  retirement: "Retirement",
+  annuity: "Annuity",
+  recruiting: "Recruiting",
+  unknown: "Unknown"
 };
 
 const typeColors = {
