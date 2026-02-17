@@ -10,6 +10,7 @@ import { FileText, Download, Calendar, Search } from "lucide-react";
 
 export default function OrdersList({ orders, customers }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showPending, setShowPending] = useState(false);
 
   const customerMap = {};
   customers.forEach(customer => {
@@ -17,6 +18,9 @@ export default function OrdersList({ orders, customers }) {
   });
 
   const filteredOrders = orders.filter(order => {
+    // Filter by status
+    if (!showPending && order.status !== 'completed') return false;
+    
     const customer = customerMap[order.customer_email];
     const customerName = customer?.full_name || '';
     const customerEmail = order.customer_email || '';
