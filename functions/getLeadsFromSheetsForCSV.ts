@@ -35,8 +35,8 @@ Deno.serve(async (req) => {
       final_expense: '387991684',
       veteran_life: '1401332567',
       retirement: '712013125',
-      annuity: '1234567890',
-      recruiting: '0987654321'
+      annuity: '409761548',
+      recruiting: '1894668336'
     };
 
     let allLeads = [];
