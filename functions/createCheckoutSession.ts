@@ -93,6 +93,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Calculate final total
+    const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
+
     // Build checkout session config
     const checkoutConfig = {
       payment_method_types: ['card'],
@@ -111,8 +114,14 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true
     };
 
-    // Calculate final total
-    const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
+    // Add coupon directly to line items if we have discount info
+    if (discountInfo && couponCode) {
+      // Remove allow_promotion_codes and use direct discount instead
+      delete checkoutConfig.allow_promotion_codes;
+      checkoutConfig.discounts = [{
+        coupon: 'mercedes'
+      }];
+    }
 
     // Create Stripe checkout session for paid orders
     let session;
