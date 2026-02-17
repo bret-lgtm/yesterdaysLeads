@@ -62,21 +62,8 @@ Deno.serve(async (req) => {
     }
 
     if (searchData.results && searchData.results.length > 0) {
-      // Contact exists, update it
+      // Contact exists, use it
       contactId = searchData.results[0].id;
-      
-      const updatePayload = { properties: { email } };
-      if (firstName) updatePayload.properties.firstname = firstName;
-      if (lastName) updatePayload.properties.lastname = lastName;
-
-      await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updatePayload)
-      });
     } else {
       // Create new contact
       const createPayload = { properties: { email } };
