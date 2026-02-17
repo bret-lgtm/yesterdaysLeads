@@ -25,25 +25,48 @@ const typeColors = {
 };
 
 export default function SoldByType({ orders }) {
+  console.log('Orders received:', orders.length);
+  
   const soldByType = orders.reduce((acc, order) => {
+    let counted = false;
+    
+    // First try: use lead_data_snapshot
     if (order.lead_data_snapshot && Array.isArray(order.lead_data_snapshot)) {
+      console.log(`Order ${order.id}: Found ${order.lead_data_snapshot.length} leads in snapshot`);
       order.lead_data_snapshot.forEach(lead => {
-        if (lead.lead_type) {
-          acc[lead.lead_type] = (acc[lead.lead_type] || 0) + 1;
-        }
-      });
-    } else if (order.leads_purchased && Array.isArray(order.leads_purchased)) {
-      // Fallback: parse lead type from lead IDs
-      order.leads_purchased.forEach(leadId => {
-        const parts = leadId.split('_');
-        const leadType = parts.slice(0, -1).join('_');
+        const leadType = lead.lead_type || lead.leadType || lead.type;
         if (leadType) {
           acc[leadType] = (acc[leadType] || 0) + 1;
+          counted = true;
         }
       });
     }
+    
+    // Second try: parse from leads_purchased IDs
+    if (!counted && order.leads_purchased && Array.isArray(order.leads_purchased)) {
+      console.log(`Order ${order.id}: Parsing ${order.leads_purchased.length} lead IDs`);
+      order.leads_purchased.forEach(leadId => {
+        const parts = String(leadId).split('_');
+        if (parts.length >= 2) {
+          const leadType = parts.slice(0, -1).join('_');
+          if (leadType) {
+            acc[leadType] = (acc[leadType] || 0) + 1;
+            counted = true;
+          }
+        }
+      });
+    }
+    
+    // Final fallback: count as "unknown" if we have lead_count but couldn't parse type
+    if (!counted && order.lead_count > 0) {
+      console.log(`Order ${order.id}: Could not determine type for ${order.lead_count} leads`);
+      acc['unknown'] = (acc['unknown'] || 0) + order.lead_count;
+    }
+    
     return acc;
   }, {});
+  
+  console.log('Final soldByType:', soldByType);
 
   // Initialize all lead types with 0
   const allTypes = ['auto', 'home', 'health', 'life', 'medicare', 'final_expense', 'veteran_life', 'retirement'];
