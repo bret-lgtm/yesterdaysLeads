@@ -100,7 +100,7 @@ export default function Checkout() {
 
       if (response.data.url) {
         if (response.data.warning) {
-          toast.error(response.data.warning);
+          toast.error('Invalid coupon code. Proceeding to checkout without discount.');
         }
         window.location.href = response.data.url;
       } else {
@@ -325,7 +325,7 @@ export default function Checkout() {
                   type="text"
                   placeholder="Enter coupon code"
                   value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onChange={(e) => setCouponCode(e.target.value)}
                   className="rounded-xl border-slate-200"
                 />
               </div>
