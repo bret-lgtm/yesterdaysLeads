@@ -100,7 +100,21 @@ export default function Checkout() {
         couponCode: couponCode || undefined
       });
 
-      if (response.data.url) {
+      if (response.data.freeOrder) {
+        // Free order - skip Stripe and go straight to success
+        setCompletedOrder({
+          id: response.data.orderId,
+          lead_count: cartItems.length,
+          total_price: 0,
+          lead_data_snapshot: cartItems
+        });
+        setOrderComplete(true);
+        if (user?.email) {
+          await base44.entities.CartItem.filter({ user_email: user.email }).then(items => {
+            items.forEach(item => base44.entities.CartItem.delete(item.id));
+          });
+        }
+      } else if (response.data.url) {
         if (response.data.warning) {
           toast.error('Invalid coupon code. Proceeding to checkout without discount.');
         }
