@@ -39,18 +39,6 @@ Deno.serve(async (req) => {
     const successUrl = `${appUrl}/CheckoutSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/Checkout`;
 
-    // Create a temporary order record to store cart data
-    const tempOrder = await base44.asServiceRole.entities.Order.create({
-      customer_id: 'pending',
-      customer_email: user?.email || customerEmail,
-      total_price: cartItems.reduce((sum, item) => sum + item.price, 0),
-      lead_count: cartItems.length,
-      stripe_transaction_id: 'pending',
-      leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems,
-      status: 'pending'
-    });
-    
     // Calculate subtotal first
     const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
 
