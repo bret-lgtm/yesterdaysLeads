@@ -34,13 +34,15 @@ Deno.serve(async (req) => {
       medicare: '757044649',
       final_expense: '387991684',
       veteran_life: '1401332567',
-      retirement: '712013125'
+      retirement: '712013125',
+      annuity: '1234567890',
+      recruiting: '0987654321'
     };
 
     let allLeads = [];
 
     // Extract unique lead types from lead IDs
-    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'auto', 'home', 'health', 'life', 'medicare'];
+    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'auto', 'home', 'health', 'life', 'medicare'];
     const sheetsToQuery = [...new Set(lead_ids.map(id => {
       for (const type of leadTypeOrder) {
         if (id.startsWith(type + '_')) return type;
