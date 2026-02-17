@@ -83,7 +83,28 @@ Deno.serve(async (req) => {
       contactId = createData.id;
     }
 
-    // Step 2: Create a deal
+    // Step 2: Get the "Cody Aksins" pipeline and find closedwon stage
+    const pipelinesResponse = await fetch('https://api.hubapi.com/crm/v3/pipelines/deals', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const pipelinesData = await pipelinesResponse.json();
+    const codyPipeline = pipelinesData.results.find(p => p.label === 'Cody Aksins');
+    
+    if (!codyPipeline) {
+      throw new Error('Cody Aksins pipeline not found');
+    }
+    
+    const closedWonStage = codyPipeline.stages.find(s => s.label.toLowerCase().includes('closed won') || s.label.toLowerCase() === 'closedwon');
+    
+    if (!closedWonStage) {
+      throw new Error('Closed Won stage not found in Cody Aksins pipeline');
+    }
+
+    // Step 3: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
     const dealResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
       method: 'POST',
@@ -95,8 +116,8 @@ Deno.serve(async (req) => {
         properties: {
           dealname: dealName,
           amount: orderData.total_price,
-          dealstage: 'closedwon',
-          pipeline: 'default'
+          dealstage: closedWonStage.id,
+          pipeline: codyPipeline.id
         }
       })
     });
@@ -104,7 +125,7 @@ Deno.serve(async (req) => {
     const dealData = await dealResponse.json();
     const dealId = dealData.id;
 
-    // Step 3: Associate contact with deal
+    // Step 4: Associate contact with deal
     await fetch(`https://api.hubapi.com/crm/v3/objects/deals/${dealId}/associations/contacts/${contactId}/3`, {
       method: 'PUT',
       headers: {
