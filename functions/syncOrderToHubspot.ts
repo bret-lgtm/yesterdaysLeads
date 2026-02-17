@@ -93,41 +93,30 @@ Deno.serve(async (req) => {
       contactId = createData.id;
     }
 
-    // Step 2: Get the "Cody Aksins" pipeline and find closedwon stage
-    console.log('Fetching HubSpot pipelines...');
-    const pipelinesResponse = await fetch('https://api.hubapi.com/crm/v3/pipelines/deals', {
+    // Step 2: Get the specific pipeline (Cody Aksins - ID: 1076939) and find closedwon stage
+    console.log('Fetching Cody Aksins pipeline...');
+    const pipelineResponse = await fetch('https://api.hubapi.com/crm/v3/pipelines/deals/1076939', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
     
-    const pipelinesData = await pipelinesResponse.json();
-    console.log('Pipelines data:', JSON.stringify(pipelinesData));
+    const codyPipeline = await pipelineResponse.json();
+    console.log('Pipeline stages:', codyPipeline.stages?.map(s => s.label));
     
-    // Try to find "Cody Aksins" pipeline, fallback to default pipeline
-    let codyPipeline = pipelinesData.results.find(p => p.label === 'Cody Aksins');
-    
-    if (!codyPipeline) {
-      console.log('Available pipelines:', pipelinesData.results.map(p => ({label: p.label, id: p.id})));
-      console.log('Cody Aksins pipeline not found, using default pipeline');
-      // Use the first pipeline as default
-      codyPipeline = pipelinesData.results[0];
-      if (!codyPipeline) {
-        throw new Error('No pipelines available in HubSpot');
-      }
-    }
-    
-    console.log('Cody Aksins pipeline found:', codyPipeline.id);
-    
-    const closedWonStage = codyPipeline.stages.find(s => s.label.toLowerCase().includes('closed won') || s.label.toLowerCase() === 'closedwon');
+    const closedWonStage = codyPipeline.stages.find(s => 
+      s.label.toLowerCase().includes('closed won') || 
+      s.label.toLowerCase() === 'closedwon' ||
+      s.label.toLowerCase().includes('won')
+    );
     
     if (!closedWonStage) {
       console.error('Available stages:', codyPipeline.stages.map(s => s.label));
       throw new Error('Closed Won stage not found in Cody Aksins pipeline');
     }
     
-    console.log('Closed Won stage found:', closedWonStage.id);
+    console.log('Using stage:', closedWonStage.label, closedWonStage.id);
 
     // Step 3: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
