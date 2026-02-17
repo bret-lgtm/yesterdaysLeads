@@ -59,6 +59,9 @@ export default function OrdersList({ orders, customers }) {
       leadsByType[type].push(lead);
     });
 
+    console.log('Leads by type:', leadsByType);
+    console.log('Number of types:', Object.keys(leadsByType).length);
+
     const entries = Object.entries(leadsByType);
     entries.forEach(([type, leads], index) => {
       setTimeout(() => {
