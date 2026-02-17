@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
           dealname: dealName,
           amount: orderData.total_price,
           dealstage: closedWonStage.id,
-          pipeline: codyPipeline.id
+          pipeline: '1076939'
         }
       })
     });
