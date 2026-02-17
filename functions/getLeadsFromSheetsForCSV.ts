@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
             lead[cleanHeader] = row[i] || '';
           });
 
-          lead.id = `${leadType}_${rowIndex}`;
+          lead.lead_id = `${leadType}_${rowIndex}`;
           lead.lead_type = leadType;
 
           // Calculate age_in_days from external_id
