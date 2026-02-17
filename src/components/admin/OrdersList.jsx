@@ -89,9 +89,11 @@ export default function OrdersList({ orders, customers }) {
         const a = document.createElement('a');
         a.href = url;
         a.download = `leads-${type}-order-${order.id}.csv`;
+        document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-      }, index * 300);
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      }, index * 1000);
     });
   };
 
