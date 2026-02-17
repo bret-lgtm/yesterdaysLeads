@@ -55,6 +55,9 @@ Deno.serve(async (req) => {
       status: 'pending'
     });
     
+    // Calculate subtotal first
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
     if (couponCode) {
@@ -109,7 +112,6 @@ Deno.serve(async (req) => {
     };
 
     // Calculate final total
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
     const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
 
     // If total is free, create order directly without Stripe
