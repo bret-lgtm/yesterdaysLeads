@@ -98,8 +98,9 @@ Deno.serve(async (req) => {
     const pipelineId = '1076939';
     const closedWonStageId = '160837376'; // closedwon stage ID from HubSpot
 
-    // Step 3: Create a deal
+    // Step 2: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
+    console.log('Creating deal:', dealName);
     const dealResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
       method: 'POST',
       headers: {
