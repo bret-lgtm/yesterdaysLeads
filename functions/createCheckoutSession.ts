@@ -47,11 +47,7 @@ Deno.serve(async (req) => {
       lead_count: cartItems.length,
       stripe_transaction_id: 'pending',
       leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems.map(item => ({
-        id: item.id,
-        lead_id: item.lead_id,
-        age_in_days: item.age_in_days
-      })),
+      lead_data_snapshot: cartItems,
       status: 'pending'
     });
     
