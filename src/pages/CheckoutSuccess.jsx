@@ -62,55 +62,88 @@ export default function CheckoutSuccess() {
     };
   }, [latestOrder, refetch, user]);
 
-  const downloadCSV = () => {
-    if (!latestOrder?.lead_data_snapshot) return;
+  const [downloading, setDownloading] = useState(false);
 
-    // Group leads by type
+  const SYSTEM_FIELDS = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'];
+
+  const isSnapshotComplete = (snapshot) => {
+    if (!snapshot || snapshot.length === 0) return false;
+    const first = snapshot[0];
+    // Must have real lead fields, not just system/cart fields
+    return !!(first.first_name || first.email || first.phone);
+  };
+
+  const generateAndDownloadCSVs = (leadData, orderId) => {
     const leadsByType = {};
-    latestOrder.lead_data_snapshot.forEach(lead => {
+    leadData.forEach(lead => {
       const type = lead.lead_type || 'unknown';
-      if (!leadsByType[type]) {
-        leadsByType[type] = [];
-      }
+      if (!leadsByType[type]) leadsByType[type] = [];
       leadsByType[type].push(lead);
     });
 
-    // Generate and download a CSV for each lead type
-    Object.entries(leadsByType).forEach(([type, leads]) => {
-      // Get all unique keys from all leads of this type
-      const allKeys = new Set();
-      leads.forEach(lead => {
-        Object.keys(lead).forEach(key => allKeys.add(key));
-      });
-      
-      // Exclude internal fields and convert to array
-      const headers = Array.from(allKeys).filter(key => 
-        !['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)
-      );
+    Object.entries(leadsByType).forEach(([type, leads], index) => {
+      setTimeout(() => {
+        const allKeys = new Set();
+        leads.forEach(lead => Object.keys(lead).forEach(key => allKeys.add(key)));
+        const headers = Array.from(allKeys).filter(key => !SYSTEM_FIELDS.includes(key));
 
-      // Generate rows with all fields
-      const rows = leads.map(lead => 
-        headers.map(header => {
-          const value = lead[header];
-          // Escape commas and quotes in CSV
-          if (value === null || value === undefined) return '';
-          const str = String(value);
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        })
-      );
+        const rows = leads.map(lead =>
+          headers.map(header => {
+            const value = lead[header];
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          })
+        );
 
-      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `leads-${type}-order-${latestOrder.id}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `leads-${type}-order-${orderId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      }, index * 800);
     });
+  };
+
+  const downloadCSV = async () => {
+    if (!latestOrder) return;
+    setDownloading(true);
+
+    let leadData = latestOrder.lead_data_snapshot;
+
+    // If snapshot is missing or incomplete, fetch fresh from sheets
+    if (!isSnapshotComplete(leadData)) {
+      const leadIds = latestOrder.leads_purchased || (leadData || []).map(l => l.lead_id).filter(Boolean);
+      if (leadIds.length > 0) {
+        const response = await base44.functions.invoke('getLeadsFromSheetsForCSV', { lead_ids: leadIds });
+        const freshLeads = response.data?.leads || [];
+        if (freshLeads.length > 0) {
+          leadData = freshLeads.map(lead => {
+            const filtered = {};
+            Object.entries(lead).forEach(([k, v]) => {
+              if (!SYSTEM_FIELDS.includes(k)) filtered[k] = v;
+            });
+            return filtered;
+          });
+        }
+      }
+    }
+
+    if (!leadData || leadData.length === 0) {
+      setDownloading(false);
+      return;
+    }
+
+    generateAndDownloadCSVs(leadData, latestOrder.id);
+    setDownloading(false);
   };
 
   if (!user?.email) {
