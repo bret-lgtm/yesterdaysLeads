@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
     const cancelUrl = `${appUrl}/Checkout`;
 
     // Calculate subtotal first
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+    const subtotal = cartItemsToProcess.reduce((sum, item) => sum + item.price, 0);
 
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
