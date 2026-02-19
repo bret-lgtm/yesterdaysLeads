@@ -121,10 +121,10 @@ Deno.serve(async (req) => {
       customer_id: 'pending',
       customer_email: user?.email || customerEmail,
       total_price: subtotal,
-      lead_count: cartItems.length,
+      lead_count: cartItemsToProcess.length,
       stripe_transaction_id: 'pending',
-      leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems,
+      leads_purchased: cartItemsToProcess.map(item => item.lead_id),
+      lead_data_snapshot: cartItemsToProcess,
       status: 'pending'
     });
 
