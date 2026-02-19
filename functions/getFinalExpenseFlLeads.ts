@@ -11,8 +11,19 @@ Deno.serve(async (req) => {
     const accessToken = await base44.asServiceRole.connectors.getAccessToken("googlesheets");
     const sheetId = Deno.env.get("GOOGLE_SHEET_ID");
 
-    // Fetch the Final Expense sheet (sheetId 387991684 = "Final Expense Leads")
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Final%20Expense%20Leads`;
+    // First get sheet metadata to find exact sheet name
+    const metaUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`;
+    const metaRes = await fetch(metaUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    const meta = await metaRes.json();
+    const sheets = meta.sheets?.map(s => s.properties?.title) || [];
+    console.log('Available sheets:', JSON.stringify(sheets));
+
+    const feSheetName = sheets.find(s => s.toLowerCase().includes('final'));
+    if (!feSheetName) {
+      return Response.json({ error: 'Final Expense sheet not found', available: sheets });
+    }
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(feSheetName)}`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
