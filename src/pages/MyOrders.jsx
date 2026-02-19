@@ -45,23 +45,23 @@ export default function MyOrders() {
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
 
-    // If no snapshot data, fetch it from Google Sheets
-    if (!leadData || leadData.length === 0) {
-      if (!order.leads_purchased || order.leads_purchased.length === 0) {
-        console.error('No lead IDs available for order:', order.id);
+    // Check if snapshot has real lead data (not just cart stubs)
+    const hasRealData = leadData && leadData.length > 0 && leadData[0]?.first_name;
+
+    // If snapshot is missing or incomplete, fetch from Google Sheets
+    // Only fetch for leads that follow the standard sheet-based ID pattern (e.g., final_expense_123)
+    if (!hasRealData) {
+      const sheetBasedIds = (order.leads_purchased || []).filter(id => /^[a-z_]+_\d+$/.test(id));
+      if (sheetBasedIds.length === 0) {
+        console.error('No fetchable lead IDs for order:', order.id);
         return;
       }
-
       try {
         const response = await base44.functions.invoke('getLeadsFromSheetsForCSV', {
-          lead_ids: order.leads_purchased
+          lead_ids: sheetBasedIds
         });
         leadData = response.data.leads;
-
-        if (!leadData || leadData.length === 0) {
-          console.error('Failed to fetch lead data for order:', order.id);
-          return;
-        }
+        if (!leadData || leadData.length === 0) return;
       } catch (error) {
         console.error('Error fetching lead data:', error);
         return;
