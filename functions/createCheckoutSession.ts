@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
-        lead_count: cartItems.length.toString(),
+        lead_count: cartItemsToProcess.length.toString(),
         temp_order_id: tempOrder.id
       },
       allow_promotion_codes: true
