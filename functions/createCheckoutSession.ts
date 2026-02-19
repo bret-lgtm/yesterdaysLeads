@@ -16,8 +16,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
+    // Deduplicate cart items by lead_id to prevent duplicate purchases
+    const seenLeadIds = new Set();
+    const uniqueCartItems = cartItems.filter(item => {
+      if (seenLeadIds.has(item.lead_id)) {
+        console.warn('Duplicate lead_id removed from cart:', item.lead_id);
+        return false;
+      }
+      seenLeadIds.add(item.lead_id);
+      return true;
+    });
+    const cartItemsToProcess = uniqueCartItems;
+
     // Create line items for Stripe
-    const lineItems = cartItems.map(item => ({
+    const lineItems = cartItemsToProcess.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
