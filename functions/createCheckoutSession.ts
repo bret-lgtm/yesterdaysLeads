@@ -98,10 +98,10 @@ Deno.serve(async (req) => {
         customer_id: 'free_customer',
         customer_email: user?.email || customerEmail,
         total_price: 0,
-        lead_count: cartItems.length,
+        lead_count: cartItemsToProcess.length,
         stripe_transaction_id: 'free_order',
-        leads_purchased: cartItems.map(item => item.lead_id),
-        lead_data_snapshot: cartItems,
+        leads_purchased: cartItemsToProcess.map(item => item.lead_id),
+        lead_data_snapshot: cartItemsToProcess,
         status: 'completed'
       });
 
