@@ -16,20 +16,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Deduplicate cart items by lead_id to prevent duplicate purchases
-    const seenLeadIds = new Set();
-    const uniqueCartItems = cartItems.filter(item => {
-      if (seenLeadIds.has(item.lead_id)) {
-        console.warn('Duplicate lead_id removed from cart:', item.lead_id);
-        return false;
-      }
-      seenLeadIds.add(item.lead_id);
-      return true;
-    });
-    const cartItemsToProcess = uniqueCartItems;
-
     // Create line items for Stripe
-    const lineItems = cartItemsToProcess.map(item => ({
+    const lineItems = cartItems.map(item => ({
       price_data: {
         currency: 'usd',
         product_data: {
@@ -52,7 +40,7 @@ Deno.serve(async (req) => {
     const cancelUrl = `${appUrl}/Checkout`;
 
     // Calculate subtotal first
-    const subtotal = cartItemsToProcess.reduce((sum, item) => sum + item.price, 0);
+    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
 
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
@@ -98,10 +86,10 @@ Deno.serve(async (req) => {
         customer_id: 'free_customer',
         customer_email: user?.email || customerEmail,
         total_price: 0,
-        lead_count: cartItemsToProcess.length,
+        lead_count: cartItems.length,
         stripe_transaction_id: 'free_order',
-        leads_purchased: cartItemsToProcess.map(item => item.lead_id),
-        lead_data_snapshot: cartItemsToProcess,
+        leads_purchased: cartItems.map(item => item.lead_id),
+        lead_data_snapshot: cartItems,
         status: 'completed'
       });
 
@@ -121,10 +109,10 @@ Deno.serve(async (req) => {
       customer_id: 'pending',
       customer_email: user?.email || customerEmail,
       total_price: subtotal,
-      lead_count: cartItemsToProcess.length,
+      lead_count: cartItems.length,
       stripe_transaction_id: 'pending',
-      leads_purchased: cartItemsToProcess.map(item => item.lead_id),
-      lead_data_snapshot: cartItemsToProcess,
+      leads_purchased: cartItems.map(item => item.lead_id),
+      lead_data_snapshot: cartItems,
       status: 'pending'
     });
 
@@ -139,7 +127,7 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
-        lead_count: cartItemsToProcess.length.toString(),
+        lead_count: cartItems.length.toString(),
         temp_order_id: tempOrder.id
       },
       allow_promotion_codes: true
