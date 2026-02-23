@@ -104,15 +104,26 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Deduplicate cart items by lead_id before saving
+    const seenLeadIds = new Set();
+    const uniqueCartItems = cartItems.filter(item => {
+      if (seenLeadIds.has(item.lead_id)) return false;
+      seenLeadIds.add(item.lead_id);
+      return true;
+    });
+    if (uniqueCartItems.length !== cartItems.length) {
+      console.warn(`Deduped cart: ${cartItems.length} -> ${uniqueCartItems.length} items`);
+    }
+
     // Create temporary order and Stripe session for paid orders
     const tempOrder = await base44.asServiceRole.entities.Order.create({
       customer_id: 'pending',
       customer_email: user?.email || customerEmail,
       total_price: subtotal,
-      lead_count: cartItems.length,
+      lead_count: uniqueCartItems.length,
       stripe_transaction_id: 'pending',
-      leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems,
+      leads_purchased: uniqueCartItems.map(item => item.lead_id),
+      lead_data_snapshot: uniqueCartItems,
       status: 'pending'
     });
 
