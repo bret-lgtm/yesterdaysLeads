@@ -36,7 +36,11 @@ export default function OrdersList({ orders, customers }) {
     const isIncompleteSnapshot = leadData && leadData.length > 0 && 
       leadData[0] && !leadData[0].first_name && !leadData[0].email && !leadData[0].phone;
 
-    if (!leadData || leadData.length === 0 || isIncompleteSnapshot) {
+    // Also refetch if snapshot count doesn't match leads_purchased count
+    const snapshotMismatch = order.leads_purchased && leadData && 
+      leadData.length !== order.leads_purchased.length;
+
+    if (!leadData || leadData.length === 0 || isIncompleteSnapshot || snapshotMismatch) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
