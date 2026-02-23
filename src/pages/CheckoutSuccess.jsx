@@ -36,7 +36,22 @@ export default function CheckoutSuccess() {
 
   const latestOrder = orders[0];
 
+  const [pixelFired, setPixelFired] = useState(false);
+
   useEffect(() => {
+    if (latestOrder && !pixelFired) {
+      setOrderReady(true);
+      if (window.fbq) {
+        fbq('track', 'Purchase', {
+          value: latestOrder.total_price,
+          currency: 'USD',
+          num_items: latestOrder.lead_count,
+          order_id: latestOrder.id
+        });
+      }
+      setPixelFired(true);
+      return;
+    }
     if (latestOrder) {
       setOrderReady(true);
       return;
