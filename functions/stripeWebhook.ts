@@ -83,17 +83,28 @@ Deno.serve(async (req) => {
       console.log('User email:', userEmail);
       console.log('Cart items count:', cartItemData.length);
 
-      // Use cart item data directly from snapshot
-      const cartItems = cartItemData.map(item => ({
-        id: item.id,
-        lead_id: item.lead_id,
-        lead_type: item.lead_type,
-        lead_name: item.lead_name,
-        state: item.state,
-        zip_code: item.zip_code,
-        age_in_days: item.age_in_days,
-        price: item.price
-      }));
+      // Use cart item data directly from snapshot - deduplicate by lead_id
+      const seenLeadIds = new Set();
+      const cartItems = cartItemData
+        .map(item => ({
+          id: item.id,
+          lead_id: item.lead_id,
+          lead_type: item.lead_type,
+          lead_name: item.lead_name,
+          state: item.state,
+          zip_code: item.zip_code,
+          age_in_days: item.age_in_days,
+          price: item.price
+        }))
+        .filter(item => {
+          if (seenLeadIds.has(item.lead_id)) return false;
+          seenLeadIds.add(item.lead_id);
+          return true;
+        });
+      
+      if (cartItems.length !== cartItemData.length) {
+        console.warn(`Deduped cart items: ${cartItemData.length} -> ${cartItems.length}`);
+      }
 
       console.log('Cart items count:', cartItems.length);
       console.log('Cart items:', cartItems.map(c => ({id: c.id, lead_id: c.lead_id})));
