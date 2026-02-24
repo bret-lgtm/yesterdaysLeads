@@ -129,11 +129,68 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- Fetch lead_data_snapshot for order 2 unique leads ----
-    const order2SnapshotResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', {
-      lead_ids: order2UniqueLeads
+    // ---- Fetch lead_data_snapshot for order 2 unique leads directly from sheets ----
+    // Order 2 unique leads are all from final_expense sheet, extract row indices
+    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'auto', 'home', 'health', 'life', 'medicare'];
+    const rowIndices2 = order2UniqueLeads.map(id => {
+      for (const type of leadTypeOrder) {
+        if (id.startsWith(type + '_')) {
+          const parts = id.split('_');
+          const typeParts = type.split('_').length;
+          return parseInt(parts[typeParts]);
+        }
+      }
+      return null;
+    }).filter(n => n !== null);
+
+    const headerResponse2 = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A1:Z1`)}`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    const headerData2 = await headerResponse2.json();
+    const feHeaders = headerData2.values?.[0] || [];
+
+    const ranges2 = rowIndices2.map(rowIndex => {
+      const rowNumber = rowIndex + 2;
+      return `'${sheetName}'!A${rowNumber}:Z${rowNumber}`;
     });
-    const order2SnapshotLeads = order2SnapshotResponse.leads || [];
+
+    const batchResponse2 = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges2.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}`,
+      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+    );
+    const batchData2 = await batchResponse2.json();
+    const valueRanges2 = batchData2.valueRanges || [];
+
+    const order2SnapshotLeads = [];
+    for (let i = 0; i < rowIndices2.length; i++) {
+      const rowIndex = rowIndices2[i];
+      const row = valueRanges2[i]?.values?.[0];
+      if (!row) continue;
+      const lead = {};
+      feHeaders.forEach((header, j) => {
+        const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
+        lead[cleanHeader] = row[j] || '';
+      });
+      lead.lead_id = `final_expense_${rowIndex}`;
+      lead.lead_type = 'final_expense';
+      if (lead.external_id) {
+        const dateStr = lead.external_id.split('-')[0];
+        if (dateStr.length === 8) {
+          const year = parseInt(dateStr.substring(0, 4));
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
+          const day = parseInt(dateStr.substring(6, 8));
+          const uploadDate = new Date(year, month, day);
+          if (!isNaN(uploadDate.getTime())) {
+            lead.age_in_days = Math.floor((Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24));
+          }
+        }
+      }
+      delete lead.external_id;
+      delete lead.tier_1; delete lead.tier_2; delete lead.tier_3; delete lead.tier_4; delete lead.tier_5;
+      order2SnapshotLeads.push(lead);
+    }
+    console.log('Order 2 snapshot leads fetched:', order2SnapshotLeads.length);
 
     // ---- Update Order 2: deduplicated to 20 unique leads ----
     await base44.asServiceRole.entities.Order.update(ORDER2_ID, {
