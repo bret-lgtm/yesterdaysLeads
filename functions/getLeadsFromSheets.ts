@@ -193,6 +193,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fetch all sold lead IDs from LeadSuppression to exclude them
+    let soldLeadIds = new Set();
+    if (!lead_ids || lead_ids.length === 0) {
+      // Only needed when browsing - not when fetching specific IDs for CSV
+      const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
+      soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
+      console.log(`Sold lead IDs (suppression list): ${soldLeadIds.size}`);
+    }
+
     // Apply status filtering only - if no status column exists, treat all leads as available
     let filteredLeads = allLeads;
 
@@ -200,13 +209,11 @@ Deno.serve(async (req) => {
     if (lead_ids && lead_ids.length > 0) {
       filteredLeads = allLeads.filter(lead => lead_ids.includes(lead.id));
     } else {
-      // Only filter by status - all other filtering happens client-side for speed
+      // Filter by status AND suppression list
       filteredLeads = allLeads.filter(lead => {
-        // If status is undefined or empty, treat as available
+        if (soldLeadIds.has(lead.id)) return false;
         if (!lead.status || lead.status === 'undefined') return true;
-        // Otherwise, check if status is "Available"
-        const statusMatch = lead.status.trim().toLowerCase() === 'available';
-        return statusMatch;
+        return lead.status.trim().toLowerCase() === 'available';
       });
     }
 

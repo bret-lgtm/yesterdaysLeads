@@ -113,13 +113,19 @@ Deno.serve(async (req) => {
 
     console.log(`Total leads before filtering: ${allLeads.length}`);
 
-    // Filter by status
+    // Fetch all sold lead IDs from LeadSuppression to exclude them
+    const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
+    const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
+    console.log(`Sold lead IDs (suppression list): ${soldLeadIds.size}`);
+
+    // Filter by status AND suppression list
     let filtered = allLeads.filter(lead => {
+      if (soldLeadIds.has(lead.id)) return false;
       if (!lead.status || lead.status === 'undefined') return true;
       return lead.status.trim().toLowerCase() === 'available';
     });
 
-    console.log(`After status filter: ${filtered.length}`);
+    console.log(`After status + suppression filter: ${filtered.length}`);
 
     // State filter - support both single state and multiple states
     if (filters.states && filters.states.length > 0) {
