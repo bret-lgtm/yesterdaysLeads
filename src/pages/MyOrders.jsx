@@ -78,41 +78,42 @@ export default function MyOrders() {
       leadsByType[type].push(lead);
     });
 
-    // Generate and download a CSV for each lead type
-    Object.entries(leadsByType).forEach(([type, leads]) => {
-      // Get all unique keys from all leads of this type
-      const allKeys = new Set();
-      leads.forEach(lead => {
-        Object.keys(lead).forEach(key => allKeys.add(key));
-      });
-      
-      // Exclude internal fields and convert to array
-      const headers = Array.from(allKeys).filter(key => 
-        !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
-      );
+    // Generate and download a CSV for each lead type, staggered to allow multiple downloads
+    const entries = Object.entries(leadsByType);
+    entries.forEach(([type, leads], index) => {
+      setTimeout(() => {
+        const allKeys = new Set();
+        leads.forEach(lead => {
+          Object.keys(lead).forEach(key => allKeys.add(key));
+        });
 
-      // Generate rows with all fields
-      const rows = leads.map(lead => 
-        headers.map(header => {
-          const value = lead[header];
-          // Escape commas and quotes in CSV
-          if (value === null || value === undefined) return '';
-          const str = String(value);
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        })
-      );
+        const headers = Array.from(allKeys).filter(key =>
+          !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
+        );
 
-      const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `leads-${type}-order-${order.id}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+        const rows = leads.map(lead =>
+          headers.map(header => {
+            const value = lead[header];
+            if (value === null || value === undefined) return '';
+            const str = String(value);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          })
+        );
+
+        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `leads-${type}-order-${order.id}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      }, index * 1000);
     });
   };
 
