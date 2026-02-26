@@ -172,8 +172,8 @@ export default function OrdersList({ orders, customers }) {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-sm text-slate-500">
-                      #{order.id?.slice(0, 8)}
+                    <span className="font-mono text-sm text-slate-500 select-all" title={order.id}>
+                      #{order.id}
                     </span>
                     <Badge className={
                       order.status === 'completed' 
