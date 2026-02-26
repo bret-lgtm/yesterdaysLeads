@@ -88,11 +88,16 @@ export default function BrowseLeads() {
     queryFn: () => base44.entities.PricingTier.list()
   });
 
-  // Fetch order data to determine most popular lead types (admin only)
+  // Fetch order data to determine most popular lead types
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
-    queryFn: () => base44.entities.Order.list(),
-    enabled: user?.role === 'admin',
+    queryFn: async () => {
+      try {
+        return await base44.entities.Order.list();
+      } catch {
+        return [];
+      }
+    }
   });
 
   const cartLeadIds = cartItems.map(item => item.lead_id);
