@@ -368,7 +368,7 @@ export default function BrowseLeads() {
                 className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add to Cart
+                {quantityLoading ? 'Adding...' : 'Add to Cart'}
               </Button>
             </div>
 
