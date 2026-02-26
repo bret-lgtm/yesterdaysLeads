@@ -16,6 +16,23 @@ import { Input } from "@/components/ui/input";
 
 const ITEMS_PER_PAGE = 20;
 
+// Always compute age from external_id so it's accurate at cart-add time
+function computeAgeInDays(lead) {
+  if (lead.external_id && lead.external_id.includes('-')) {
+    const dateStr = lead.external_id.split('-')[0];
+    if (dateStr && dateStr.length === 8) {
+      const year = parseInt(dateStr.substring(0, 4));
+      const month = parseInt(dateStr.substring(4, 6)) - 1;
+      const day = parseInt(dateStr.substring(6, 8));
+      const uploadDate = new Date(year, month, day);
+      if (!isNaN(uploadDate.getTime())) {
+        return Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+      }
+    }
+  }
+  return lead.age_in_days || 1;
+}
+
 export default function BrowseLeads() {
   // Get lead_type and age_range from URL params if present
   const urlParams = new URLSearchParams(window.location.search);
