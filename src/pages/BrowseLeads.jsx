@@ -179,8 +179,8 @@ export default function BrowseLeads() {
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
           state: lead.state,
           zip_code: String(lead.zip_code || ''),
-          age_in_days: lead.age_in_days,
-          price: calculateLeadPrice(lead, pricingTiers)
+          age_in_days: computeAgeInDays(lead),
+          price: calculateLeadPrice({...lead, age_in_days: computeAgeInDays(lead)}, pricingTiers)
         });
       }
       queryClient.invalidateQueries({ queryKey: ['cart'] });
@@ -197,8 +197,8 @@ export default function BrowseLeads() {
         lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
         state: lead.state,
         zip_code: String(lead.zip_code || ''),
-        age_in_days: lead.age_in_days,
-        price: calculateLeadPrice(lead, pricingTiers)
+        age_in_days: computeAgeInDays(lead),
+        price: calculateLeadPrice({...lead, age_in_days: computeAgeInDays(lead)}, pricingTiers)
       }));
       
       const updatedCart = [...existingCart, ...newItems];
