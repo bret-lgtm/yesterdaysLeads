@@ -293,7 +293,7 @@ export default function BrowseLeads() {
 
   const handleRemoveAll = async () => {
     if (user) {
-      await Promise.all(cartItems.map(item => base44.entities.CartItem.delete(item.id)));
+      await base44.functions.invoke('clearCart', {});
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Cart cleared');
     } else {
