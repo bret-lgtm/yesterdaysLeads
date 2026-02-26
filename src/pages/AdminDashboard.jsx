@@ -31,7 +31,7 @@ export default function AdminDashboard() {
   const { data: sheetLeadsResponse, isLoading: leadsLoading, refetch: refetchLeads } = useQuery({
     queryKey: ['sheetLeads'],
     queryFn: async () => {
-      const response = await base44.functions.invoke('getLeadsFromSheets', {
+      const response = await base44.functions.invoke('getFilteredLeads', {
         filters: {},
         include_last_names: true
       });
