@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
 
     let allLeads = [];
 
-    // Extract unique lead types from lead IDs
-    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'auto', 'home', 'health', 'life', 'medicare'];
+    // Extract unique lead types from lead IDs (order matters - longer/multi-word types first)
+    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'medicare', 'health', 'home', 'auto', 'life'];
     const sheetsToQuery = [...new Set(lead_ids.map(id => {
       for (const type of leadTypeOrder) {
         if (id.startsWith(type + '_')) return type;
