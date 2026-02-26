@@ -272,15 +272,18 @@ export default function BrowseLeads() {
 
     setQuantityLoading(true);
     try {
-      const items = leadsToAdd.map(lead => ({
-        lead_id: lead.id,
-        lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-        state: lead.state,
-        zip_code: String(lead.zip_code || ''),
-        age_in_days: lead.age_in_days,
-        price: calculateLeadPrice(lead, pricingTiers)
-      }));
+      const items = leadsToAdd.map(lead => {
+        const age = computeAgeInDays(lead);
+        return {
+          lead_id: lead.id,
+          lead_type: lead.lead_type,
+          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+          state: lead.state,
+          zip_code: String(lead.zip_code || ''),
+          age_in_days: age,
+          price: calculateLeadPrice({...lead, age_in_days: age}, pricingTiers)
+        };
+      });
 
       if (user) {
         // Bulk create in batches of 50 to avoid timeouts
