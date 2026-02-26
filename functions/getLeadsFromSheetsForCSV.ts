@@ -75,12 +75,18 @@ Deno.serve(async (req) => {
     console.log('Sheet map:', JSON.stringify(sheetMap));
     console.log('Sheets to query:', sheetsToQuery);
 
+    // Deduplicate lead IDs first
+    const uniqueLeadIds = [...new Set(lead_ids)];
+    if (uniqueLeadIds.length !== lead_ids.length) {
+      console.warn(`Deduped lead IDs: ${lead_ids.length} -> ${uniqueLeadIds.length}`);
+    }
+
     // Group lead_ids by lead type and get specific row numbers
     const leadsByType = {};
-    lead_ids.forEach(id => {
+    uniqueLeadIds.forEach(id => {
       for (const type of leadTypeOrder) {
         if (id.startsWith(type + '_')) {
-          // Extract row index - handle multi-word types like "veteran_life"
+          // Extract row index - handle multi-word types like "veteran_life", "final_expense"
           const parts = id.split('_');
           const typeParts = type.split('_').length;
           const rowIndex = parseInt(parts[typeParts]);
