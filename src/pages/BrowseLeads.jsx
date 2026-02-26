@@ -236,22 +236,44 @@ export default function BrowseLeads() {
     }
   };
 
+  const [quantityLoading, setQuantityLoading] = useState(false);
+
   const handleQuantityAddToCart = async () => {
     const qty = parseInt(quantity);
-    if (!qty || qty <= 0) return;
+    if (!qty || qty <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
 
     const availableLeads = sortedLeads.filter(lead => !cartLeadIds.includes(lead.id));
     const leadsToAdd = availableLeads.slice(0, qty);
 
-    console.log('Quantity requested:', qty);
-    console.log('Available leads:', availableLeads.length);
-    console.log('Leads to add:', leadsToAdd.length);
+    if (leadsToAdd.length === 0) {
+      toast.info('No available leads to add');
+      return;
+    }
 
-    if (user) {
-      // Bulk create for database
-      for (const lead of leadsToAdd) {
-        await base44.entities.CartItem.create({
-          user_email: user.email,
+    setQuantityLoading(true);
+    try {
+      if (user) {
+        for (const lead of leadsToAdd) {
+          await base44.entities.CartItem.create({
+            user_email: user.email,
+            lead_id: lead.id,
+            lead_type: lead.lead_type,
+            lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+            state: lead.state,
+            zip_code: String(lead.zip_code || ''),
+            age_in_days: lead.age_in_days,
+            price: calculateLeadPrice(lead, pricingTiers)
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ['cart'] });
+      } else {
+        const stored = localStorage.getItem('anonymous_cart');
+        const existingCart = stored ? JSON.parse(stored) : [];
+        const newItems = leadsToAdd.map(lead => ({
+          id: `local_${Date.now()}_${Math.random()}`,
           lead_id: lead.id,
           lead_type: lead.lead_type,
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
@@ -259,32 +281,16 @@ export default function BrowseLeads() {
           zip_code: String(lead.zip_code || ''),
           age_in_days: lead.age_in_days,
           price: calculateLeadPrice(lead, pricingTiers)
-        });
+        }));
+        const updatedCart = [...existingCart, ...newItems];
+        localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
+        window.dispatchEvent(new Event('cartUpdated'));
       }
-      queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success(`${leadsToAdd.length} leads added to cart`);
-    } else {
-      // Batch add to localStorage for anonymous users
-      const stored = localStorage.getItem('anonymous_cart');
-      const existingCart = stored ? JSON.parse(stored) : [];
-      
-      const newItems = leadsToAdd.map(lead => ({
-        id: `local_${Date.now()}_${Math.random()}`,
-        lead_id: lead.id,
-        lead_type: lead.lead_type,
-        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-        state: lead.state,
-        zip_code: String(lead.zip_code || ''),
-        age_in_days: lead.age_in_days,
-        price: calculateLeadPrice(lead, pricingTiers)
-      }));
-      
-      const updatedCart = [...existingCart, ...newItems];
-      localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
-      window.dispatchEvent(new Event('cartUpdated'));
+      setQuantity('');
+    } finally {
+      setQuantityLoading(false);
     }
-
-    setQuantity('');
   };
 
   const handleCheckout = () => {
