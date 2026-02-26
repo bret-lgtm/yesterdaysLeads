@@ -255,35 +255,29 @@ export default function BrowseLeads() {
 
     setQuantityLoading(true);
     try {
+      const items = leadsToAdd.map(lead => ({
+        lead_id: lead.id,
+        lead_type: lead.lead_type,
+        lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
+        state: lead.state,
+        zip_code: String(lead.zip_code || ''),
+        age_in_days: lead.age_in_days,
+        price: calculateLeadPrice(lead, pricingTiers)
+      }));
+
       if (user) {
-        for (const lead of leadsToAdd) {
-          await base44.entities.CartItem.create({
-            user_email: user.email,
-            lead_id: lead.id,
-            lead_type: lead.lead_type,
-            lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-            state: lead.state,
-            zip_code: String(lead.zip_code || ''),
-            age_in_days: lead.age_in_days,
-            price: calculateLeadPrice(lead, pricingTiers)
-          });
+        // Bulk create in batches of 50 to avoid timeouts
+        const BATCH_SIZE = 50;
+        for (let i = 0; i < items.length; i += BATCH_SIZE) {
+          const batch = items.slice(i, i + BATCH_SIZE).map(item => ({ user_email: user.email, ...item }));
+          await base44.entities.CartItem.bulkCreate(batch);
         }
         queryClient.invalidateQueries({ queryKey: ['cart'] });
       } else {
         const stored = localStorage.getItem('anonymous_cart');
         const existingCart = stored ? JSON.parse(stored) : [];
-        const newItems = leadsToAdd.map(lead => ({
-          id: `local_${Date.now()}_${Math.random()}`,
-          lead_id: lead.id,
-          lead_type: lead.lead_type,
-          lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-          state: lead.state,
-          zip_code: String(lead.zip_code || ''),
-          age_in_days: lead.age_in_days,
-          price: calculateLeadPrice(lead, pricingTiers)
-        }));
-        const updatedCart = [...existingCart, ...newItems];
-        localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
+        const newItems = items.map(item => ({ id: `local_${Date.now()}_${Math.random()}`, ...item }));
+        localStorage.setItem('anonymous_cart', JSON.stringify([...existingCart, ...newItems]));
         window.dispatchEvent(new Event('cartUpdated'));
       }
       toast.success(`${leadsToAdd.length} leads added to cart`);
