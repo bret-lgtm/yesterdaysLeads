@@ -16,17 +16,30 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
-    // Create line items for Stripe
-    const lineItems = cartItems.map(item => ({
+    // Group cart items by lead_type + price to create consolidated line items (Stripe has a 100 line item limit)
+    const lineItemMap = {};
+    for (const item of cartItems) {
+      const key = `${item.lead_type}__${item.price}`;
+      if (!lineItemMap[key]) {
+        lineItemMap[key] = {
+          lead_type: item.lead_type,
+          price: item.price,
+          count: 0
+        };
+      }
+      lineItemMap[key].count++;
+    }
+
+    const lineItems = Object.values(lineItemMap).map(group => ({
       price_data: {
         currency: 'usd',
         product_data: {
-          name: `${item.lead_type.toUpperCase()} Lead - ${item.lead_name}`,
-          description: `${item.state} • ${item.age_in_days} days old`
+          name: `${group.lead_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} Leads`,
+          description: `$${group.price.toFixed(2)} each × ${group.count} leads`
         },
-        unit_amount: Math.round(item.price * 100) // Convert to cents
+        unit_amount: Math.round(group.price * 100)
       },
-      quantity: 1
+      quantity: group.count
     }));
 
     // Get app URL for redirect
