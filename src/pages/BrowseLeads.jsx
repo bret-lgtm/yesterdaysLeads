@@ -443,15 +443,17 @@ export default function BrowseLeads() {
                   isSelected={!!isSelected}
                   onSelect={handleSelectLead}
                   isInCart={isInCart}
-                  onAddToCart={async (lead, price) => {
+                  onAddToCart={async (lead, _price) => {
+                    const age = computeAgeInDays(lead);
+                    const computedPrice = calculateLeadPrice({...lead, age_in_days: age}, pricingTiers);
                     await addToCart({
                       lead_id: lead.id,
                       lead_type: lead.lead_type,
                       lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
                       state: lead.state,
                       zip_code: String(lead.zip_code || ''),
-                      age_in_days: lead.age_in_days,
-                      price
+                      age_in_days: age,
+                      price: computedPrice
                     });
                   }}
                 />
