@@ -364,7 +364,7 @@ export default function BrowseLeads() {
               />
               <Button
                 onClick={handleQuantityAddToCart}
-                disabled={!quantity || parseInt(quantity) <= 0 || sortedLeads.length === 0}
+                disabled={!quantity || parseInt(quantity) <= 0 || sortedLeads.length === 0 || quantityLoading}
                 className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-lg shadow-emerald-500/20"
               >
                 <Plus className="w-4 h-4 mr-1" />
