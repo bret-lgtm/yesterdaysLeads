@@ -27,7 +27,8 @@ export default function OrdersList({ orders, customers }) {
     
     const query = searchQuery.toLowerCase();
     return customerName.toLowerCase().includes(query) || 
-           customerEmail.toLowerCase().includes(query);
+           customerEmail.toLowerCase().includes(query) ||
+           (order.id || '').toLowerCase().includes(query);
   });
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
