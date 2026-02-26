@@ -293,14 +293,10 @@ export default function BrowseLeads() {
 
   const handleRemoveAll = async () => {
     if (user) {
-      // Delete all cart items for authenticated user
-      for (const item of cartItems) {
-        await base44.entities.CartItem.delete(item.id);
-      }
+      await Promise.all(cartItems.map(item => base44.entities.CartItem.delete(item.id)));
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       toast.success('Cart cleared');
     } else {
-      // Clear local storage for anonymous user
       clearLocalCart();
       toast.success('Cart cleared');
     }
