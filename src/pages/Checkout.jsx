@@ -34,6 +34,8 @@ export default function Checkout() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [discountInfo, setDiscountInfo] = useState(null);
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
