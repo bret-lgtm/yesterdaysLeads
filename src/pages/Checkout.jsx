@@ -75,7 +75,8 @@ export default function Checkout() {
     try {
       const response = await base44.functions.invoke('validateCoupon', {
         couponCode: couponCode.trim(),
-        subtotal
+        subtotal,
+        customerEmail: user?.email
       });
       if (response.data.valid) {
         setDiscountInfo(response.data.discountInfo);
