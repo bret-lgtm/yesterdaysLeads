@@ -22,6 +22,22 @@ Deno.serve(async (req) => {
     const promo = promoCodes.data[0];
     const coupon = promo.coupon;
 
+    // Check if this promo code restricts to one use per customer
+    // by looking at past Stripe charges with this coupon for this customer
+    if (customerEmail && coupon.max_redemptions_per_customer !== undefined) {
+      // Stripe handles this natively, nothing extra needed
+    }
+
+    // Check our own Order records to see if this customer already used this coupon
+    if (customerEmail) {
+      const base44 = createClientFromRequest(req);
+      const existingOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: customerEmail });
+      const alreadyUsed = existingOrders.some(order => order.coupon_code === couponCode.toUpperCase() && order.status === 'completed');
+      if (alreadyUsed) {
+        return Response.json({ valid: false, error: 'This coupon has already been used on a previous order' });
+      }
+    }
+
     let discountAmount = 0;
     let discountType = '';
     let discountValue = 0;
