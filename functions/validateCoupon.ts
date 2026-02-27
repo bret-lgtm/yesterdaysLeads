@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
       apiVersion: '2023-10-16'
     });
 
-    const { couponCode, subtotal } = await req.json();
+    const { couponCode, subtotal, customerEmail } = await req.json();
 
     if (!couponCode) {
       return Response.json({ error: 'No coupon code provided' }, { status: 400 });
