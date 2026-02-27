@@ -69,6 +69,30 @@ export default function Checkout() {
 
 
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    try {
+      const response = await base44.functions.invoke('validateCoupon', {
+        couponCode: couponCode.trim(),
+        subtotal
+      });
+      if (response.data.valid) {
+        setDiscountInfo(response.data.discountInfo);
+        setCouponApplied(true);
+        toast.success('Coupon applied!');
+      } else {
+        toast.error(response.data.error || 'Invalid coupon code');
+        setDiscountInfo(null);
+        setCouponApplied(false);
+      }
+    } catch {
+      toast.error('Failed to validate coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
   const discountAmount = discountInfo?.amount || 0;
   const total = subtotal - discountAmount;
