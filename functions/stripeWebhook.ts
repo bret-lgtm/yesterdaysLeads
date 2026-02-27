@@ -163,6 +163,21 @@ Deno.serve(async (req) => {
 
       console.log('Session total:', session.amount_total / 100);
 
+      // Get coupon code from session discounts if any
+      let usedCouponCode = null;
+      if (session.total_details?.breakdown?.discounts?.length > 0) {
+        try {
+          const discountObj = session.total_details.breakdown.discounts[0];
+          const promoCodeId = discountObj.discount?.promotion_code;
+          if (promoCodeId) {
+            const promoCode = await stripe.promotionCodes.retrieve(promoCodeId);
+            usedCouponCode = promoCode.code?.toUpperCase();
+          }
+        } catch (err) {
+          console.warn('Could not retrieve promo code:', err.message);
+        }
+      }
+
       // Create order - use cartItems.length for accurate lead count
       const order = await base44.asServiceRole.entities.Order.create({
         customer_id: customer.id,
@@ -172,6 +187,7 @@ Deno.serve(async (req) => {
         stripe_transaction_id: session.payment_intent,
         leads_purchased: cartItems.map(item => item.lead_id),
         lead_data_snapshot: completeLeadData,
+        coupon_code: usedCouponCode,
         status: 'completed'
       });
 
