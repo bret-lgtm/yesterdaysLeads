@@ -370,14 +370,31 @@ export default function Checkout() {
                   <Tag className="w-4 h-4 inline mr-2" />
                   Coupon Code (Optional)
                 </Label>
-                <Input
-                  id="coupon"
-                  type="text"
-                  placeholder="Enter coupon code"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  className="rounded-xl border-slate-200"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="coupon"
+                    type="text"
+                    placeholder="Enter coupon code"
+                    value={couponCode}
+                    onChange={(e) => { setCouponCode(e.target.value); setCouponApplied(false); setDiscountInfo(null); }}
+                    className="rounded-xl border-slate-200"
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={!couponCode.trim() || couponLoading || couponApplied}
+                    variant="outline"
+                    className={`rounded-xl whitespace-nowrap ${couponApplied ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-slate-200'}`}
+                  >
+                    {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : couponApplied ? <CheckCircle className="w-4 h-4" /> : 'Apply'}
+                  </Button>
+                </div>
+                {couponApplied && discountInfo && (
+                  <p className="text-sm text-emerald-600 mt-1 font-medium">
+                    ✓ Discount of ${discountInfo.amount.toFixed(2)} will be applied at checkout
+                  </p>
+                )}
               </div>
 
               <div className="flex items-start gap-3 mt-6 mb-4">
