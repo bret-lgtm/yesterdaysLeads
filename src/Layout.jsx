@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { migrateLocalCartToDatabase } from './components/cartMigration';
 import ChatWidget from './components/chat/ChatWidget';
+import { Toaster } from '@/components/ui/sonner';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
