@@ -267,6 +267,7 @@ export default function Layout({ children }) {
 
       {/* Chat Widget */}
       <ChatWidget />
+      <Toaster />
 
       {/* Footer */}
       <footer className="bg-emerald-700 border-t border-emerald-800 mt-auto">
