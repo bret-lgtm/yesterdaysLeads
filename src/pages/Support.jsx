@@ -23,20 +23,14 @@ export default function Support() {
     setSubmitting(true);
 
     try {
-      await base44.integrations.Core.SendEmail({
-        to: 'support@yesterdaysleads.com',
-        subject: `Support Request from ${formData.first_name} ${formData.last_name}`,
-        body: `
-New support request received:
-
-Name: ${formData.first_name} ${formData.last_name}
-Email: ${formData.email}
-Phone: ${formData.phone}
-
-Message:
-${formData.message}
-        `
+      const response = await base44.functions.invoke('sendSupportEmail', {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        phone: formData.phone,
+        message: formData.message,
       });
+      if (!response.data.success) throw new Error('Failed');
 
       toast.success('Message sent! We\'ll get back to you soon.');
       setFormData({
