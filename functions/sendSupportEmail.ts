@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'support@yesterdaysleads.com',
+        from: 'onboarding@resend.dev',
         to: 'support@yesterdaysleads.com',
         reply_to: email,
         subject: `Support Request from ${first_name} ${last_name}`,
@@ -27,10 +27,12 @@ Deno.serve(async (req) => {
       }),
     });
 
+    const resBody = await res.json();
+    console.log('Resend response:', JSON.stringify(resBody));
+
     if (!res.ok) {
-      const err = await res.text();
-      console.error('Resend error:', err);
-      return Response.json({ error: 'Failed to send email' }, { status: 500 });
+      console.error('Resend error:', resBody);
+      return Response.json({ error: 'Failed to send email', details: resBody }, { status: 500 });
     }
 
     return Response.json({ success: true });
