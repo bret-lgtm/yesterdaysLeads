@@ -205,6 +205,10 @@ export default function AdminDashboard() {
               <OrdersList orders={orders} customers={customers} />
             )}
           </TabsContent>
+
+          <TabsContent value="recover">
+            <RecoverOrder />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
