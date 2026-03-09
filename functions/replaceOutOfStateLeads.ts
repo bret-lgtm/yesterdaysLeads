@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
       if (soldLeadIds.has(lead.lead_id)) return false;
       const status = (lead.status || '').trim().toLowerCase();
       if (status && status !== 'available' && status !== 'undefined' && status !== '') return false;
-      return allowedSet.has((lead.state || '').toUpperCase());
+      return allowedSet.has(String(lead.state || '').toUpperCase());
     });
 
     console.log(`Found ${replacements.length} available replacement leads in ${allowed_states.join('/')}`);
