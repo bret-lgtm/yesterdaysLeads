@@ -11,13 +11,17 @@ import OrdersList from '../components/admin/OrdersList';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { 
   LayoutDashboard, 
   Upload, 
   RefreshCw,
   DollarSign,
   Users,
-  ShoppingBag
+  ShoppingBag,
+  Wrench
 } from "lucide-react";
 
 export default function AdminDashboard() {
