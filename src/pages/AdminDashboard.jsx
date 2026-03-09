@@ -8,6 +8,7 @@ import SoldByType from '../components/admin/SoldByType';
 import CSVUploader from '../components/admin/CSVUploader';
 import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
 import OrdersList from '../components/admin/OrdersList';
+import RecoverOrder from '../components/admin/RecoverOrder';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
