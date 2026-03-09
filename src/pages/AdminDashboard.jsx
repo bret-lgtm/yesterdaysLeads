@@ -153,6 +153,10 @@ export default function AdminDashboard() {
               <ShoppingBag className="w-4 h-4 mr-2" />
               Orders
             </TabsTrigger>
+            <TabsTrigger value="recover" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+              <Wrench className="w-4 h-4 mr-2" />
+              Recover
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="space-y-6">
