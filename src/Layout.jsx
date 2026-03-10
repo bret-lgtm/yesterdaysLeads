@@ -32,6 +32,14 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [localCartCount, setLocalCartCount] = React.useState(0);
+  const [showCookieBanner, setShowCookieBanner] = React.useState(
+    () => !localStorage.getItem('cookie_consent')
+  );
+
+  const acceptCookies = () => {
+    localStorage.setItem('cookie_consent', 'accepted');
+    setShowCookieBanner(false);
+  };
 
   // Facebook Pixel
   React.useEffect(() => {
