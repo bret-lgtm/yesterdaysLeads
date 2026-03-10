@@ -273,6 +273,24 @@ export default function Layout({ children }) {
         {children}
       </main>
 
+      {/* Cookie Consent Banner */}
+      {showCookieBanner && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900 text-white px-4 py-4 shadow-lg">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p className="text-sm text-slate-200 text-center sm:text-left">
+              We use cookies and similar tracking technologies (including the Facebook Pixel) to improve your experience and analyze site traffic. By continuing to use this site, you consent to our use of cookies as described in our{' '}
+              <a href="/privacy-policy" className="underline text-white hover:text-slate-300">Privacy Policy</a>.
+            </p>
+            <Button
+              onClick={acceptCookies}
+              className="shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-6"
+            >
+              Accept & Close
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Chat Widget */}
       <ChatWidget />
       <Toaster />
