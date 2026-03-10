@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
         
         // Remove last name for security
         if (lead.last_name) {
-          lead.last_name_initial = lead.last_name.charAt(0).toUpperCase();
+          lead.last_name_initial = String(lead.last_name).charAt(0).toUpperCase();
           delete lead.last_name;
         }
         
