@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { order_id, correct_lead_type, dry_run = true } = await req.json();
+    const { order_id, correct_lead_type, allowed_states = [], dry_run = true } = await req.json();
 
     // Load the order
     const orders = await base44.asServiceRole.entities.Order.filter({ id: order_id });
