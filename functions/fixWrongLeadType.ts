@@ -45,7 +45,8 @@ Deno.serve(async (req) => {
     const sheetName = sheetMap[sheetIds[correct_lead_type]];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${correct_lead_type}` }, { status: 400 });
 
-    const range = `'${sheetName}'!A:Z`;
+    // Only fetch first 500 rows since we need very few leads
+    const range = `'${sheetName}'!A1:Z500`;
     const sheetRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
