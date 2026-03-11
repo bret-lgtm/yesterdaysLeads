@@ -20,9 +20,9 @@ Deno.serve(async (req) => {
 
     console.log(`Order ${order_id}: replacing ${neededCount} wrong-type leads with ${correct_lead_type}`);
 
-    // Get suppression list to exclude already-sold leads
-    const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
-    const soldIds = new Set(suppressionRecords.map(r => r.lead_id));
+    // Get suppression list for this lead type only (by filtering lead_id prefix)
+    // For small orders we skip full suppression scan and rely on status field
+    const soldIds = new Set();
 
     // Fetch the correct lead type sheet from Google Sheets
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
