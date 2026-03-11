@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       const statusVal = String(lead.status || '').trim().toLowerCase();
       lead._available = !soldIds.has(lead.id) && (!statusVal || statusVal === 'available' || statusVal === 'undefined');
       return lead;
-    }).filter(l => l._available);
+    }).filter(l => l._available && (allowed_states.length === 0 || allowed_states.includes(l.state)));
 
     console.log(`Found ${candidates.length} available ${correct_lead_type} leads`);
 
