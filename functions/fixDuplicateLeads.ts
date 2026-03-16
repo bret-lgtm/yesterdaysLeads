@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { order_id, dry_run = true } = await req.json();
+    const { order_id, dry_run = true, allowed_states = [] } = await req.json();
 
     // Load the order
     const orders = await base44.asServiceRole.entities.Order.filter({ id: order_id });
@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
       lead._available = !soldIds.has(lead.id) && !alreadyOnOrder.has(lead.id) &&
         (!statusVal || statusVal === 'available' || statusVal === 'undefined');
       return lead;
-    }).filter(l => l._available);
+    }).filter(l => l._available && (allowed_states.length === 0 || allowed_states.includes(l.state)));
 
     console.log(`Found ${candidates.length} available replacement candidates`);
 

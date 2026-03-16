@@ -10,11 +10,10 @@ Deno.serve(async (req) => {
     }
 
     // Columns to exclude from CSV
-    const excludeColumns = new Set(['id', 'created_date', 'updated_date', 'created_by', 'external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'last_name_initial', 'user_email', 'price', 'lead_type', 'lead_name', 'lead_id', 'status']);
+    const excludeColumns = new Set(['id', 'created_date', 'updated_date', 'created_by', 'external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', 'last_name_initial', 'user_email', 'price', 'lead_type', 'lead_name', 'lead_id', 'status', 'age_in_days', 'is_sample', 'created_by_id']);
     
     // Preferred column order
     const preferredOrder = [
-      'age_in_days',
       'first_name',
       'last_name',
       'email',
