@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     const sheetName = sheetMap[sheetIds[leadType]];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
 
-    const range = `'${sheetName}'!A1:Z2000`;
+    const range = `'${sheetName}'!A1:Z10000`;
     const sheetRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
