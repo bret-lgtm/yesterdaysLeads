@@ -10,10 +10,21 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
 
-    const { cartItems, customerEmail, couponCode } = await req.json();
+    const { cartItems: rawCartItems, customerEmail, couponCode } = await req.json();
 
-    if (!cartItems || cartItems.length === 0) {
+    if (!rawCartItems || rawCartItems.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
+    }
+
+    // Deduplicate by lead_id FIRST before any pricing or Stripe line item calculations
+    const seenLeadIds = new Set();
+    const cartItems = rawCartItems.filter(item => {
+      if (seenLeadIds.has(item.lead_id)) return false;
+      seenLeadIds.add(item.lead_id);
+      return true;
+    });
+    if (cartItems.length !== rawCartItems.length) {
+      console.warn(`Deduped cart at checkout creation: ${rawCartItems.length} -> ${cartItems.length} items`);
     }
 
     // Group cart items by lead_type + price to create consolidated line items (Stripe has a 100 line item limit)
