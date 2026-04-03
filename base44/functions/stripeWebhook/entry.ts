@@ -39,20 +39,45 @@ Deno.serve(async (req) => {
       const tempOrderId = metadata.temp_order_id || session.client_reference_id;
       console.log('Temp order ID:', tempOrderId);
 
-      // Check if order already exists for this payment_intent or session (prevent duplicate processing)
+      // Check if order already exists for this payment_intent (prevent duplicate processing)
       const existingOrders = await base44.asServiceRole.entities.Order.filter({ 
         stripe_transaction_id: session.payment_intent 
       });
       
       if (existingOrders.length > 0) {
         console.log('Order already processed for payment_intent:', session.payment_intent);
-        // Clean up temp order if it still exists
-        try {
-          await base44.asServiceRole.entities.Order.delete(tempOrderId);
-        } catch (err) {
-          console.log('Temp order already deleted or not found');
-        }
+        try { await base44.asServiceRole.entities.Order.delete(tempOrderId); } catch (err) {}
         return Response.json({ received: true, message: 'Already processed' });
+      }
+
+      // Cross-session duplicate check: if a completed order already exists for same customer + same leads, skip
+      const userEmailForCheck = session.customer_details?.email || session.customer_email;
+      if (userEmailForCheck && tempOrderId) {
+        try {
+          const tempOrderData = await base44.asServiceRole.entities.Order.get(tempOrderId);
+          const newLeadsSorted = (tempOrderData.leads_purchased || []).slice().sort().join(',');
+          const recentCompleted = await base44.asServiceRole.entities.Order.filter({
+            customer_email: userEmailForCheck,
+            status: 'completed'
+          });
+          for (const existing of recentCompleted) {
+            const existingLeadsSorted = (existing.leads_purchased || []).slice().sort().join(',');
+            if (existingLeadsSorted === newLeadsSorted && existingLeadsSorted.length > 0) {
+              console.warn(`Duplicate order detected! Customer ${userEmailForCheck} already has a completed order with the same ${existing.leads_purchased.length} leads (order ${existing.id}). Refunding duplicate payment_intent: ${session.payment_intent}`);
+              // Auto-refund the duplicate charge
+              try {
+                await stripe.refunds.create({ payment_intent: session.payment_intent });
+                console.log('Auto-refunded duplicate charge:', session.payment_intent);
+              } catch (refundErr) {
+                console.error('Failed to auto-refund duplicate:', refundErr.message);
+              }
+              try { await base44.asServiceRole.entities.Order.delete(tempOrderId); } catch (err) {}
+              return Response.json({ received: true, message: 'Duplicate order auto-refunded' });
+            }
+          }
+        } catch (err) {
+          console.warn('Cross-session duplicate check failed, continuing:', err.message);
+        }
       }
 
       // Fetch the temporary order

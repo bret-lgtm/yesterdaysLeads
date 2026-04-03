@@ -128,6 +128,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check if a pending order already exists for this customer with the same leads (prevent duplicate sessions)
+    const customerEmailForCheck = user?.email || customerEmail;
+    if (customerEmailForCheck) {
+      const existingPending = await base44.asServiceRole.entities.Order.filter({
+        customer_email: customerEmailForCheck,
+        status: 'pending'
+      });
+      const sortedNewLeads = cartItems.map(i => i.lead_id).sort().join(',');
+      for (const pending of existingPending) {
+        const sortedExisting = (pending.leads_purchased || []).sort().join(',');
+        if (sortedExisting === sortedNewLeads && pending.stripe_transaction_id !== 'pending') {
+          // Try to retrieve the existing Stripe session
+          try {
+            const sessions = await stripe.checkout.sessions.list({ limit: 10 });
+            const match = sessions.data.find(s => s.client_reference_id === pending.id && s.status === 'open');
+            if (match) {
+              console.log('Reusing existing checkout session:', match.id, 'for pending order:', pending.id);
+              return Response.json({ sessionId: match.id, url: match.url, discountInfo, subtotal, finalTotal });
+            }
+          } catch (e) {
+            console.warn('Could not retrieve existing session, will create new one:', e.message);
+          }
+        }
+      }
+    }
+
     // Create temporary order and Stripe session for paid orders
     const tempOrder = await base44.asServiceRole.entities.Order.create({
       customer_id: 'pending',

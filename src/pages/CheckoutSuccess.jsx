@@ -42,7 +42,7 @@ export default function CheckoutSuccess() {
     if (latestOrder && !pixelFired) {
       setOrderReady(true);
       if (window.fbq) {
-        fbq('track', 'Purchase', {
+        window.fbq('track', 'Purchase', {
           value: latestOrder.total_price,
           currency: 'USD',
           num_items: latestOrder.lead_count,
