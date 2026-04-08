@@ -82,8 +82,12 @@ Deno.serve(async (req) => {
 
     const totalDups = summary.reduce((s, o) => s + o.duplicate_count, 0);
     console.log(`Total cross-order duplicates: ${totalDups}`);
+    summary.filter(o => o.duplicate_count > 0).forEach(o => {
+      console.log(`Order ${o.order_id} duplicates: ${JSON.stringify(o.duplicates)}`);
+    });
 
-    return Response.json({ total_orders: allOrders.length, total_cross_order_duplicates: totalDups, orders: summary });
+    const ordersWithDups = summary.filter(o => o.duplicate_count > 0);
+    return Response.json({ total_orders: allOrders.length, total_cross_order_duplicates: totalDups, orders_with_duplicates: ordersWithDups });
 
   } catch (error) {
     console.error('error:', error);
