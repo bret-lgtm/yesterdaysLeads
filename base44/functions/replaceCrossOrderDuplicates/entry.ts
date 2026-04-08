@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     }
 
     // duplicate_leads: array of { lead_id, state } to replace
-    const { order_id, duplicate_leads, dry_run = true } = await req.json();
+    const { order_id, duplicate_leads, dry_run = true, age_min = null, age_max = null } = await req.json();
 
     if (!order_id || !duplicate_leads?.length) {
       return Response.json({ error: 'order_id and duplicate_leads required' }, { status: 400 });
@@ -38,8 +38,15 @@ Deno.serve(async (req) => {
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldIds = new Set(suppressionRecords.map(r => r.lead_id));
 
-    // Also exclude leads already on this order (except the duplicates being replaced)
-    const keepIds = new Set((order.leads_purchased || []).filter(id => !duplicateIds.has(id)));
+    // Exclude leads from ALL of this customer's orders (not just the current one)
+    const allCustomerOrders = await base44.asServiceRole.entities.Order.filter({ customer_id: order.customer_id });
+    const allCustomerLeadIds = new Set();
+    for (const o of allCustomerOrders) {
+      for (const lid of (o.leads_purchased || [])) {
+        if (!duplicateIds.has(lid)) allCustomerLeadIds.add(lid);
+      }
+    }
+    const keepIds = allCustomerLeadIds;
 
     // Fetch sheet data
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
@@ -103,7 +110,8 @@ Deno.serve(async (req) => {
       }
 
       const statusVal = String(lead.status || '').trim().toLowerCase();
-      lead._available = !soldIds.has(lead.id) && !keepIds.has(lead.id) && !duplicateIds.has(lead.id) &&
+      const ageOk = (age_min == null || lead.age_in_days >= age_min) && (age_max == null || lead.age_in_days <= age_max);
+      lead._available = ageOk && !soldIds.has(lead.id) && !keepIds.has(lead.id) && !duplicateIds.has(lead.id) &&
         (!statusVal || statusVal === 'available' || statusVal === 'undefined');
       return lead;
     }).filter(l => l._available);
