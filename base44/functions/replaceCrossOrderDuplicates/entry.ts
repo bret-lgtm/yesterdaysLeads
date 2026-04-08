@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const sheetName = sheetMap[sheetIds[leadType]];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
 
-    const range = `'${sheetName}'!A1:Z10000`;
+    const range = `'${sheetName}'!A1:Z50000`;
     const sheetRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -115,6 +115,28 @@ Deno.serve(async (req) => {
         (!statusVal || statusVal === 'available' || statusVal === 'undefined');
       return lead;
     }).filter(l => l._available);
+
+    // Debug: log NJ leads found and their ages
+    const njAll = dataRows.map((row, index) => {
+      const lead = {};
+      headers.forEach((h, i) => { lead[h.trim().toLowerCase().replace(/\s+/g, '_')] = row[i] || ''; });
+      lead.id = `${leadType}_${index}`;
+      if (lead.external_id) {
+        const dateStr = String(lead.external_id).split('-')[0];
+        if (dateStr.length === 8) {
+          const year = parseInt(dateStr.substring(0, 4));
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
+          const day = parseInt(dateStr.substring(6, 8));
+          const uploadDate = new Date(year, month, day);
+          if (!isNaN(uploadDate.getTime())) lead.age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+        }
+      }
+      return lead;
+    }).filter(l => l.state === 'NJ');
+    console.log(`Total NJ rows in sheet: ${njAll.length}`);
+    const njUnsold = njAll.filter(l => !soldIds.has(l.id) && !keepIds.has(l.id) && !duplicateIds.has(l.id));
+    console.log(`NJ unsold/unowned: ${njUnsold.length}`);
+    njUnsold.forEach(l => console.log(`  NJ lead ${l.id}: age=${l.age_in_days}, status=${l.status}`));
 
     // Group candidates by state
     const candidatesByState = {};
