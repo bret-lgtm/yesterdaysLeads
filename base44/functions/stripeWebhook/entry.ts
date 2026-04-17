@@ -131,6 +131,26 @@ Deno.serve(async (req) => {
         console.warn(`Deduped cart items: ${cartItemData.length} -> ${cartItems.length}`);
       }
 
+      // Cross-order duplicate check: remove leads the customer already owns in prior orders
+      const customerEmail = tempOrder.customer_email;
+      const priorOrders = await base44.asServiceRole.entities.Order.filter({
+        customer_email: customerEmail,
+        status: 'completed'
+      });
+      const priorLeadIds = new Set();
+      for (const priorOrder of priorOrders) {
+        for (const lid of (priorOrder.leads_purchased || [])) {
+          priorLeadIds.add(lid);
+        }
+      }
+      const crossOrderDupes = cartItems.filter(item => priorLeadIds.has(item.lead_id));
+      if (crossOrderDupes.length > 0) {
+        console.warn(`Cross-order duplicates detected for ${customerEmail}: ${crossOrderDupes.map(i => i.lead_id).join(', ')} — removing from order`);
+        // Remove them from the cart items list
+        const dupeIds = new Set(crossOrderDupes.map(i => i.lead_id));
+        cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !dupeIds.has(i.lead_id)));
+      }
+
       console.log('Cart items count:', cartItems.length);
       console.log('Cart items:', cartItems.map(c => ({id: c.id, lead_id: c.lead_id})));
 
