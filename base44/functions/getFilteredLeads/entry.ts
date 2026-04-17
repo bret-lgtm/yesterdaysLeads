@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { filters = {} } = await req.json();
+    const { filters = {}, user_email } = await req.json();
 
     // Get access token for Google Sheets
     const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
@@ -117,6 +117,17 @@ Deno.serve(async (req) => {
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
     console.log(`Sold lead IDs (suppression list): ${soldLeadIds.size}`);
+
+    // Also exclude leads the current customer has already purchased in any prior order
+    if (user_email) {
+      const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: user_email, status: 'completed' });
+      for (const order of customerOrders) {
+        for (const lid of (order.leads_purchased || [])) {
+          soldLeadIds.add(lid);
+        }
+      }
+      console.log(`After adding customer prior purchases: ${soldLeadIds.size} excluded lead IDs`);
+    }
 
     // Filter by status AND suppression list
     let filtered = allLeads.filter(lead => {

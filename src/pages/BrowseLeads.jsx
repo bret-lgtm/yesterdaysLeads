@@ -65,7 +65,7 @@ export default function BrowseLeads() {
     queryFn: async () => {
       try {
         console.log('Fetching leads with filters:', filters);
-        const response = await base44.functions.invoke('getFilteredLeads', { filters });
+        const response = await base44.functions.invoke('getFilteredLeads', { filters, user_email: user?.email || null });
         console.log('Received leads:', response.data?.leads?.length);
         return response.data?.leads || [];
       } catch (err) {
