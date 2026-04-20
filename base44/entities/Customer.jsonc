@@ -1,0 +1,74 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Link to User entity"
+    },
+    "full_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "stripe_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "is_subscriber": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_blocked": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, this customer is blocked from browsing leads or purchasing"
+    },
+    "block_reason": {
+      "type": "string",
+      "description": "Optional internal note explaining why the customer was blocked"
+    },
+    "suppression_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of Lead IDs the customer has purchased"
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

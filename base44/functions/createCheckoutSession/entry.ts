@@ -16,6 +16,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
     }
 
+    // Block check — reject checkout if customer is flagged as blocked
+    const emailToCheck = user?.email || customerEmail;
+    if (emailToCheck) {
+      const customers = await base44.asServiceRole.entities.Customer.filter({ email: emailToCheck });
+      if (customers[0]?.is_blocked) {
+        console.warn(`Blocked customer attempted checkout: ${emailToCheck}`);
+        return Response.json({ error: 'Your account has been suspended. Please contact support.' }, { status: 403 });
+      }
+    }
+
     // Deduplicate by lead_id FIRST before any pricing or Stripe line item calculations
     const seenLeadIds = new Set();
     const cartItems = rawCartItems.filter(item => {

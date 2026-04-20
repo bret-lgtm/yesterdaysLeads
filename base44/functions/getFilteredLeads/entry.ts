@@ -119,7 +119,15 @@ Deno.serve(async (req) => {
     console.log(`Sold lead IDs (suppression list): ${soldLeadIds.size}`);
 
     // Also exclude leads the current customer has already purchased in any prior order
+    // AND block the customer entirely if they are flagged as blocked
     if (user_email) {
+      const customers = await base44.asServiceRole.entities.Customer.filter({ email: user_email });
+      const customer = customers[0];
+      if (customer?.is_blocked) {
+        console.warn(`Blocked customer attempted to browse leads: ${user_email}`);
+        return Response.json({ leads: [], total: 0, blocked: true });
+      }
+
       const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: user_email, status: 'completed' });
       for (const order of customerOrders) {
         for (const lid of (order.leads_purchased || [])) {
