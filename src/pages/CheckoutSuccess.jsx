@@ -158,6 +158,14 @@ export default function CheckoutSuccess() {
     }
 
     generateAndDownloadCSVs(leadData, latestOrder.id);
+
+    // Log the download for dispute protection
+    try {
+      await base44.functions.invoke('logDownload', { order_id: latestOrder.id });
+    } catch (e) {
+      console.warn('Failed to log download:', e);
+    }
+
     setDownloading(false);
   };
 

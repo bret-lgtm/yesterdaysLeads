@@ -1,0 +1,86 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Link to Customer entity"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "total_price": {
+      "type": "number"
+    },
+    "lead_count": {
+      "type": "number"
+    },
+    "stripe_transaction_id": {
+      "type": "string"
+    },
+    "leads_purchased": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of Lead IDs purchased"
+    },
+    "lead_data_snapshot": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Snapshot of lead data at time of purchase"
+    },
+    "coupon_code": {
+      "type": "string",
+      "description": "Coupon code used on this order"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "refunded"
+      ],
+      "default": "completed"
+    },
+    "download_log": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Log of each CSV download: {timestamp, ip, user_agent}"
+    }
+  },
+  "required": [
+    "customer_id",
+    "total_price",
+    "lead_count"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.customer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

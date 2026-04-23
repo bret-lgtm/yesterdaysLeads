@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { motion } from "framer-motion";
-import { FileText, Download, Calendar, Search } from "lucide-react";
+import { FileText, Download, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function OrdersList({ orders, customers }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showPending, setShowPending] = useState(false);
+  const [expandedDownloads, setExpandedDownloads] = useState({});
 
   const customerMap = {};
   customers.forEach(customer => {
@@ -208,6 +209,19 @@ export default function OrdersList({ orders, customers }) {
                   <p className="text-xs text-slate-500">
                     ${(order.total_price / order.lead_count).toFixed(2)} per lead
                   </p>
+                  {order.download_log?.length > 0 && (
+                    <button
+                      onClick={() => setExpandedDownloads(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
+                      className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 mt-1 ml-auto"
+                    >
+                      <Download className="w-3 h-3" />
+                      {order.download_log.length} download{order.download_log.length !== 1 ? 's' : ''}
+                      {expandedDownloads[order.id] ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                  )}
+                  {!order.download_log?.length && (
+                    <p className="text-xs text-slate-400 mt-1">Never downloaded</p>
+                  )}
                 </div>
                 <Button
                   onClick={() => downloadCSV(order)}
@@ -219,6 +233,23 @@ export default function OrdersList({ orders, customers }) {
                 </Button>
               </div>
             </div>
+
+            {/* Download Log */}
+            {expandedDownloads[order.id] && order.download_log?.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-slate-100">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Download History</p>
+                <div className="space-y-1.5">
+                  {order.download_log.map((entry, i) => (
+                    <div key={i} className="flex items-start gap-3 text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
+                      <span className="text-slate-400 shrink-0">#{i + 1}</span>
+                      <span className="font-medium shrink-0">{format(new Date(entry.timestamp), 'MMM d, yyyy • h:mm:ss a')}</span>
+                      <span className="text-slate-400">IP: {entry.ip}</span>
+                      <span className="text-slate-400 truncate hidden sm:block">{entry.user_agent}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </Card>
         </motion.div>
       ))}
