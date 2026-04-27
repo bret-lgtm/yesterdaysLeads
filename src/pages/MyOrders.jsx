@@ -14,7 +14,8 @@ import {
   Download, 
   Calendar, 
   FileText,
-  ArrowRight
+  ArrowRight,
+  Info
 } from "lucide-react";
 
 export default function MyOrders() {
@@ -124,6 +125,14 @@ export default function MyOrders() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">My Orders</h1>
           <p className="text-slate-500">View and download your purchased leads</p>
+        </div>
+
+        {/* Info banner */}
+        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-6">
+          <Info className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+          <p className="text-sm text-blue-700">
+            <span className="font-semibold">Multiple CSV files:</span> If your order includes more than one lead type (e.g. Auto and Life), your leads will download as separate CSV files — one per lead type. Allow pop-ups in your browser if prompted.
+          </p>
         </div>
 
         {isLoading ? (
