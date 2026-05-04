@@ -160,11 +160,9 @@ export default function CheckoutSuccess() {
     generateAndDownloadCSVs(leadData, latestOrder.id);
 
     // Log the download for dispute protection
-    try {
-      await base44.functions.invoke('logDownload', { order_id: latestOrder.id });
-    } catch (e) {
-      console.warn('Failed to log download:', e);
-    }
+    base44.functions.invoke('logDownload', { order_id: latestOrder.id })
+      .then(res => console.log('Download logged:', res.data))
+      .catch(e => console.error('logDownload failed:', e));
 
     setDownloading(false);
   };

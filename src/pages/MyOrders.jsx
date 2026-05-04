@@ -69,12 +69,10 @@ export default function MyOrders() {
       }
     }
 
-    // Log the download
-    try {
-      await base44.functions.invoke('logDownload', { order_id: order.id });
-    } catch (e) {
-      console.warn('Failed to log download:', e);
-    }
+    // Log the download for dispute protection
+    base44.functions.invoke('logDownload', { order_id: order.id })
+      .then(res => console.log('Download logged:', res.data))
+      .catch(e => console.error('logDownload failed:', e));
 
     // Group leads by type
     const leadsByType = {};

@@ -238,6 +238,20 @@ Deno.serve(async (req) => {
 
       console.log('Order created:', order.id);
 
+      // Log initial fulfillment as first download record (dispute evidence)
+      try {
+        await base44.asServiceRole.entities.Order.update(order.id, {
+          download_log: [{
+            timestamp: new Date().toISOString(),
+            ip: 'server-webhook',
+            user_agent: 'stripe-webhook-fulfillment'
+          }]
+        });
+        console.log('Initial download log entry created for order:', order.id);
+      } catch (logErr) {
+        console.warn('Failed to create initial download log:', logErr.message);
+      }
+
       // Track lead purchase completion
       if (base44.analytics) {
         await base44.analytics.track({
