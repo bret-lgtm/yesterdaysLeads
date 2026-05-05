@@ -48,12 +48,12 @@ export default function AdminDashboard() {
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ['allOrders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 1000)
+    queryFn: () => base44.entities.Order.list('-created_date', 5000)
   });
 
   const { data: customers = [] } = useQuery({
     queryKey: ['allCustomers'],
-    queryFn: () => base44.entities.Customer.list('-created_date', 1000)
+    queryFn: () => base44.entities.Customer.list('-created_date', 5000)
   });
 
   const completedOrders = orders.filter(o => o.status === 'completed' && o.stripe_transaction_id);
