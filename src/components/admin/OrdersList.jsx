@@ -239,14 +239,23 @@ export default function OrdersList({ orders, customers }) {
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Download History</p>
                 <div className="space-y-1.5">
-                  {order.download_log.map((entry, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
-                      <span className="text-slate-400 shrink-0">#{i + 1}</span>
-                      <span className="font-medium shrink-0">{format(new Date(entry.timestamp), 'MMM d, yyyy • h:mm:ss a')}</span>
-                      <span className="text-slate-400">IP: {entry.ip}</span>
-                      <span className="text-slate-400 truncate hidden sm:block">{entry.user_agent}</span>
-                    </div>
-                  ))}
+                  {order.download_log.map((entry, i) => {
+                    const isServerEntry = entry.ip === 'server-webhook';
+                    return (
+                      <div key={i} className="flex items-start gap-3 text-xs text-slate-600 bg-slate-50 rounded-lg px-3 py-2">
+                        <span className="text-slate-400 shrink-0">#{i + 1}</span>
+                        <span className="font-medium shrink-0">{format(new Date(entry.timestamp), 'MMM d, yyyy • h:mm:ss a')}</span>
+                        {isServerEntry ? (
+                          <span className="text-slate-400 italic">Order fulfilled (server)</span>
+                        ) : (
+                          <>
+                            <span className="text-slate-600 font-mono">IP: {entry.ip}</span>
+                            <span className="text-slate-400 truncate hidden sm:block">{entry.user_agent}</span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
