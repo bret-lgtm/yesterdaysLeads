@@ -60,6 +60,11 @@
     "lead_count"
   ],
   "rls": {
+    "create": {
+      "user_condition": {
+        "role": "user"
+      }
+    },
     "read": {
       "$or": [
         {
@@ -78,6 +83,11 @@
       }
     },
     "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "write": {
       "user_condition": {
         "role": "admin"
       }
