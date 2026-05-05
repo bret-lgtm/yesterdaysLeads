@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { motion } from "framer-motion";
-import { FileText, Download, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Download, Calendar, Search, ChevronDown, ChevronUp, Shield } from "lucide-react";
 
 export default function OrdersList({ orders, customers }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -232,6 +232,21 @@ export default function OrdersList({ orders, customers }) {
                   <Download className="w-4 h-4 mr-2" />
                   CSV
                 </Button>
+              </div>
+            </div>
+
+            {/* Audit Info */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Shield className="w-3.5 h-3.5 text-slate-400" />
+                <span className="font-semibold text-slate-600">Audit:</span>
+                <span>
+                  {order.created_by === `service+5aba306e-5c21-4158-9eb8-db51b92bacbb@no-reply.base44.com`
+                    ? '✅ Created by system (customer self-checkout)'
+                    : `⚠️ Created by: ${order.created_by}`}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span>{format(new Date(order.created_date), 'MMM d, yyyy h:mm a')}</span>
               </div>
             </div>
 
