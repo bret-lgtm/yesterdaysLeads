@@ -7,8 +7,6 @@ import { useCart } from '../components/useCart';
 import { migrateLocalCartToDatabase } from '../components/cartMigration';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -19,7 +17,6 @@ import {
   ShoppingCart, 
   CreditCard, 
   ArrowLeft, 
-  Tag, 
   Loader2,
   CheckCircle,
   Download,
@@ -32,10 +29,7 @@ export default function Checkout() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [discountInfo, setDiscountInfo] = useState(null);
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponLoading, setCouponLoading] = useState(false);
+
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ['currentUser'],
@@ -69,34 +63,7 @@ export default function Checkout() {
 
 
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim()) return;
-    setCouponLoading(true);
-    try {
-      const response = await base44.functions.invoke('validateCoupon', {
-        couponCode: couponCode.trim(),
-        subtotal,
-        customerEmail: user?.email
-      });
-      if (response.data.valid) {
-        setDiscountInfo(response.data.discountInfo);
-        setCouponApplied(true);
-        toast.success('Coupon applied!');
-      } else {
-        toast.error(response.data.error || 'Invalid coupon code');
-        setDiscountInfo(null);
-        setCouponApplied(false);
-      }
-    } catch {
-      toast.error('Failed to validate coupon');
-    } finally {
-      setCouponLoading(false);
-    }
-  };
-
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
-  const discountAmount = discountInfo?.amount || 0;
-  const total = subtotal - discountAmount;
 
   // Group by lead type, then by age
   const groupedItems = React.useMemo(() => {
@@ -123,8 +90,7 @@ export default function Checkout() {
     try {
       const response = await base44.functions.invoke('createCheckoutSession', {
         cartItems,
-        customerEmail: user?.email,
-        couponCode: couponCode || undefined
+        customerEmail: user?.email
       });
 
       if (response.data.freeOrder) {
@@ -142,12 +108,6 @@ export default function Checkout() {
           });
         }
       } else if (response.data.url) {
-        if (response.data.warning) {
-          toast.error('Invalid coupon code. Proceeding to checkout without discount.');
-        }
-        if (response.data.discountInfo) {
-          setDiscountInfo(response.data.discountInfo);
-        }
         window.location.href = response.data.url;
       } else {
         throw new Error('No checkout URL returned');
@@ -349,53 +309,12 @@ export default function Checkout() {
                   <span className="text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
 
-                {discountInfo && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-emerald-600 font-medium">
-                      {discountInfo.type === 'percent' ? `Discount (${discountInfo.value}%)` : 'Discount'}
-                    </span>
-                    <span className="text-emerald-600 font-medium">-${discountInfo.amount.toFixed(2)}</span>
-                  </div>
-                )}
-
                 <Separator />
 
                 <div className="flex justify-between">
                   <span className="font-medium text-slate-900">Total</span>
-                  <span className="text-2xl font-bold text-slate-900">${total.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <Label htmlFor="coupon" className="text-sm font-medium text-slate-900 mb-2 block">
-                  <Tag className="w-4 h-4 inline mr-2" />
-                  Coupon Code (Optional)
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="coupon"
-                    type="text"
-                    placeholder="Enter coupon code"
-                    value={couponCode}
-                    onChange={(e) => { setCouponCode(e.target.value); setCouponApplied(false); setDiscountInfo(null); }}
-                    className="rounded-xl border-slate-200"
-                    onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleApplyCoupon}
-                    disabled={!couponCode.trim() || couponLoading || couponApplied}
-                    variant="outline"
-                    className={`rounded-xl whitespace-nowrap ${couponApplied ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-slate-200'}`}
-                  >
-                    {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : couponApplied ? <CheckCircle className="w-4 h-4" /> : 'Apply'}
-                  </Button>
-                </div>
-                {couponApplied && discountInfo && (
-                  <p className="text-sm text-emerald-600 mt-1 font-medium">
-                    ✓ Discount of ${discountInfo.amount.toFixed(2)} will be applied at checkout
-                  </p>
-                )}
               </div>
 
               <div className="flex items-start gap-3 mt-6 mb-4">
