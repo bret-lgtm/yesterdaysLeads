@@ -146,9 +146,21 @@ Deno.serve(async (req) => {
       const crossOrderDupes = cartItems.filter(item => priorLeadIds.has(item.lead_id));
       if (crossOrderDupes.length > 0) {
         console.warn(`Cross-order duplicates detected for ${customerEmail}: ${crossOrderDupes.map(i => i.lead_id).join(', ')} — removing from order`);
-        // Remove them from the cart items list
         const dupeIds = new Set(crossOrderDupes.map(i => i.lead_id));
         cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !dupeIds.has(i.lead_id)));
+      }
+
+      // If ALL leads were stripped as duplicates, refund and abort
+      if (cartItems.length === 0 && session.payment_intent) {
+        console.warn(`All ${crossOrderDupes.length} leads were cross-order duplicates for ${customerEmail}. Auto-refunding.`);
+        try {
+          await stripe.refunds.create({ payment_intent: session.payment_intent });
+          console.log('Auto-refunded all-duplicate order:', session.payment_intent);
+        } catch (refundErr) {
+          console.error('Failed to auto-refund all-duplicate order:', refundErr.message);
+        }
+        try { await base44.asServiceRole.entities.Order.delete(tempOrderId); } catch (_) {}
+        return Response.json({ received: true, message: 'All leads were duplicates, payment refunded' });
       }
 
       console.log('Cart items count:', cartItems.length);
