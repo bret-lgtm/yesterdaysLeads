@@ -63,13 +63,17 @@ Deno.serve(async (req) => {
       quantity: group.count
     }));
 
-    // Get app URL for redirect
-    let appUrl = req.headers.get('origin') || req.headers.get('referer') || Deno.env.get('APP_URL');
-    if (!appUrl) {
+    // Get app URL for redirect — use origin only (strips path, query, trailing slash)
+    const rawUrl = req.headers.get('origin') || req.headers.get('referer') || Deno.env.get('APP_URL');
+    if (!rawUrl) {
       return Response.json({ error: 'Invalid app configuration' }, { status: 500 });
     }
-    // Remove trailing slash and path
-    appUrl = appUrl.split('?')[0];
+    let appUrl;
+    try {
+      appUrl = new URL(rawUrl).origin;
+    } catch {
+      appUrl = rawUrl.split('?')[0].replace(/\/$/, '');
+    }
     const successUrl = `${appUrl}/CheckoutSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${appUrl}/Checkout`;
 
@@ -114,18 +118,84 @@ Deno.serve(async (req) => {
     // Calculate final total
     const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
 
-    // If total is free, create order directly without Stripe
+    // If total is free, fulfill order directly without Stripe (mirrors webhook flow)
     if (finalTotal <= 0) {
+      const freeEmail = user?.email || customerEmail;
+      const leadIds = cartItems.map(item => item.lead_id);
+
+      // Fetch full lead data from Google Sheets
+      let completeLeadData = [];
+      try {
+        const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { lead_ids: leadIds });
+        completeLeadData = (sheetsResponse.data.leads || []).map(lead => {
+          const filtered = {};
+          Object.entries(lead).forEach(([key, value]) => {
+            if (!['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)) {
+              filtered[key] = value;
+            }
+          });
+          return filtered;
+        });
+        console.log('Free order: fetched full lead data, count:', completeLeadData.length);
+      } catch (err) {
+        console.error('Free order: failed to fetch lead data:', err.message);
+        throw new Error(`Failed to fetch lead data from sheets: ${err.message}`);
+      }
+
+      // Get or create customer record
+      let customer = (await base44.asServiceRole.entities.Customer.filter({ email: freeEmail }))[0];
+      if (!customer) {
+        customer = await base44.asServiceRole.entities.Customer.create({
+          email: freeEmail,
+          full_name: freeEmail,
+          suppression_list: []
+        });
+      }
+
+      // Create the order
       const freeOrder = await base44.asServiceRole.entities.Order.create({
-        customer_id: 'free_customer',
-        customer_email: user?.email || customerEmail,
+        customer_id: customer.id,
+        customer_email: freeEmail,
         total_price: 0,
         lead_count: cartItems.length,
         stripe_transaction_id: 'free_order',
-        leads_purchased: cartItems.map(item => item.lead_id),
-        lead_data_snapshot: cartItems,
+        leads_purchased: leadIds,
+        lead_data_snapshot: completeLeadData,
+        coupon_code: couponCode || null,
         status: 'completed'
       });
+      console.log('Free order created:', freeOrder.id);
+
+      // Create suppression records
+      function getTierFromAge(ageInDays) {
+        if (ageInDays >= 1 && ageInDays <= 3) return 'tier1';
+        if (ageInDays >= 4 && ageInDays <= 14) return 'tier2';
+        if (ageInDays >= 15 && ageInDays <= 30) return 'tier3';
+        if (ageInDays >= 31 && ageInDays <= 90) return 'tier4';
+        return 'tier5';
+      }
+      for (const item of cartItems) {
+        await base44.asServiceRole.entities.LeadSuppression.create({
+          lead_id: item.lead_id,
+          tier: getTierFromAge(item.age_in_days || 1),
+          order_id: freeOrder.id,
+          sale_date: new Date().toISOString()
+        });
+        try {
+          await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
+            lead_id: item.lead_id,
+            tier: getTierFromAge(item.age_in_days || 1)
+          });
+        } catch (err) {
+          console.error(`Free order: sheet update failed for ${item.lead_id}:`, err.message);
+        }
+      }
+
+      // Delete cart items from database
+      const cartItemsInDb = await base44.asServiceRole.entities.CartItem.filter({ user_email: freeEmail });
+      for (const dbItem of cartItemsInDb) {
+        try { await base44.asServiceRole.entities.CartItem.delete(dbItem.id); } catch (_) {}
+      }
 
       return Response.json({ 
         sessionId: null,
