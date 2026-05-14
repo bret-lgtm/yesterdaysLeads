@@ -40,14 +40,17 @@ Deno.serve(async (req) => {
       console.log('Temp order ID:', tempOrderId);
 
       // Check if order already exists for this payment_intent (prevent duplicate processing)
-      const existingOrders = await base44.asServiceRole.entities.Order.filter({ 
-        stripe_transaction_id: session.payment_intent 
-      });
-      
-      if (existingOrders.length > 0) {
-        console.log('Order already processed for payment_intent:', session.payment_intent);
-        try { await base44.asServiceRole.entities.Order.delete(tempOrderId); } catch (err) {}
-        return Response.json({ received: true, message: 'Already processed' });
+      // Only do this check when payment_intent is non-null (free/100%-off orders have null payment_intent)
+      if (session.payment_intent) {
+        const existingOrders = await base44.asServiceRole.entities.Order.filter({ 
+          stripe_transaction_id: session.payment_intent 
+        });
+        
+        if (existingOrders.length > 0) {
+          console.log('Order already processed for payment_intent:', session.payment_intent);
+          try { await base44.asServiceRole.entities.Order.delete(tempOrderId); } catch (err) {}
+          return Response.json({ received: true, message: 'Already processed' });
+        }
       }
 
       // Cross-session duplicate check: if a completed order already exists for same customer + same leads, skip
