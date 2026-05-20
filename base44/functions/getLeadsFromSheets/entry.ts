@@ -52,35 +52,33 @@ Deno.serve(async (req) => {
         : Object.keys(sheetIds);
     }
 
-    // First, get sheet names from metadata
-    console.log('🌐 Fetching sheet metadata...');
-    const sheetMetaResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
+    // Helper: fetch with retry on 429
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const res = await fetch(url, options);
+        if (res.status !== 429) return res;
+        const waitMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        console.warn(`Rate limited (429), retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})...`);
+        await new Promise(r => setTimeout(r, waitMs));
       }
-    );
-    
-    console.log('📡 Sheet metadata response status:', sheetMetaResponse.status);
-    
-    if (!sheetMetaResponse.ok) {
-      const errorText = await sheetMetaResponse.text();
-      console.error('❌ Failed to fetch sheet metadata:', errorText);
-      return Response.json({ success: false, error: 'Failed to fetch sheet metadata', leads: [] });
+      // Final attempt
+      return fetch(url, options);
     }
-    
-    const sheetMeta = await sheetMetaResponse.json();
-    console.log('📑 Sheet metadata fetched, sheets count:', sheetMeta.sheets?.length || 0);
-    
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(sheet => {
-      const id = sheet.properties.sheetId.toString();
-      sheetMap[id] = sheet.properties.title;
-    });
-    console.log('🗺️ Sheet map:', JSON.stringify(sheetMap));
+
+    // Use hardcoded sheet name map to avoid metadata API call (saves quota)
+    const sheetMap = {
+      '44023422': 'Auto Leads',
+      '113648240': 'Life Leads',
+      '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads',
+      '712013125': 'Retirement Leads',
+      '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads',
+      '1401332567': 'Veteran Life Leads',
+      '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
+    console.log('🗺️ Using hardcoded sheet map (no metadata API call needed)');
 
     // Fetch data from each sheet
     for (const leadType of sheetsToQuery) {
@@ -97,7 +95,7 @@ Deno.serve(async (req) => {
       
       const range = `'${sheetName}'!A:Z`;
       
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
         {
           headers: {
