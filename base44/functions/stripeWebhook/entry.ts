@@ -272,6 +272,14 @@ Deno.serve(async (req) => {
         // Don't fail the webhook if HubSpot sync fails
       }
 
+      // Update Customer.suppression_list with all newly purchased lead IDs
+      const newLeadIds = cartItems.map(item => item.lead_id);
+      const updatedSuppressionList = [...new Set([...(customer.suppression_list || []), ...newLeadIds])];
+      await base44.asServiceRole.entities.Customer.update(customer.id, {
+        suppression_list: updatedSuppressionList
+      });
+      console.log(`Updated suppression_list to ${updatedSuppressionList.length} leads for ${userEmail}`);
+
       // Delete the temporary order
       await base44.asServiceRole.entities.Order.delete(tempOrderId);
 

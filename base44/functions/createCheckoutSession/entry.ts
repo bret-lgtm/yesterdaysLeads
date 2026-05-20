@@ -37,9 +37,29 @@ Deno.serve(async (req) => {
       console.warn(`Deduped cart at checkout creation: ${rawCartItems.length} -> ${cartItems.length} items`);
     }
 
+    // Suppression check: remove any leads this customer already purchased
+    const emailForSuppression = user?.email || customerEmail;
+    let filteredCartItems = cartItems;
+    if (emailForSuppression) {
+      const existingCustomers = await base44.asServiceRole.entities.Customer.filter({ email: emailForSuppression });
+      const existingCustomer = existingCustomers[0];
+      const suppressionSet = new Set(existingCustomer?.suppression_list || []);
+      console.log(`Suppression check for ${emailForSuppression}: ${suppressionSet.size} suppressed leads, cart has ${cartItems.length} items`);
+      if (suppressionSet.size > 0) {
+        const suppressed = cartItems.filter(item => suppressionSet.has(item.lead_id));
+        filteredCartItems = cartItems.filter(item => !suppressionSet.has(item.lead_id));
+        if (suppressed.length > 0) {
+          console.warn(`Suppression check removed ${suppressed.length} already-purchased leads for ${emailForSuppression}: ${suppressed.map(i => i.lead_id).join(', ')}`);
+        }
+        if (filteredCartItems.length === 0) {
+          return Response.json({ error: 'All leads in your cart have already been purchased. Please browse for new leads.' }, { status: 400 });
+        }
+      }
+    }
+
     // Group cart items by lead_type + price to create consolidated line items (Stripe has a 100 line item limit)
     const lineItemMap = {};
-    for (const item of cartItems) {
+    for (const item of filteredCartItems) {
       const key = `${item.lead_type}__${item.price}`;
       if (!lineItemMap[key]) {
         lineItemMap[key] = {
@@ -78,7 +98,7 @@ Deno.serve(async (req) => {
     const cancelUrl = `${appUrl}/Checkout`;
 
     // Calculate subtotal first
-    const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
+    const subtotal = filteredCartItems.reduce((sum, item) => sum + item.price, 0);
 
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
@@ -121,7 +141,7 @@ Deno.serve(async (req) => {
     // If total is free, fulfill order directly without Stripe (mirrors webhook flow)
     if (finalTotal <= 0) {
       const freeEmail = user?.email || customerEmail;
-      const leadIds = cartItems.map(item => item.lead_id);
+      const leadIds = filteredCartItems.map(item => item.lead_id);
 
       // Fetch full lead data from Google Sheets
       let completeLeadData = [];
@@ -157,7 +177,7 @@ Deno.serve(async (req) => {
         customer_id: customer.id,
         customer_email: freeEmail,
         total_price: 0,
-        lead_count: cartItems.length,
+        lead_count: filteredCartItems.length,
         stripe_transaction_id: 'free_order',
         leads_purchased: leadIds,
         lead_data_snapshot: completeLeadData,
@@ -174,7 +194,7 @@ Deno.serve(async (req) => {
         if (ageInDays >= 31 && ageInDays <= 90) return 'tier4';
         return 'tier5';
       }
-      for (const item of cartItems) {
+      for (const item of filteredCartItems) {
         await base44.asServiceRole.entities.LeadSuppression.create({
           lead_id: item.lead_id,
           tier: getTierFromAge(item.age_in_days || 1),
@@ -190,6 +210,13 @@ Deno.serve(async (req) => {
           console.error(`Free order: sheet update failed for ${item.lead_id}:`, err.message);
         }
       }
+
+      // Update Customer.suppression_list with newly purchased lead IDs
+      const updatedSuppressionList = [...new Set([...(customer.suppression_list || []), ...leadIds])];
+      await base44.asServiceRole.entities.Customer.update(customer.id, {
+        suppression_list: updatedSuppressionList
+      });
+      console.log(`Free order: updated suppression_list to ${updatedSuppressionList.length} leads for ${freeEmail}`);
 
       // Delete cart items from database
       const cartItemsInDb = await base44.asServiceRole.entities.CartItem.filter({ user_email: freeEmail });
@@ -215,7 +242,7 @@ Deno.serve(async (req) => {
         customer_email: customerEmailForCheck,
         status: 'pending'
       });
-      const sortedNewLeads = cartItems.map(i => i.lead_id).sort().join(',');
+      const sortedNewLeads = filteredCartItems.map(i => i.lead_id).sort().join(',');
       for (const pending of existingPending) {
         const sortedExisting = (pending.leads_purchased || []).sort().join(',');
         if (sortedExisting === sortedNewLeads && pending.stripe_transaction_id !== 'pending') {
@@ -239,10 +266,10 @@ Deno.serve(async (req) => {
       customer_id: 'pending',
       customer_email: user?.email || customerEmail,
       total_price: subtotal,
-      lead_count: cartItems.length,
+      lead_count: filteredCartItems.length,
       stripe_transaction_id: 'pending',
-      leads_purchased: cartItems.map(item => item.lead_id),
-      lead_data_snapshot: cartItems,
+      leads_purchased: filteredCartItems.map(item => item.lead_id),
+      lead_data_snapshot: filteredCartItems,
       status: 'pending'
     });
 
@@ -257,7 +284,7 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
         user_email: user?.email || customerEmail,
-        lead_count: cartItems.length.toString(),
+        lead_count: filteredCartItems.length.toString(),
         temp_order_id: tempOrder.id
       },
       allow_promotion_codes: true
