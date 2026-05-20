@@ -186,6 +186,168 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (mode === 'replace_empty_leads') {
+      const ORDER_ID = '6a0de5e143439e856df48a0d';
+      const EMPTY_LEAD_IDS = new Set([
+        'final_expense_21372',
+        'final_expense_21359',
+        'final_expense_21320',
+        'final_expense_21268',
+        'final_expense_21450',
+        'final_expense_21410'
+      ]);
+
+      const order = await base44.asServiceRole.entities.Order.get(ORDER_ID);
+      const snapshot = order.lead_data_snapshot || [];
+      const goodLeads = snapshot.filter(l => !EMPTY_LEAD_IDS.has(l.lead_id));
+      const removedLeads = snapshot.filter(l => EMPTY_LEAD_IDS.has(l.lead_id));
+
+      console.log(`Good leads: ${goodLeads.length}, to replace: ${removedLeads.length}`);
+
+      // Get all suppressed lead IDs
+      const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
+      const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
+      const allUsedLeadIds = new Set(order.leads_purchased || []);
+
+      // Get access token for Google Sheets
+      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+      const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+
+      // Fetch Final Expense sheet directly (hardcoded name)
+      const feSheetName = 'Final Expense Leads';
+      const feResponse = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${feSheetName}'!A:Z`)}`,
+        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      );
+      const feData = await feResponse.json();
+      const rows = feData.values || [];
+      const headers = rows[0];
+      const dataRows = rows.slice(1);
+
+      const allUsedEmails = new Set(goodLeads.map(l => l.email?.toLowerCase()).filter(Boolean));
+
+      // Find available Idaho leads with all fields populated, same age (~2 days)
+      const candidates = [];
+      dataRows.forEach((row, index) => {
+        const lead = {};
+        headers.forEach((h, i) => {
+          lead[h.trim().toLowerCase().replace(/\s+/g, '_')] = row[i] || '';
+        });
+        lead.lead_id = `final_expense_${index}`;
+        lead.lead_type = 'final_expense';
+
+        if (soldLeadIds.has(lead.lead_id)) return;
+        if (allUsedLeadIds.has(lead.lead_id)) return;
+        if (allUsedEmails.has(lead.email?.toLowerCase())) return;
+        if (lead.state?.trim().toUpperCase() !== 'ID') return;
+        // Must have all key fields populated
+        if (!lead.type_of_coverage || !lead.beneficiary || !lead.favorite_hobby) return;
+
+        if (lead.external_id) {
+          const dateStr = lead.external_id.split('-')[0];
+          if (dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const uploadDate = new Date(year, month, day);
+            if (!isNaN(uploadDate.getTime())) {
+              lead.age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+            }
+          }
+        }
+
+        candidates.push(lead);
+      });
+
+      // Sort by closest age to 2 days
+      candidates.sort((a, b) => Math.abs((a.age_in_days || 999) - 2) - Math.abs((b.age_in_days || 999) - 2));
+
+      console.log(`Available Idaho replacement candidates: ${candidates.length}`);
+      if (candidates.length > 0) {
+        console.log('Age distribution of top candidates:', candidates.slice(0, 10).map(c => `${c.first_name} age=${c.age_in_days}`));
+      }
+
+      if (candidates.length < removedLeads.length) {
+        return Response.json({
+          error: `Not enough Idaho replacements: need ${removedLeads.length}, found ${candidates.length}`,
+          candidates: candidates.map(c => `${c.first_name} (age=${c.age_in_days}, id=${c.lead_id})`)
+        }, { status: 400 });
+      }
+
+      const replacements = candidates.slice(0, removedLeads.length);
+
+      const newSnapshot = [...goodLeads];
+      for (const repl of replacements) {
+        newSnapshot.push({
+          first_name: repl.first_name,
+          last_name: repl.last_name,
+          email: repl.email,
+          phone: repl.phone,
+          date_of_birth: repl.date_of_birth,
+          city: repl.city,
+          state: repl.state,
+          zip_code: repl.zip_code,
+          type_of_coverage: repl.type_of_coverage,
+          beneficiary: repl.beneficiary,
+          favorite_hobby: repl.favorite_hobby,
+          lead_id: repl.lead_id,
+          lead_type: 'final_expense',
+          age_in_days: repl.age_in_days || 2
+        });
+      }
+
+      const newLeadsPurchased = newSnapshot.map(l => l.lead_id);
+
+      await base44.asServiceRole.entities.Order.update(ORDER_ID, {
+        lead_data_snapshot: newSnapshot,
+        leads_purchased: newLeadsPurchased,
+        lead_count: newSnapshot.length
+      });
+
+      // Remove suppression records for the removed leads
+      const badSuppressions = suppressionRecords.filter(r => EMPTY_LEAD_IDS.has(r.lead_id) && r.order_id === ORDER_ID);
+      for (const s of badSuppressions) {
+        await base44.asServiceRole.entities.LeadSuppression.delete(s.id);
+      }
+
+      // Add suppression records for replacements
+      function getTierFromAge(age) {
+        if (age >= 1 && age <= 3) return 'tier1';
+        if (age >= 4 && age <= 14) return 'tier2';
+        if (age >= 15 && age <= 30) return 'tier3';
+        if (age >= 31 && age <= 90) return 'tier4';
+        return 'tier5';
+      }
+
+      for (const repl of replacements) {
+        await base44.asServiceRole.entities.LeadSuppression.create({
+          lead_id: repl.lead_id,
+          tier: getTierFromAge(repl.age_in_days || 2),
+          order_id: ORDER_ID,
+          sale_date: new Date().toISOString()
+        });
+      }
+
+      // Also update Customer suppression_list
+      const customer = await base44.asServiceRole.entities.Customer.get(order.customer_id);
+      if (customer) {
+        const currentList = new Set(customer.suppression_list || []);
+        EMPTY_LEAD_IDS.forEach(id => currentList.delete(id));
+        replacements.forEach(r => currentList.add(r.lead_id));
+        await base44.asServiceRole.entities.Customer.update(customer.id, {
+          suppression_list: [...currentList]
+        });
+      }
+
+      return Response.json({
+        success: true,
+        message: `Replaced ${removedLeads.length} empty leads with ${replacements.length} Idaho leads`,
+        removed: removedLeads.map(l => `${l.first_name} ${l.last_name} (${l.lead_id})`),
+        added: replacements.map(r => `${r.first_name} ${r.last_name} (${r.state}, age=${r.age_in_days}, id=${r.lead_id})`),
+        newSnapshotCount: newSnapshot.length
+      });
+    }
+
     return Response.json({ error: 'Unknown mode' }, { status: 400 });
 
   } catch (error) {
