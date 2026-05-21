@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
   try {
@@ -32,18 +32,19 @@ Deno.serve(async (req) => {
       ? [filters.lead_type]
       : Object.keys(sheetIds);
 
-    // Fetch sheet metadata to get names
-    const sheetMetaResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
-    );
-    
-    const sheetMeta = await sheetMetaResponse.json();
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(sheet => {
-      const id = sheet.properties.sheetId.toString();
-      sheetMap[id] = sheet.properties.title;
-    });
+    // Use hardcoded sheet map to avoid metadata API call (saves quota + works without user auth)
+    const sheetMap = {
+      '44023422': 'Auto Leads',
+      '113648240': 'Life Leads',
+      '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads',
+      '712013125': 'Retirement Leads',
+      '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads',
+      '1401332567': 'Veteran Life Leads',
+      '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
 
     // Fetch data from each sheet
     let allLeads = [];
