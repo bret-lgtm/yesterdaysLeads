@@ -13,19 +13,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get access token for Google Sheets
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
+    if (!apiKey) {
+      return Response.json({ success: false, error: 'GOOGLE_API_KEY not configured', leads: [] });
+    }
     
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
     if (!spreadsheetId) {
-      return Response.json({ 
-        success: false, 
-        error: 'GOOGLE_SHEET_ID not configured',
-        leads: [] 
-      });
+      return Response.json({ success: false, error: 'GOOGLE_SHEET_ID not configured', leads: [] });
     }
 
-    // Map lead types to sheet IDs (gid)
     const sheetIds = {
       auto: '44023422',
       home: '1745292620',
@@ -39,54 +36,30 @@ Deno.serve(async (req) => {
       recruiting: '1894668336'
     };
 
-    let allLeads = [];
+    const sheetMap = {
+      '44023422': 'Auto Leads',
+      '113648240': 'Life Leads',
+      '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads',
+      '712013125': 'Retirement Leads',
+      '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads',
+      '1401332567': 'Veteran Life Leads',
+      '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
 
-    // Extract unique lead types from lead IDs (order matters - longer/multi-word types first)
     const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'medicare', 'health', 'home', 'auto', 'life'];
-    const sheetsToQuery = [...new Set(lead_ids.map(id => {
-      for (const type of leadTypeOrder) {
-        if (id.startsWith(type + '_')) return type;
-      }
-      return null;
-    }).filter(Boolean))];
-    console.log('Extracted lead types:', sheetsToQuery);
 
-    // Get sheet names from metadata
-    const sheetMetaResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    if (!sheetMetaResponse.ok) {
-      return Response.json({ success: false, error: 'Failed to fetch sheet metadata', leads: [] });
-    }
-    
-    const sheetMeta = await sheetMetaResponse.json();
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(sheet => {
-      const id = sheet.properties.sheetId.toString();
-      sheetMap[id] = sheet.properties.title;
-    });
-    console.log('Sheet map:', JSON.stringify(sheetMap));
-    console.log('Sheets to query:', sheetsToQuery);
-
-    // Deduplicate lead IDs first
+    // Deduplicate lead IDs
     const uniqueLeadIds = [...new Set(lead_ids)];
-    if (uniqueLeadIds.length !== lead_ids.length) {
-      console.warn(`Deduped lead IDs: ${lead_ids.length} -> ${uniqueLeadIds.length}`);
-    }
+    console.log('Fetching leads for CSV:', uniqueLeadIds.length);
 
-    // Group lead_ids by lead type and get specific row numbers
+    // Group lead_ids by lead type and row index
     const leadsByType = {};
     uniqueLeadIds.forEach(id => {
       for (const type of leadTypeOrder) {
         if (id.startsWith(type + '_')) {
-          // Extract row index - handle multi-word types like "veteran_life", "final_expense"
           const parts = id.split('_');
           const typeParts = type.split('_').length;
           const rowIndex = parseInt(parts[typeParts]);
@@ -97,61 +70,50 @@ Deno.serve(async (req) => {
       }
     });
 
-    // Fetch only the header row and specific rows for each sheet
+    let allLeads = [];
+
     for (const [leadType, rowIndices] of Object.entries(leadsByType)) {
       try {
         const sheetId = sheetIds[leadType];
         const sheetName = sheetMap[sheetId];
-        
         if (!sheetName) continue;
 
-        // Get header row first
+        // Get header row
         const headerResponse = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A1:Z1`)}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          }
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A1:Z1`)}?key=${apiKey}`
         );
 
-        if (!headerResponse.ok) continue;
+        if (!headerResponse.ok) {
+          console.error(`Header fetch failed for ${leadType}:`, await headerResponse.text());
+          continue;
+        }
         const headerData = await headerResponse.json();
         const headers = headerData.values?.[0] || [];
 
-        // Build batch request for specific rows (deduplicate)
+        // Batch fetch specific rows
         const uniqueRowIndices = [...new Set(rowIndices)];
-        const ranges = uniqueRowIndices.map(rowIndex => {
-          const rowNumber = rowIndex + 2;
-          return `'${sheetName}'!A${rowNumber}:Z${rowNumber}`;
-        });
+        const ranges = uniqueRowIndices.map(rowIndex => `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`);
 
         const batchResponse = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          }
+          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}&key=${apiKey}`
         );
 
-        if (!batchResponse.ok) continue;
+        if (!batchResponse.ok) {
+          console.error(`Batch fetch failed for ${leadType}:`, await batchResponse.text());
+          continue;
+        }
         const batchData = await batchResponse.json();
         const valueRanges = batchData.valueRanges || [];
 
-        // Process each row from the batch
         for (let i = 0; i < uniqueRowIndices.length; i++) {
           const rowIndex = uniqueRowIndices[i];
           const row = valueRanges[i]?.values?.[0];
-          
           if (!row) continue;
 
           const lead = {};
-          headers.forEach((header, i) => {
+          headers.forEach((header, j) => {
             const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
-            lead[cleanHeader] = row[i] || '';
+            lead[cleanHeader] = row[j] || '';
           });
 
           lead.lead_id = `${leadType}_${rowIndex}`;
@@ -165,17 +127,13 @@ Deno.serve(async (req) => {
               const month = parseInt(dateStr.substring(4, 6)) - 1;
               const day = parseInt(dateStr.substring(6, 8));
               const uploadDate = new Date(year, month, day);
-
               if (!isNaN(uploadDate.getTime())) {
                 const now = new Date();
-                const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
-                lead.age_in_days = Math.floor(hoursSinceUpload / 24);
+                lead.age_in_days = Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
               }
             }
           }
 
-          // Remove external_id and tier fields
-          delete lead.external_id;
           delete lead.tier_1;
           delete lead.tier_2;
           delete lead.tier_3;
@@ -189,12 +147,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    const filteredLeads = allLeads;
-
     return Response.json({
       success: true,
-      leads: filteredLeads,
-      total: filteredLeads.length
+      leads: allLeads,
+      total: allLeads.length
     });
 
   } catch (error) {

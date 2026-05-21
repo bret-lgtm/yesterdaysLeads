@@ -10,10 +10,12 @@ Deno.serve(async (req) => {
     console.log('🟣 Filters:', JSON.stringify(filters));
     console.log('🔐 Include last names:', include_last_names);
 
-    // Get access token for Google Sheets
-    console.log('⏳ Getting access token...');
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
-    console.log('✅ Access token received');
+    // Use API key for Google Sheets
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
+    if (!apiKey) {
+      return Response.json({ success: false, error: 'GOOGLE_API_KEY not configured', leads: [] });
+    }
+    console.log('✅ API key found');;
     
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
     console.log('📄 Spreadsheet ID:', spreadsheetId ? 'Set' : 'NOT SET');
@@ -96,13 +98,8 @@ Deno.serve(async (req) => {
       const range = `'${sheetName}'!A:Z`;
       
       const response = await fetchWithRetry(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?key=${apiKey}`,
+        {}
       );
 
       if (!response.ok) {
