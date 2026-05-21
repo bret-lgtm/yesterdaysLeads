@@ -48,9 +48,10 @@ Deno.serve(async (req) => {
     // Remove bad leads from the exclusion so we don't double-exclude
     badLeads.forEach(l => soldLeadIds.delete(l.lead_id));
 
-    // Fetch leads from sheets using the Google Sheets connector
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
+    // Fetch leads from Google Sheets using API key
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
 
     // Detect the lead type from the order
     const leadType = snapshot[0]?.lead_type || 'final_expense';
@@ -61,18 +62,18 @@ Deno.serve(async (req) => {
     };
     const sheetId = sheetIds[leadType];
 
-    // Get sheet name
-    const metaRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
-    );
-    const meta = await metaRes.json();
-    const sheetName = meta.sheets?.find(s => s.properties.sheetId.toString() === sheetId)?.properties.title;
+    // Use hardcoded sheet name map
+    const sheetNameMap = {
+      '44023422': 'Auto Leads', '113648240': 'Life Leads', '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads', '712013125': 'Retirement Leads', '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads', '1401332567': 'Veteran Life Leads', '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
+    const sheetName = sheetNameMap[sheetId];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 500 });
 
     const sheetRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A:Z`)}?valueRenderOption=UNFORMATTED_VALUE`,
-      { headers: { 'Authorization': `Bearer ${accessToken}` } }
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A:Z`)}?valueRenderOption=UNFORMATTED_VALUE&key=${apiKey}`
     );
     const sheetData = await sheetRes.json();
     const rows = sheetData.values || [];

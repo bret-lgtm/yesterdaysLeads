@@ -12,9 +12,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'lead_id and tier are required' }, { status: 400 });
     }
 
-    // Get access token for Google Sheets
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
 
     if (!spreadsheetId) {
       return Response.json({ error: 'GOOGLE_SHEET_ID not configured' }, { status: 500 });
@@ -46,31 +46,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid lead type' }, { status: 400 });
     }
 
-    // Get sheet name from metadata
-    const sheetMetaResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    // Use hardcoded sheet name map
+    const sheetNameMap = {
+      '44023422': 'Auto Leads', '113648240': 'Life Leads', '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads', '712013125': 'Retirement Leads', '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads', '1401332567': 'Veteran Life Leads', '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
 
-    if (!sheetMetaResponse.ok) {
-      const errorText = await sheetMetaResponse.text();
-      console.error(`[updateSheetTierStatus] Failed to fetch sheet metadata:`, errorText);
-      return Response.json({ error: 'Failed to fetch sheet metadata', details: errorText }, { status: 500 });
-    }
-
-    const sheetMeta = await sheetMetaResponse.json();
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(sheet => {
-      const id = sheet.properties.sheetId.toString();
-      sheetMap[id] = sheet.properties.title;
-    });
-
-    const sheetName = sheetMap[sheetId];
+    const sheetName = sheetNameMap[sheetId];
     if (!sheetName) {
       console.error(`[updateSheetTierStatus] Sheet not found for sheetId: ${sheetId}`);
       return Response.json({ error: 'Sheet not found' }, { status: 404 });
@@ -81,13 +65,7 @@ Deno.serve(async (req) => {
     // Fetch the header row to find tier columns dynamically
     const headerRange = `'${sheetName}'!1:1`;
     const headerResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(headerRange)}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(headerRange)}?key=${apiKey}`
     );
 
     if (!headerResponse.ok) {
@@ -135,16 +113,11 @@ Deno.serve(async (req) => {
     console.log(`[updateSheetTierStatus] Found column '${tierColumnName}' at index ${columnIndex} (${columnLetter}), updating range: ${range}`);
     
     const updateResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${apiKey}`,
       {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          values: [['Sold']]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [['Sold']] })
       }
     );
 

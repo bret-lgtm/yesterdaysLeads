@@ -47,8 +47,9 @@ Deno.serve(async (req) => {
     const soldIds = new Set(suppressionRecords.map(r => r.lead_id));
 
     // Fetch leads from Google Sheets
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
+    const apiKey = Deno.env.get('GOOGLE_API_KEY');
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
 
     const sheetIds = {
       auto: '44023422', home: '1745292620', health: '1305861843',
@@ -56,13 +57,12 @@ Deno.serve(async (req) => {
       veteran_life: '1401332567', retirement: '712013125', annuity: '409761548', recruiting: '1894668336'
     };
 
-    const sheetMetaRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const sheetMeta = await sheetMetaRes.json();
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(s => { sheetMap[s.properties.sheetId.toString()] = s.properties.title; });
+    const sheetMap = {
+      '44023422': 'Auto Leads', '113648240': 'Life Leads', '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads', '712013125': 'Retirement Leads', '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads', '1401332567': 'Veteran Life Leads', '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
 
     const sheetName = sheetMap[sheetIds[leadType]];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
@@ -70,8 +70,7 @@ Deno.serve(async (req) => {
     // Fetch rows
     const range = `'${sheetName}'!A1:Z2000`;
     const sheetRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&key=${apiKey}`
     );
     const sheetData = await sheetRes.json();
     const rows = sheetData.values || [];

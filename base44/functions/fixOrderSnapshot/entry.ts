@@ -49,24 +49,14 @@ Deno.serve(async (req) => {
         ...(olderOrder.leads_purchased || [])
       ]);
 
-      // Get access token for Google Sheets
-      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+      const apiKey = Deno.env.get('GOOGLE_API_KEY');
       const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
-
-      // Get sheet metadata
-      const sheetMeta = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-        { headers: { 'Authorization': `Bearer ${accessToken}` } }
-      );
-      const sheetMetaJson = await sheetMeta.json();
-      const sheetMap = {};
-      sheetMetaJson.sheets?.forEach(s => { sheetMap[s.properties.sheetId.toString()] = s.properties.title; });
+      if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
 
       // Fetch Final Expense sheet
-      const feSheetName = sheetMap['387991684'];
+      const feSheetName = 'Final Expense Leads';
       const feResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${feSheetName}'!A:Z`)}`,
-        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${feSheetName}'!A:Z`)}?key=${apiKey}`
       );
       const feData = await feResponse.json();
       const rows = feData.values || [];
@@ -209,15 +199,14 @@ Deno.serve(async (req) => {
       const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
       const allUsedLeadIds = new Set(order.leads_purchased || []);
 
-      // Get access token for Google Sheets
-      const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+      const apiKey = Deno.env.get('GOOGLE_API_KEY');
       const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+      if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
 
       // Fetch Final Expense sheet directly (hardcoded name)
       const feSheetName = 'Final Expense Leads';
       const feResponse = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${feSheetName}'!A:Z`)}`,
-        { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${feSheetName}'!A:Z`)}?key=${apiKey}`
       );
       const feData = await feResponse.json();
       const rows = feData.values || [];
