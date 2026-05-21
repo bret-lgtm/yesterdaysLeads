@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     const { filters = {}, user_email } = await req.json();
 
     // Get access token for Google Sheets
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('googlesheets');
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
     const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
 
     if (!spreadsheetId) {
