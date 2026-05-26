@@ -43,7 +43,12 @@ export default function OrdersList({ orders, customers }) {
     const snapshotMismatch = order.leads_purchased && leadData && 
       leadData.length !== order.leads_purchased.length;
 
-    if (!leadData || leadData.length === 0 || isIncompleteSnapshot || snapshotMismatch) {
+    // Refetch if any lead has a corrupted Excel serial date
+    const hasCorruptedDates = leadData?.some(lead =>
+      typeof lead.date_of_birth === 'number' && lead.date_of_birth > 10000
+    );
+
+    if (!leadData || leadData.length === 0 || isIncompleteSnapshot || snapshotMismatch || hasCorruptedDates) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
@@ -103,10 +108,20 @@ export default function OrdersList({ orders, customers }) {
           !['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'].includes(key)
         );
 
+        const excelSerialToDate = (serial) => {
+          const excelEpoch = new Date(1899, 11, 30);
+          const date = new Date(excelEpoch.getTime() + serial * 86400000);
+          return date.toISOString().split('T')[0];
+        };
+        const dateFields = ['date_of_birth', 'dob', 'birth_date'];
+
         const rows = leads.map(lead => 
           headers.map(header => {
             const value = lead[header];
             if (value === null || value === undefined) return '';
+            if (dateFields.includes(header) && typeof value === 'number' && value > 10000) {
+              return excelSerialToDate(value);
+            }
             const str = String(value);
             if (str.includes(',') || str.includes('"') || str.includes('\n')) {
               return `"${str.replace(/"/g, '""')}"`;
