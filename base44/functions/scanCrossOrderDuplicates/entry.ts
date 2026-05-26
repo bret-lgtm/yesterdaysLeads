@@ -8,10 +8,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { customer_id } = await req.json();
+    const { customer_id, customer_email } = await req.json();
 
-    // Get all orders for this customer - fetch minimal fields by listing and filtering
-    const allOrders = await base44.asServiceRole.entities.Order.filter({ customer_id });
+    // Get all orders for this customer
+    const allOrders = customer_email
+      ? await base44.asServiceRole.entities.Order.filter({ customer_email })
+      : await base44.asServiceRole.entities.Order.filter({ customer_id });
     console.log(`Found ${allOrders.length} orders`);
 
     // Sort by date ascending (oldest first)
@@ -46,8 +48,8 @@ Deno.serve(async (req) => {
         }
 
         // Check phone
-        if (!isDup && lead.phone && lead.phone.trim()) {
-          const phone = lead.phone.trim().replace(/\D/g, '').slice(-10);
+        if (!isDup && lead.phone && String(lead.phone).trim()) {
+          const phone = String(lead.phone).trim().replace(/\D/g, '').slice(-10);
           if (phone.length === 10 && phoneSeen[phone] && phoneSeen[phone].order_id !== order.id) {
             isDup = true;
             reason = `phone:${phone}`;
@@ -63,8 +65,8 @@ Deno.serve(async (req) => {
             const email = lead.email.trim().toLowerCase();
             if (!emailSeen[email]) emailSeen[email] = { order_id: order.id, lead_id: leadId };
           }
-          if (lead.phone && lead.phone.trim()) {
-            const phone = lead.phone.trim().replace(/\D/g, '').slice(-10);
+          if (lead.phone && String(lead.phone).trim()) {
+            const phone = String(lead.phone).trim().replace(/\D/g, '').slice(-10);
             if (phone.length === 10 && !phoneSeen[phone]) phoneSeen[phone] = { order_id: order.id, lead_id: leadId };
           }
         }
