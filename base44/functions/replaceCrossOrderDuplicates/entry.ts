@@ -8,8 +8,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // duplicate_leads: array of { lead_id, state } to replace
-    const { order_id, duplicate_leads, dry_run = true, age_min = null, age_max = null } = await req.json();
+    // duplicate_leads: array of { lead_id, state, age_in_days } to replace
+    const { order_id, duplicate_leads, dry_run = true } = await req.json();
 
     if (!order_id || !duplicate_leads?.length) {
       return Response.json({ error: 'order_id and duplicate_leads required' }, { status: 400 });
@@ -26,6 +26,17 @@ Deno.serve(async (req) => {
     const snapshot = order.lead_data_snapshot || [];
     const leadType = snapshot[0]?.lead_type || 'final_expense';
     console.log(`Lead type: ${leadType}, replacing ${duplicate_leads.length} leads`);
+
+    // Build a map of dup lead_id -> its age_in_days (from the order snapshot)
+    const dupAgeMap = {};
+    for (const s of snapshot) {
+      const id = s.lead_id || s.id;
+      if (duplicateIds.has(id)) dupAgeMap[id] = s.age_in_days || 0;
+    }
+    // Also accept age_in_days passed directly in duplicate_leads
+    for (const d of duplicate_leads) {
+      if (d.age_in_days != null) dupAgeMap[d.lead_id] = d.age_in_days;
+    }
 
     // Group needed replacements by state
     const neededByState = {};
@@ -109,8 +120,7 @@ Deno.serve(async (req) => {
       }
 
       const statusVal = String(lead.status || '').trim().toLowerCase();
-      const ageOk = (age_min == null || lead.age_in_days >= age_min) && (age_max == null || lead.age_in_days <= age_max);
-      lead._available = ageOk && !soldIds.has(lead.id) && !keepIds.has(lead.id) && !duplicateIds.has(lead.id) &&
+      lead._available = !soldIds.has(lead.id) && !keepIds.has(lead.id) && !duplicateIds.has(lead.id) &&
         (!statusVal || statusVal === 'available' || statusVal === 'undefined');
       return lead;
     }).filter(l => l._available);
@@ -144,16 +154,33 @@ Deno.serve(async (req) => {
       candidatesByState[c.state].push(c);
     }
 
-    // Pick replacements by state
+    // Pick replacements: match each duplicate's state AND age tier
+    const usedCandidateIds = new Set();
     const replacements = [];
     const errors = [];
-    for (const [state, count] of Object.entries(neededByState)) {
-      const pool = candidatesByState[state] || [];
-      if (pool.length < count) {
-        errors.push(`Not enough ${state} leads: need ${count}, found ${pool.length}`);
-        continue;
+
+    for (const dup of duplicate_leads) {
+      const dupAge = dupAgeMap[dup.lead_id] || 0;
+      const dupTier = getTier(dupAge);
+      const pool = (candidatesByState[dup.state] || []).filter(c => {
+        if (usedCandidateIds.has(c.id)) return false;
+        return getTier(c.age_in_days || 0) === dupTier;
+      });
+
+      if (pool.length === 0) {
+        // Fallback: same state, any age
+        const fallback = (candidatesByState[dup.state] || []).find(c => !usedCandidateIds.has(c.id));
+        if (!fallback) {
+          errors.push(`No replacement found for ${dup.lead_id} (state:${dup.state}, tier:${dupTier})`);
+          continue;
+        }
+        console.warn(`Tier fallback for ${dup.lead_id}: using age=${fallback.age_in_days} instead of tier ${dupTier}`);
+        usedCandidateIds.add(fallback.id);
+        replacements.push({ ...fallback, _replacing: dup.lead_id });
+      } else {
+        usedCandidateIds.add(pool[0].id);
+        replacements.push({ ...pool[0], _replacing: dup.lead_id });
       }
-      replacements.push(...pool.slice(0, count));
     }
 
     if (errors.length) {
