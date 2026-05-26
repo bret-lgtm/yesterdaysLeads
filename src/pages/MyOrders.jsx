@@ -97,10 +97,23 @@ export default function MyOrders() {
           !['id', 'created_date', 'updated_date', 'created_by'].includes(key)
         );
 
+        // Convert Excel serial date numbers to YYYY-MM-DD strings
+        const excelSerialToDate = (serial) => {
+          const excelEpoch = new Date(1899, 11, 30);
+          const date = new Date(excelEpoch.getTime() + serial * 86400000);
+          return date.toISOString().split('T')[0];
+        };
+
+        const dateFields = ['date_of_birth', 'dob', 'birth_date'];
+
         const rows = leads.map(lead =>
           headers.map(header => {
             const value = lead[header];
             if (value === null || value === undefined) return '';
+            // Fix Excel serial numbers in date fields
+            if (dateFields.includes(header) && typeof value === 'number' && value > 10000) {
+              return excelSerialToDate(value);
+            }
             const str = String(value);
             if (str.includes(',') || str.includes('"') || str.includes('\n')) {
               return `"${str.replace(/"/g, '""')}"`;
