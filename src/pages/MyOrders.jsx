@@ -46,8 +46,13 @@ export default function MyOrders() {
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
 
-    // If no snapshot data, fetch it from Google Sheets
-    if (!leadData || leadData.length === 0) {
+    // Check if snapshot has corrupted Excel serial dates — if so, force re-fetch from Sheets
+    const hasCorruptedDates = leadData?.some(lead =>
+      typeof lead.date_of_birth === 'number' && lead.date_of_birth > 10000
+    );
+
+    // If no snapshot data, or snapshot has corrupted dates, fetch fresh from Google Sheets
+    if (!leadData || leadData.length === 0 || hasCorruptedDates) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
