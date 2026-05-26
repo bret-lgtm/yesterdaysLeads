@@ -90,24 +90,27 @@ Deno.serve(async (req) => {
         const headerData = await headerResponse.json();
         const headers = headerData.values?.[0] || [];
 
-        // Batch fetch specific rows
+        // Batch fetch specific rows in chunks of 100 to avoid URL length limits
         const uniqueRowIndices = [...new Set(rowIndices)];
-        const ranges = uniqueRowIndices.map(rowIndex => `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`);
-
-        const batchResponse = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}&key=${apiKey}`
-        );
-
-        if (!batchResponse.ok) {
-          console.error(`Batch fetch failed for ${leadType}:`, await batchResponse.text());
-          continue;
+        const CHUNK_SIZE = 100;
+        const allValueRanges = [];
+        for (let chunkStart = 0; chunkStart < uniqueRowIndices.length; chunkStart += CHUNK_SIZE) {
+          const chunk = uniqueRowIndices.slice(chunkStart, chunkStart + CHUNK_SIZE);
+          const ranges = chunk.map(rowIndex => `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`);
+          const batchResponse = await fetch(
+            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}&key=${apiKey}`
+          );
+          if (!batchResponse.ok) {
+            console.error(`Batch fetch failed for ${leadType}:`, await batchResponse.text());
+            continue;
+          }
+          const batchData = await batchResponse.json();
+          allValueRanges.push(...(batchData.valueRanges || []));
         }
-        const batchData = await batchResponse.json();
-        const valueRanges = batchData.valueRanges || [];
 
         for (let i = 0; i < uniqueRowIndices.length; i++) {
           const rowIndex = uniqueRowIndices[i];
-          const row = valueRanges[i]?.values?.[0];
+          const row = allValueRanges[i]?.values?.[0];
           if (!row) continue;
 
           const lead = {};
