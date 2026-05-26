@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
   try {
@@ -19,6 +19,8 @@ Deno.serve(async (req) => {
     if (!spreadsheetId) {
       return Response.json({ error: 'GOOGLE_SHEET_ID not configured' }, { status: 500 });
     }
+
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
 
     // Parse lead_id to get lead type and row index
     // Format: leadType_rowIndex (e.g., "life_0", "auto_5")
@@ -115,10 +117,10 @@ Deno.serve(async (req) => {
     console.log(`[updateSheetTierStatus] Found column '${tierColumnName}' at index ${columnIndex} (${columnLetter}), updating range: ${range}`);
     
     const updateResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW&key=${apiKey}`,
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
       {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ values: [['Sold']] })
       }
     );

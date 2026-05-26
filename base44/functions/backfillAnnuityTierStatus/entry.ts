@@ -16,6 +16,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing GOOGLE_API_KEY or GOOGLE_SHEET_ID' }, { status: 500 });
     }
 
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
+
     // Get all sold annuity leads from LeadSuppression
     const allSuppressions = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const annuitySuppressions = allSuppressions.filter(s => s.lead_id?.startsWith('annuity_'));
@@ -30,7 +32,8 @@ Deno.serve(async (req) => {
     const sheetName = 'Annuity Leads';
     const headerRange = `'${sheetName}'!1:1`;
     const headerRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(headerRange)}?key=${apiKey}`
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(headerRange)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
     );
     const headerData = await headerRes.json();
     const headers = headerData.values?.[0] || [];
@@ -87,29 +90,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Apply updates one by one using PUT (same method as updateSheetTierStatus)
-    let successCount = 0;
-
-    for (const update of updates) {
-      const res = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(update.range)}?valueInputOption=RAW&key=${apiKey}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ values: [['Sold']] })
-        }
-      );
-
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error(`Failed to update ${update.lead_id}:`, errText);
-        errors.push(`Failed ${update.lead_id}: ${errText}`);
-      } else {
-        successCount++;
+    // Use a single batchUpdate to avoid rate limits
+    const batchRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({
+          valueInputOption: 'RAW',
+          data: updates.map(u => ({ range: u.range, values: [['Sold']] }))
+        })
       }
-    }
+    );
 
-    console.log(`Done: ${successCount} updated, ${errors.length} errors`);
+    let successCount = 0;
+    if (!batchRes.ok) {
+      const errText = await batchRes.text();
+      console.error('batchUpdate failed:', errText);
+      errors.push(`batchUpdate failed: ${errText}`);
+    } else {
+      successCount = updates.length;
+      console.log(`batchUpdate succeeded: ${successCount} cells updated`);
+    }
 
     return Response.json({
       success: true,
