@@ -32,6 +32,13 @@ export default function OrdersList({ orders, customers }) {
            (order.id || '').toLowerCase().includes(query) ||
            (order.stripe_transaction_id || '').toLowerCase().includes(query);
   });
+  const excelSerialToDate = (serial) => {
+    const excelEpoch = new Date(1899, 11, 30);
+    const date = new Date(excelEpoch.getTime() + serial * 86400000);
+    return date.toISOString().split('T')[0];
+  };
+  const dateFields = ['date_of_birth', 'dob', 'birth_date'];
+
   const downloadCSV = async (order) => {
     let leadData = order.lead_data_snapshot;
 
@@ -43,12 +50,7 @@ export default function OrdersList({ orders, customers }) {
     const snapshotMismatch = order.leads_purchased && leadData && 
       leadData.length !== order.leads_purchased.length;
 
-    // Refetch if any lead has a corrupted Excel serial date
-    const hasCorruptedDates = leadData?.some(lead =>
-      typeof lead.date_of_birth === 'number' && lead.date_of_birth > 10000
-    );
-
-    if (!leadData || leadData.length === 0 || isIncompleteSnapshot || snapshotMismatch || hasCorruptedDates) {
+    if (!leadData || leadData.length === 0 || isIncompleteSnapshot || snapshotMismatch) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
@@ -69,6 +71,17 @@ export default function OrdersList({ orders, customers }) {
         return;
       }
     }
+
+    // Fix corrupted Excel serial dates in snapshot data in-place (don't re-fetch just for this)
+    leadData = leadData.map(lead => {
+      const fixed = { ...lead };
+      for (const field of dateFields) {
+        if (typeof fixed[field] === 'number' && fixed[field] > 10000) {
+          fixed[field] = excelSerialToDate(fixed[field]);
+        }
+      }
+      return fixed;
+    });
 
     console.log('All lead data:', leadData);
     
@@ -108,13 +121,6 @@ export default function OrdersList({ orders, customers }) {
         const excludedKeys = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'];
         const remainingHeaders = Array.from(allKeys).filter(key => !excludedKeys.includes(key) && key !== 'external_id');
         const headers = allKeys.has('external_id') ? ['external_id', ...remainingHeaders] : remainingHeaders;
-
-        const excelSerialToDate = (serial) => {
-          const excelEpoch = new Date(1899, 11, 30);
-          const date = new Date(excelEpoch.getTime() + serial * 86400000);
-          return date.toISOString().split('T')[0];
-        };
-        const dateFields = ['date_of_birth', 'dob', 'birth_date'];
 
         const rows = leads.map(lead => 
           headers.map(header => {
