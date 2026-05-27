@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const MESSAGES = [
   "Hang tight!",
   "Sorting through 35,000+ premium leads...",
-  <>Worth the wait for<br />the quality of<br />Yesterday's Leads.</>
+  "Worth the wait for the quality of Yesterday's Leads."
 ];
 
 export default function LoadingMessages() {
