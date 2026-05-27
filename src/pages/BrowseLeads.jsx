@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import LeadFilters from '../components/leads/LeadFilters';
 import LeadCard from '../components/leads/LeadCard';
 import CartSidebar from '../components/leads/CartSidebar';
+import LoadingMessages from '../components/leads/LoadingMessages';
 import { calculateLeadPrice } from '../components/pricing/PricingCalculator';
 import { useCart } from '../components/useCart';
 import { Button } from "@/components/ui/button";
@@ -403,11 +404,7 @@ export default function BrowseLeads() {
 
         {/* Leads Grid */}
         {leadsLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Skeleton key={i} className="h-32 rounded-2xl" />
-            ))}
-          </div>
+          <LoadingMessages />
         ) : paginatedLeads.length === 0 ? (
           <div className="text-center py-16">
             <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
