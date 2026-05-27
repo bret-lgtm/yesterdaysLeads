@@ -34,7 +34,7 @@ export default function LoadingMessages() {
         ))}
       </div>
       <p
-        className="text-lg font-medium text-slate-700 text-center max-w-sm transition-opacity duration-400"
+        className="text-lg font-medium text-slate-700 text-center max-w-lg whitespace-nowrap transition-opacity duration-400"
         style={{ opacity: visible ? 1 : 0 }}
       >
         {MESSAGES[index]}
