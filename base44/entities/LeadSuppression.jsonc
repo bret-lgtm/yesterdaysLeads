@@ -1,0 +1,56 @@
+{
+  "name": "LeadSuppression",
+  "type": "object",
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "description": "The ID of the lead that was sold"
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "tier1",
+        "tier2",
+        "tier3",
+        "tier4",
+        "tier5"
+      ],
+      "description": "The age tier when the lead was sold"
+    },
+    "order_id": {
+      "type": "string",
+      "description": "Reference to the Order"
+    },
+    "sale_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the lead was sold"
+    }
+  },
+  "required": [
+    "lead_id",
+    "tier"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

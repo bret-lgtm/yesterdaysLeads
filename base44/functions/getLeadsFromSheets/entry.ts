@@ -6,6 +6,12 @@ Deno.serve(async (req) => {
     console.log('🟢 Inside try block');
     const base44 = createClientFromRequest(req);
     console.log('🟡 Base44 client created');
+
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ success: false, error: 'Unauthorized', leads: [] }, { status: 401 });
+    }
+
     const { filters = {}, include_last_names = false, lead_ids = [] } = await req.json();
     console.log('🟣 Filters:', JSON.stringify(filters));
     console.log('🔐 Include last names:', include_last_names);

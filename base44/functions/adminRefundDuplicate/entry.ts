@@ -6,6 +6,11 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), { apiVersion: '2023-10-16' });
 
+    const user = await base44.auth.me();
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
+
     const { payment_intent_id, order_id, reason } = await req.json();
 
     if (!payment_intent_id || !order_id) {

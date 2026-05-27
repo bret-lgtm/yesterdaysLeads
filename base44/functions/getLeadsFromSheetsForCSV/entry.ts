@@ -5,7 +5,12 @@ const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 Deno.serve(async (req) => {
   try {
-    createClientFromRequest(req); // auth context
+    const base44 = createClientFromRequest(req);
+
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ success: false, error: 'Unauthorized', leads: [] }, { status: 401 });
+    }
 
     const { lead_ids = [] } = await req.json();
 

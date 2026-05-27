@@ -1,0 +1,46 @@
+{
+  "name": "ZipCode",
+  "type": "object",
+  "properties": {
+    "zip_code": {
+      "type": "string",
+      "description": "5-digit US zip code"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "description": "2-letter state code"
+    }
+  },
+  "required": [
+    "zip_code",
+    "latitude",
+    "longitude"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
