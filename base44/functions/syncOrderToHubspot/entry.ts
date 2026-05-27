@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 Deno.serve(async (req) => {
   try {
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
 
     // Get HubSpot access token using service role
     console.log('Getting HubSpot access token...');
-    const accessToken = await base44.asServiceRole.connectors.getAccessToken('hubspot');
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('hubspot');
     console.log('Access token obtained');
 
     // Extract customer info from order
