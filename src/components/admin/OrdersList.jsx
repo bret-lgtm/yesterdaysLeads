@@ -118,7 +118,7 @@ export default function OrdersList({ orders, customers }) {
         });
         
         // Pin external_id first as the visible reference ID, then all other fields
-        const excludedKeys = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample'];
+        const excludedKeys = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample', 'lead_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5', '_replacing'];
         const remainingHeaders = Array.from(allKeys).filter(key => !excludedKeys.includes(key) && key !== 'external_id');
         const headers = allKeys.has('external_id') ? ['external_id', ...remainingHeaders] : remainingHeaders;
 
