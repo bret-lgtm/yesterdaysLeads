@@ -1,127 +1,61 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+const supabase = async (path, options = {}) => {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase error: ${res.status} ${text}`);
+  }
+  return res.json();
+};
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const { filters = {}, user_email } = await req.json();
 
-    const apiKey = Deno.env.get('GOOGLE_API_KEY');
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    // Build Supabase query params
+    const params = new URLSearchParams();
 
-    if (!apiKey) {
-      return Response.json({ leads: [], error: 'GOOGLE_API_KEY not configured' });
-    }
-    if (!spreadsheetId) {
-      return Response.json({ leads: [], error: 'GOOGLE_SHEET_ID not configured' });
-    }
+    // Select all columns
+    params.append('select', '*');
 
-    // Map lead types to sheet IDs (gid) - MUST match getLeadsFromSheets
-    const sheetIds = {
-      auto: '44023422',
-      home: '1745292620',
-      health: '1305861843',
-      life: '113648240',
-      medicare: '757044649',
-      final_expense: '387991684',
-      veteran_life: '1401332567',
-      retirement: '712013125',
-      annuity: '409761548',
-      recruiting: '1894668336'
-    };
-
-    // Determine which sheets to query
-    const sheetsToQuery = filters.lead_type && filters.lead_type !== 'all'
-      ? [filters.lead_type]
-      : Object.keys(sheetIds);
-
-    // Use hardcoded sheet map to avoid metadata API call (saves quota + works without user auth)
-    const sheetMap = {
-      '44023422': 'Auto Leads',
-      '113648240': 'Life Leads',
-      '387991684': 'Final Expense Leads',
-      '409761548': 'Annuity Leads',
-      '712013125': 'Retirement Leads',
-      '757044649': 'Medicare Leads',
-      '1305861843': 'Health Leads',
-      '1401332567': 'Veteran Life Leads',
-      '1745292620': 'Home Leads',
-      '1894668336': 'Recruiting Leads'
-    };
-
-    // Fetch data from each sheet
-    let allLeads = [];
-    for (const leadType of sheetsToQuery) {
-      const sheetId = sheetIds[leadType];
-      const sheetName = sheetMap[sheetId];
-      
-      if (!sheetName) continue;
-    
-      const range = `'${sheetName}'!A:Z`;
-      const response = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&key=${apiKey}`
-      );
-
-      if (!response.ok) {
-        console.error(`Failed to fetch ${leadType} sheet:`, response.status, await response.text());
-        continue;
-      }
-
-      const data = await response.json();
-      const rows = data.values || [];
-      console.log(`Fetched ${rows.length} rows from ${leadType} sheet`);
-      if (rows.length < 2) continue;
-
-      const headers = rows[0];
-      const dataRows = rows.slice(1);
-
-      const leads = dataRows.map((row, index) => {
-        const lead = {};
-        headers.forEach((header, i) => {
-          const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
-          lead[cleanHeader] = row[i] || '';
-        });
-        
-        lead.id = `${leadType}_${index}`;
-        lead.lead_type = leadType;
-        
-        // Calculate age_in_days from external_id
-        if (lead.external_id) {
-          const dateStr = lead.external_id.split('-')[0];
-          if (dateStr.length === 8) {
-            const year = parseInt(dateStr.substring(0, 4));
-            const month = parseInt(dateStr.substring(4, 6)) - 1;
-            const day = parseInt(dateStr.substring(6, 8));
-            const uploadDate = new Date(year, month, day);
-            
-            if (!isNaN(uploadDate.getTime())) {
-              const now = new Date();
-              const hoursSinceUpload = (now - uploadDate) / (1000 * 60 * 60);
-              lead.age_in_days = Math.floor(hoursSinceUpload / 24);
-            }
-          }
-        }
-        
-        // Remove last name for security
-        if (lead.last_name) {
-          lead.last_name_initial = String(lead.last_name).charAt(0).toUpperCase();
-          delete lead.last_name;
-        }
-        
-        return lead;
-      });
-
-      allLeads = allLeads.concat(leads);
+    // Lead type filter — Supabase stores as title-case (e.g. "Final Expense"), 
+    // app uses snake_case (e.g. "final_expense"). Use ilike for flexibility.
+    if (filters.lead_type && filters.lead_type !== 'all') {
+      const readable = filters.lead_type.replace(/_/g, ' ');
+      params.append('lead_type', `ilike.${readable}`);
     }
 
-    console.log(`Total leads before filtering: ${allLeads.length}`);
+    // State filter (single or multiple)
+    if (filters.states && filters.states.length > 0) {
+      params.append('state', `in.(${filters.states.join(',')})`);
+    } else if (filters.state && filters.state !== 'all') {
+      params.append('state', `eq.${filters.state}`);
+    }
 
-    // Fetch all sold lead IDs from LeadSuppression to exclude them
+    // Supabase default page size is 1000 — set a high limit
+    params.append('limit', '20000');
+
+    const leads = await supabase(`aged_leads?${params.toString()}`);
+    console.log(`Fetched ${leads.length} leads from Supabase`);
+
+    // Build suppression set (already-sold lead IDs globally + customer's own purchases)
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
-    console.log(`Sold lead IDs (suppression list): ${soldLeadIds.size}`);
 
-    // Also exclude leads the current customer has already purchased in any prior order
-    // AND block the customer entirely if they are flagged as blocked
     if (user_email) {
       const customers = await base44.asServiceRole.entities.Customer.filter({ email: user_email });
       const customer = customers[0];
@@ -136,28 +70,59 @@ Deno.serve(async (req) => {
           soldLeadIds.add(lid);
         }
       }
-      console.log(`After adding customer prior purchases: ${soldLeadIds.size} excluded lead IDs`);
     }
 
-    // Filter by status AND suppression list
-    let filtered = allLeads.filter(lead => {
-      if (soldLeadIds.has(lead.id)) return false;
-      if (!lead.status || lead.status === 'undefined') return true;
-      return lead.status.trim().toLowerCase() === 'available';
-    });
+    // Process and filter leads
+    let filtered = leads
+      .filter(lead => !soldLeadIds.has(lead.id))
+      .map(lead => {
+        // Calculate age_in_days from external_id (format: YYYYMMDD-...)
+        let age_in_days = 0;
+        if (lead.external_id) {
+          const dateStr = lead.external_id.split('-')[0];
+          if (dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const uploadDate = new Date(year, month, day);
+            if (!isNaN(uploadDate.getTime())) {
+              age_in_days = Math.floor((Date.now() - uploadDate) / (1000 * 60 * 60 * 24));
+            }
+          }
+        }
 
-    console.log(`After status + suppression filter: ${filtered.length}`);
+        // Determine tier availability — a lead is "browsable" if at least one tier is still unsold
+        const anyTierAvailable = !lead.tier_1_sold || !lead.tier_2_sold || !lead.tier_3_sold || !lead.tier_4_sold || !lead.tier_5_sold;
+        if (!anyTierAvailable) return null;
 
-    // State filter - support both single state and multiple states
-    if (filters.states && filters.states.length > 0) {
-      console.log(`Filtering by states: ${JSON.stringify(filters.states)}`);
-      const beforeCount = filtered.length;
-      filtered = filtered.filter(lead => filters.states.includes(lead.state));
-      console.log(`After state filter: ${filtered.length} (filtered from ${beforeCount})`);
-    } else if (filters.state && filters.state !== 'all') {
-      console.log(`Filtering by single state: ${filters.state}`);
-      filtered = filtered.filter(lead => lead.state === filters.state);
-    }
+        // Obscure last name for browsing
+        const last_name_initial = lead.last_name ? String(lead.last_name).charAt(0).toUpperCase() : '';
+
+        return {
+          id: lead.id,
+          external_id: lead.external_id,
+          first_name: lead.first_name,
+          last_name_initial,
+          email: lead.email,
+          phone: lead.phone,
+          date_of_birth: lead.date_of_birth,
+          city: lead.city,
+          state: lead.state,
+          zip_code: lead.zip_code,
+          lead_type: lead.lead_type?.toLowerCase().replace(/\s+/g, '_'),
+          age_in_days,
+          // Spread custom_data fields for UI compatibility
+          ...(lead.custom_data || {}),
+          tier_1_sold: lead.tier_1_sold,
+          tier_2_sold: lead.tier_2_sold,
+          tier_3_sold: lead.tier_3_sold,
+          tier_4_sold: lead.tier_4_sold,
+          tier_5_sold: lead.tier_5_sold,
+        };
+      })
+      .filter(Boolean);
+
+    console.log(`After suppression filter: ${filtered.length}`);
 
     // Age range filter
     if (filters.age_range && filters.age_range !== 'all') {
@@ -172,172 +137,78 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Zip code and distance filter
+    // Zip code / distance filter
     if (filters.zip_code) {
       const normalizeZip = (zip) => String(zip).padStart(5, '0');
       const normalizedSearchZip = normalizeZip(filters.zip_code);
 
       if (filters.distance) {
-        // Distance-based search with geocoding
         const distance = parseFloat(filters.distance);
 
-        // Helper: Get coordinates for a zip code (cache or Nominatim)
         const getZipCoordinates = async (zipCode) => {
-          // Check cache first
           const cached = await base44.asServiceRole.entities.ZipCode.filter({ zip_code: zipCode });
-          if (cached.length > 0) {
-            const data = cached[0].data || cached[0];
-            return { latitude: data.latitude, longitude: data.longitude };
-          }
-
-          // Fetch from Nominatim
-          const response = await fetch(
+          if (cached.length > 0) return { latitude: cached[0].latitude, longitude: cached[0].longitude };
+          const res = await fetch(
             `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
             { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
           );
-          
-          if (!response.ok) return null;
-          
-          const results = await response.json();
-          if (results.length === 0) return null;
-
-          const coords = {
-            latitude: parseFloat(results[0].lat),
-            longitude: parseFloat(results[0].lon)
-          };
-
-          // Cache for future use
-          await base44.asServiceRole.entities.ZipCode.create({
-            zip_code: zipCode,
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-            city: results[0].display_name?.split(',')[0] || '',
-            state: ''
-          });
-
+          if (!res.ok) return null;
+          const results = await res.json();
+          if (!results.length) return null;
+          const coords = { latitude: parseFloat(results[0].lat), longitude: parseFloat(results[0].lon) };
+          base44.asServiceRole.entities.ZipCode.create({ zip_code: zipCode, ...coords, city: results[0].display_name?.split(',')[0] || '', state: '' }).catch(() => {});
           return coords;
         };
 
-        // Get search zip coordinates
         const searchCoords = await getZipCoordinates(normalizedSearchZip);
         if (!searchCoords) {
-          // Search zip not found, return empty
           filtered = [];
         } else {
           const { latitude: lat1, longitude: lon1 } = searchCoords;
-
-          // Get unique lead zip codes (validate 5-digit format)
-          const validateZip = (zip) => {
-            const normalized = normalizeZip(zip);
-            return normalized.length === 5 && /^\d{5}$/.test(normalized);
-          };
-          
-          const uniqueLeadZips = [...new Set(
-            filtered
-              .map(l => normalizeZip(l.zip_code))
-              .filter(z => {
-                if (!validateZip(z)) {
-                  console.warn(`Invalid ZIP code format: ${z}`);
-                  return false;
-                }
-                return true;
-              })
-          )];
-          
-          // Check cache for all lead zips
           const cachedZips = await base44.asServiceRole.entities.ZipCode.list('', 50000);
-          const zipMap = new Map();
-          cachedZips.forEach(result => {
-            const zipData = result.data || result;
-            if (zipData.zip_code) {
-              zipMap.set(normalizeZip(zipData.zip_code), zipData);
-            }
-          });
+          const zipMap = new Map(cachedZips.map(z => [normalizeZip(z.zip_code), z]));
 
-          // Find missing zips - limit to 5 to avoid timeout
-          const missingZips = uniqueLeadZips.filter(z => !zipMap.has(z)).slice(0, 5);
-
-          // Lookup missing zips using Nominatim
-          if (missingZips.length > 0) {
-            for (const zipCode of missingZips) {
-              try {
-                const response = await fetch(
-                  `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`,
-                  { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } }
-                );
-                
-                if (response.ok) {
-                  const results = await response.json();
-                  if (results.length > 0) {
-                    const coords = {
-                      latitude: parseFloat(results[0].lat),
-                      longitude: parseFloat(results[0].lon)
-                    };
-                    
-                    zipMap.set(zipCode, coords);
-                    
-                    // Cache in database (async, don't await)
-                    base44.asServiceRole.entities.ZipCode.create({
-                      zip_code: zipCode,
-                      latitude: coords.latitude,
-                      longitude: coords.longitude,
-                      city: results[0].display_name?.split(',')[0] || '',
-                      state: ''
-                    }).catch(err => console.error('Cache failed:', err.message));
-                  }
+          const missingZips = [...new Set(filtered.map(l => normalizeZip(l.zip_code)).filter(z => !zipMap.has(z)))].slice(0, 5);
+          for (const zipCode of missingZips) {
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json&limit=1`, { headers: { 'User-Agent': 'YesterdaysLeads/1.0' } });
+              if (res.ok) {
+                const results = await res.json();
+                if (results.length) {
+                  const coords = { latitude: parseFloat(results[0].lat), longitude: parseFloat(results[0].lon) };
+                  zipMap.set(zipCode, coords);
+                  base44.asServiceRole.entities.ZipCode.create({ zip_code: zipCode, ...coords, city: results[0].display_name?.split(',')[0] || '', state: '' }).catch(() => {});
                 }
-                
-                // Rate limit: 1 request per second
-                await new Promise(resolve => setTimeout(resolve, 1100));
-              } catch (error) {
-                console.error(`Failed to lookup zip ${zipCode}:`, error.message);
               }
-            }
+              await new Promise(r => setTimeout(r, 1100));
+            } catch (e) { console.error(`Zip lookup failed for ${zipCode}:`, e.message); }
           }
 
-          // Haversine distance formula
-          const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 3959; // Earth radius in miles
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+          const haversine = (lat1, lon1, lat2, lon2) => {
+            const R = 3959, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
           };
 
-          // Filter leads by distance
           filtered = filtered.filter(lead => {
-            if (!lead.zip_code) return false;
-            const normalizedLeadZip = normalizeZip(lead.zip_code);
-            
-            // Exact match always included
-            if (normalizedLeadZip === normalizedSearchZip) return true;
-
-            // Check if we have coordinates for this zip
-            const leadZipData = zipMap.get(normalizedLeadZip);
-            if (!leadZipData) return false;
-
-            // Calculate distance
-            const dist = calculateDistance(lat1, lon1, leadZipData.latitude, leadZipData.longitude);
-            return dist <= distance;
+            const z = normalizeZip(lead.zip_code);
+            if (z === normalizedSearchZip) return true;
+            const zd = zipMap.get(z);
+            if (!zd) return false;
+            return haversine(lat1, lon1, zd.latitude, zd.longitude) <= distance;
           });
         }
       } else {
-        // Just zip code filter, no distance
-        filtered = filtered.filter(lead => 
-          lead.zip_code && (normalizeZip(lead.zip_code) === normalizedSearchZip || normalizeZip(lead.zip_code).startsWith(normalizedSearchZip))
-        );
+        filtered = filtered.filter(lead => {
+          const z = normalizeZip(lead.zip_code);
+          return z === normalizedSearchZip || z.startsWith(normalizedSearchZip);
+        });
       }
     }
 
     console.log(`Returning ${filtered.length} filtered leads`);
-    
-    return Response.json({ 
-      leads: filtered,
-      total: filtered.length
-    });
+    return Response.json({ leads: filtered, total: filtered.length });
+
   } catch (error) {
     console.error('Filter error:', error);
     return Response.json({ error: error.message, leads: [] }, { status: 500 });

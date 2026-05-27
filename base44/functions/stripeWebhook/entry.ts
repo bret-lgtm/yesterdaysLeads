@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Fetch complete lead data from Google Sheets for CSV
+      // Fetch complete lead data from Supabase for CSV snapshot
       const leadIds = cartItems.map(item => item.lead_id);
       let completeLeadData = [];
 
@@ -303,15 +303,15 @@ Deno.serve(async (req) => {
           sale_date: new Date().toISOString()
         });
 
-        // Update the Google Sheet tier status
+        // Update Supabase tier status
         try {
           const sheetUpdateResponse = await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
             lead_id: cartItem.lead_id,
             tier: tier
           });
-          console.log(`Sheet update response for ${cartItem.lead_id} (${tier}):`, JSON.stringify(sheetUpdateResponse.data));
+          console.log(`Tier update response for ${cartItem.lead_id} (${tier}):`, JSON.stringify(sheetUpdateResponse.data));
           if (!sheetUpdateResponse.data?.success) {
-            console.error(`Sheet update failed for ${cartItem.lead_id}:`, sheetUpdateResponse.data?.error);
+            console.error(`Tier update failed for ${cartItem.lead_id}:`, sheetUpdateResponse.data?.error);
           }
         } catch (err) {
           console.error(`Failed to update sheet for ${cartItem.lead_id}:`, err.message, err.stack);

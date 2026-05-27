@@ -1,167 +1,90 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
+    createClientFromRequest(req); // auth context
+
     const { lead_ids = [] } = await req.json();
 
     if (!lead_ids || lead_ids.length === 0) {
-      return Response.json({ 
-        success: false, 
-        error: 'No lead IDs provided',
-        leads: [] 
-      });
+      return Response.json({ success: false, error: 'No lead IDs provided', leads: [] });
     }
 
-    const apiKey = Deno.env.get('GOOGLE_API_KEY');
-    if (!apiKey) {
-      return Response.json({ success: false, error: 'GOOGLE_API_KEY not configured', leads: [] });
-    }
-    
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
-    if (!spreadsheetId) {
-      return Response.json({ success: false, error: 'GOOGLE_SHEET_ID not configured', leads: [] });
-    }
-
-    const sheetIds = {
-      auto: '44023422',
-      home: '1745292620',
-      health: '1305861843',
-      life: '113648240',
-      medicare: '757044649',
-      final_expense: '387991684',
-      veteran_life: '1401332567',
-      retirement: '712013125',
-      annuity: '409761548',
-      recruiting: '1894668336'
-    };
-
-    const sheetMap = {
-      '44023422': 'Auto Leads',
-      '113648240': 'Life Leads',
-      '387991684': 'Final Expense Leads',
-      '409761548': 'Annuity Leads',
-      '712013125': 'Retirement Leads',
-      '757044649': 'Medicare Leads',
-      '1305861843': 'Health Leads',
-      '1401332567': 'Veteran Life Leads',
-      '1745292620': 'Home Leads',
-      '1894668336': 'Recruiting Leads'
-    };
-
-    const leadTypeOrder = ['final_expense', 'veteran_life', 'retirement', 'annuity', 'recruiting', 'medicare', 'health', 'home', 'auto', 'life'];
-
-    // Deduplicate lead IDs
     const uniqueLeadIds = [...new Set(lead_ids)];
-    console.log('Fetching leads for CSV:', uniqueLeadIds.length);
+    console.log('Fetching leads for CSV from Supabase:', uniqueLeadIds.length);
 
-    // Group lead_ids by lead type and row index
-    const leadsByType = {};
-    uniqueLeadIds.forEach(id => {
-      for (const type of leadTypeOrder) {
-        if (id.startsWith(type + '_')) {
-          const parts = id.split('_');
-          const typeParts = type.split('_').length;
-          const rowIndex = parseInt(parts[typeParts]);
-          if (!leadsByType[type]) leadsByType[type] = [];
-          leadsByType[type].push(rowIndex);
-          break;
-        }
-      }
-    });
-
+    // Fetch in batches of 200 to avoid URL length limits
+    const BATCH_SIZE = 200;
     let allLeads = [];
 
-    for (const [leadType, rowIndices] of Object.entries(leadsByType)) {
-      try {
-        const sheetId = sheetIds[leadType];
-        const sheetName = sheetMap[sheetId];
-        if (!sheetName) continue;
+    for (let i = 0; i < uniqueLeadIds.length; i += BATCH_SIZE) {
+      const batch = uniqueLeadIds.slice(i, i + BATCH_SIZE);
+      const idList = batch.map(id => `"${id}"`).join(',');
 
-        // Get header row
-        const headerResponse = await fetch(
-          `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(`'${sheetName}'!A1:Z1`)}?key=${apiKey}`
-        );
-
-        if (!headerResponse.ok) {
-          console.error(`Header fetch failed for ${leadType}:`, await headerResponse.text());
-          continue;
-        }
-        const headerData = await headerResponse.json();
-        const headers = headerData.values?.[0] || [];
-
-        // Batch fetch specific rows in chunks of 100 to avoid URL length limits
-        const uniqueRowIndices = [...new Set(rowIndices)];
-        const CHUNK_SIZE = 100;
-        const allValueRanges = [];
-        for (let chunkStart = 0; chunkStart < uniqueRowIndices.length; chunkStart += CHUNK_SIZE) {
-          const chunk = uniqueRowIndices.slice(chunkStart, chunkStart + CHUNK_SIZE);
-          const ranges = chunk.map(rowIndex => `'${sheetName}'!A${rowIndex + 2}:Z${rowIndex + 2}`);
-          const batchResponse = await fetch(
-            `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?${ranges.map(r => `ranges=${encodeURIComponent(r)}`).join('&')}&key=${apiKey}`
-          );
-          if (!batchResponse.ok) {
-            console.error(`Batch fetch failed for ${leadType}:`, await batchResponse.text());
-            continue;
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/aged_leads?id=in.(${idList})&select=*`,
+        {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Content-Type': 'application/json'
           }
-          const batchData = await batchResponse.json();
-          allValueRanges.push(...(batchData.valueRanges || []));
         }
+      );
 
-        for (let i = 0; i < uniqueRowIndices.length; i++) {
-          const rowIndex = uniqueRowIndices[i];
-          const row = allValueRanges[i]?.values?.[0];
-          if (!row) continue;
-
-          const lead = {};
-          headers.forEach((header, j) => {
-            const cleanHeader = header.trim().toLowerCase().replace(/\s+/g, '_');
-            lead[cleanHeader] = row[j] || '';
-          });
-
-          lead.lead_id = `${leadType}_${rowIndex}`;
-          lead.lead_type = leadType;
-
-          // Calculate age_in_days from external_id
-          if (lead.external_id) {
-            const dateStr = lead.external_id.split('-')[0];
-            if (dateStr.length === 8) {
-              const year = parseInt(dateStr.substring(0, 4));
-              const month = parseInt(dateStr.substring(4, 6)) - 1;
-              const day = parseInt(dateStr.substring(6, 8));
-              const uploadDate = new Date(year, month, day);
-              if (!isNaN(uploadDate.getTime())) {
-                const now = new Date();
-                lead.age_in_days = Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
-              }
-            }
-          }
-
-          delete lead.tier_1;
-          delete lead.tier_2;
-          delete lead.tier_3;
-          delete lead.tier_4;
-          delete lead.tier_5;
-
-          allLeads.push(lead);
-        }
-      } catch (error) {
-        console.error(`Error processing ${leadType}:`, error.message);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Supabase fetch error:', text);
+        continue;
       }
+
+      const rows = await res.json();
+      allLeads = allLeads.concat(rows);
     }
+
+    // Format leads for CSV — flatten custom_data and calculate age_in_days
+    const formattedLeads = allLeads.map(lead => {
+      let age_in_days = 0;
+      if (lead.external_id) {
+        const dateStr = lead.external_id.split('-')[0];
+        if (dateStr.length === 8) {
+          const year = parseInt(dateStr.substring(0, 4));
+          const month = parseInt(dateStr.substring(4, 6)) - 1;
+          const day = parseInt(dateStr.substring(6, 8));
+          const uploadDate = new Date(year, month, day);
+          if (!isNaN(uploadDate.getTime())) {
+            age_in_days = Math.floor((Date.now() - uploadDate) / (1000 * 60 * 60 * 24));
+          }
+        }
+      }
+
+      const { custom_data, tier_1_sold, tier_2_sold, tier_3_sold, tier_4_sold, tier_5_sold, created_at, ...coreFields } = lead;
+
+      return {
+        ...coreFields,
+        age_in_days,
+        // Flatten custom_data fields into the row
+        ...(custom_data || {}),
+        // Include tier sold status for reference
+        tier_1: tier_1_sold ? 'Sold' : '',
+        tier_2: tier_2_sold ? 'Sold' : '',
+        tier_3: tier_3_sold ? 'Sold' : '',
+        tier_4: tier_4_sold ? 'Sold' : '',
+        tier_5: tier_5_sold ? 'Sold' : '',
+      };
+    });
 
     return Response.json({
       success: true,
-      leads: allLeads,
-      total: allLeads.length
+      leads: formattedLeads,
+      total: formattedLeads.length
     });
 
   } catch (error) {
     console.error('CSV fetch error:', error);
-    return Response.json({
-      success: false,
-      error: error.message,
-      leads: []
-    }, { status: 500 });
+    return Response.json({ success: false, error: error.message, leads: [] }, { status: 500 });
   }
 });

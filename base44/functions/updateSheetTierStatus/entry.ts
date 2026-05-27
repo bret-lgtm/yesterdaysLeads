@@ -1,153 +1,56 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    
+    createClientFromRequest(req); // auth context
+
     const { lead_id, tier } = await req.json();
 
-    console.log(`[updateSheetTierStatus] Received request - lead_id: ${lead_id}, tier: ${tier}`);
+    console.log(`[updateTierStatus] lead_id: ${lead_id}, tier: ${tier}`);
 
     if (!lead_id || !tier) {
       return Response.json({ error: 'lead_id and tier are required' }, { status: 400 });
     }
 
-    const apiKey = Deno.env.get('GOOGLE_API_KEY');
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
-    if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
-
-    if (!spreadsheetId) {
-      return Response.json({ error: 'GOOGLE_SHEET_ID not configured' }, { status: 500 });
+    // Map tier name to Supabase column
+    // Accepts: 'tier1', 'tier_1', 'tier 1'
+    const tierNum = String(tier).replace(/[^1-5]/g, '');
+    if (!tierNum) {
+      return Response.json({ error: `Invalid tier: ${tier}` }, { status: 400 });
     }
+    const column = `tier_${tierNum}_sold`;
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
-
-    // Parse lead_id to get lead type and row index
-    // Format: leadType_rowIndex (e.g., "life_0", "auto_5")
-    const parts = lead_id.split('_');
-    const leadType = parts.slice(0, -1).join('_'); // Handle multi-word types like "final_expense"
-    const rowIndex = parseInt(parts[parts.length - 1]);
-    const rowNumber = rowIndex + 2; // +1 for header row, +1 for 0-based index
-    
-    console.log(`[updateSheetTierStatus] Parsed - leadType: ${leadType}, rowIndex: ${rowIndex}, rowNumber: ${rowNumber}`);
-
-    // Map lead types to sheet IDs
-    const sheetIds = {
-      auto: '44023422',
-      home: '1745292620',
-      health: '1305861843',
-      life: '113648240',
-      medicare: '757044649',
-      final_expense: '387991684',
-      veteran_life: '1401332567',
-      retirement: '712013125',
-      annuity: '409761548',
-      recruiting: '1894668336'
-    };
-
-    const sheetId = sheetIds[leadType];
-    if (!sheetId) {
-      return Response.json({ error: 'Invalid lead type' }, { status: 400 });
-    }
-
-    // Use hardcoded sheet name map
-    const sheetNameMap = {
-      '44023422': 'Auto Leads', '113648240': 'Life Leads', '387991684': 'Final Expense Leads',
-      '409761548': 'Annuity Leads', '712013125': 'Retirement Leads', '757044649': 'Medicare Leads',
-      '1305861843': 'Health Leads', '1401332567': 'Veteran Life Leads', '1745292620': 'Home Leads',
-      '1894668336': 'Recruiting Leads'
-    };
-
-    const sheetName = sheetNameMap[sheetId];
-    if (!sheetName) {
-      console.error(`[updateSheetTierStatus] Sheet not found for sheetId: ${sheetId}`);
-      return Response.json({ error: 'Sheet not found' }, { status: 404 });
-    }
-    
-    console.log(`[updateSheetTierStatus] Sheet name: ${sheetName}`);
-
-    // Fetch the header row to find tier columns dynamically
-    const headerRange = `'${sheetName}'!1:1`;
-    const headerResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(headerRange)}?key=${apiKey}`
-    );
-
-    if (!headerResponse.ok) {
-      const errorText = await headerResponse.text();
-      console.error(`[updateSheetTierStatus] Failed to fetch headers:`, errorText);
-      return Response.json({ 
-        success: false, 
-        error: 'Failed to fetch headers', 
-        details: errorText 
-      });
-    }
-
-    const headerData = await headerResponse.json();
-    const headers = headerData.values?.[0] || [];
-    
-    console.log(`[updateSheetTierStatus] Found ${headers.length} columns, looking for tier columns...`);
-
-    // Find the column index for the specified tier
-    const tierColumnName = tier.replace('tier', 'tier_'); // Convert 'tier1' to 'tier_1'
-    const columnIndex = headers.findIndex(h => h.toLowerCase() === tierColumnName.toLowerCase());
-
-    if (columnIndex === -1) {
-      console.error(`[updateSheetTierStatus] Column '${tierColumnName}' not found in headers:`, headers);
-      return Response.json({ 
-        success: false, 
-        error: `Column '${tierColumnName}' not found in sheet`,
-        headers: headers
-      });
-    }
-
-    // Convert column index to letter (0 = A, 1 = B, etc.)
-    const getColumnLetter = (index) => {
-      let letter = '';
-      while (index >= 0) {
-        letter = String.fromCharCode(65 + (index % 26)) + letter;
-        index = Math.floor(index / 26) - 1;
-      }
-      return letter;
-    };
-
-    const columnLetter = getColumnLetter(columnIndex);
-    
-    // Update the cell
-    const range = `'${sheetName}'!${columnLetter}${rowNumber}`;
-    console.log(`[updateSheetTierStatus] Found column '${tierColumnName}' at index ${columnIndex} (${columnLetter}), updating range: ${range}`);
-    
-    const updateResponse = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/aged_leads?id=eq.${lead_id}`,
       {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ values: [['Sold']] })
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ [column]: true })
       }
     );
 
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      console.error(`[updateSheetTierStatus] Failed to update sheet:`, errorText);
-      // Return success:false instead of error status to prevent webhook from failing
-      return Response.json({ 
-        success: false, 
-        error: 'Failed to update sheet', 
-        details: errorText,
-        range: range
-      });
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('[updateTierStatus] Supabase update failed:', text);
+      return Response.json({ success: false, error: 'Failed to update tier status', details: text });
     }
 
-    const result = await updateResponse.json();
-    console.log(`[updateSheetTierStatus] Update successful:`, JSON.stringify(result));
-
-    return Response.json({ 
+    console.log(`[updateTierStatus] Successfully set ${column}=true for lead ${lead_id}`);
+    return Response.json({
       success: true,
-      message: `Updated ${leadType} lead row ${rowNumber}, ${tier} to Sold`,
-      range: range
+      message: `Marked lead ${lead_id} ${column} as sold`
     });
 
   } catch (error) {
-    console.error('Error in updateSheetTierStatus:', error);
+    console.error('Error in updateTierStatus:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
       const freeEmail = user?.email || customerEmail;
       const leadIds = filteredCartItems.map(item => item.lead_id);
 
-      // Fetch full lead data from Google Sheets
+      // Fetch full lead data from Supabase
       let completeLeadData = [];
       try {
         const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { lead_ids: leadIds });
