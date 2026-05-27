@@ -11,15 +11,16 @@ export default function LoadingMessages() {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const cycle = setInterval(() => {
+    if (index >= MESSAGES.length - 1) return;
+    const cycle = setTimeout(() => {
       setVisible(false);
       setTimeout(() => {
-        setIndex(i => (i + 1) % MESSAGES.length);
+        setIndex(i => i + 1);
         setVisible(true);
       }, 400);
-    }, 2800);
-    return () => clearInterval(cycle);
-  }, []);
+    }, 3000);
+    return () => clearTimeout(cycle);
+  }, [index]);
 
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-6">
