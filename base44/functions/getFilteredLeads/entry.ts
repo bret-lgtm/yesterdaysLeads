@@ -49,7 +49,19 @@ Deno.serve(async (req) => {
     // Supabase default page size is 1000 — set a high limit
     params.append('limit', '20000');
 
-    const leads = await supabase(`aged_leads?${params.toString()}`);
+    // Supabase enforces a 1000-row page size by default — paginate until we have all rows
+    const PAGE_SIZE = 1000;
+    let leads = [];
+    let offset = 0;
+    while (true) {
+      const pageParams = new URLSearchParams(params);
+      pageParams.set('limit', String(PAGE_SIZE));
+      pageParams.set('offset', String(offset));
+      const page = await supabase(`aged_leads?${pageParams.toString()}`);
+      leads = leads.concat(page);
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
     console.log(`Fetched ${leads.length} leads from Supabase`);
 
     // Build suppression set (already-sold lead IDs globally + customer's own purchases)
