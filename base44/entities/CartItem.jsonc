@@ -1,0 +1,72 @@
+{
+  "name": "CartItem",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who added the item"
+    },
+    "lead_id": {
+      "type": "string",
+      "description": "ID of the lead in cart (Supabase UUID)"
+    },
+    "external_id": {
+      "type": "string",
+      "description": "Human-readable reference ID for the lead (e.g. 20240101-LIFE-001)"
+    },
+    "lead_type": {
+      "type": "string"
+    },
+    "lead_name": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip_code": {
+      "type": "string"
+    },
+    "age_in_days": {
+      "type": "number"
+    },
+    "price": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "user_email",
+    "lead_id"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

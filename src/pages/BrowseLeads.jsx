@@ -177,6 +177,7 @@ export default function BrowseLeads() {
         await base44.entities.CartItem.create({
           user_email: user.email,
           lead_id: lead.id,
+          external_id: lead.external_id,
           lead_type: lead.lead_type,
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
           state: lead.state,
@@ -195,6 +196,7 @@ export default function BrowseLeads() {
       const newItems = leadsToAdd.map(lead => ({
         id: `local_${Date.now()}_${Math.random()}`,
         lead_id: lead.id,
+        external_id: lead.external_id,
         lead_type: lead.lead_type,
         lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
         state: lead.state,
@@ -261,6 +263,7 @@ export default function BrowseLeads() {
         const age = computeAgeInDays(lead);
         return {
           lead_id: lead.id,
+          external_id: lead.external_id,
           lead_type: lead.lead_type,
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
           state: lead.state,
@@ -433,6 +436,7 @@ export default function BrowseLeads() {
                     const computedPrice = calculateLeadPrice({...lead, age_in_days: age}, pricingTiers);
                     await addToCart({
                       lead_id: lead.id,
+                      external_id: lead.external_id,
                       lead_type: lead.lead_type,
                       lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
                       state: lead.state,

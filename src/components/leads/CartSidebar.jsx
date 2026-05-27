@@ -109,10 +109,10 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
                           .sort(([a], [b]) => Number(a) - Number(b))
                           .map(([age, group]) => (
                             <div key={age} className="bg-slate-50 rounded-xl p-4">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between mb-2">
                                 <div>
                                   <p className="font-medium text-slate-900">
-                                    {group.count} Leads
+                                    {group.count} Lead{group.count !== 1 ? 's' : ''}
                                   </p>
                                   <p className="text-sm text-slate-500">
                                     {age} days old • ${group.price.toFixed(2)} each
@@ -121,6 +121,13 @@ export default function CartSidebar({ items, onRemove, onCheckout, isOpen, onTog
                                 <span className="font-semibold text-slate-900">
                                   ${(group.count * group.price).toFixed(2)}
                                 </span>
+                              </div>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {group.items.map(item => item.external_id && (
+                                  <span key={item.lead_id} className="text-xs font-mono bg-white border border-slate-200 rounded px-1.5 py-0.5 text-slate-500">
+                                    {item.external_id}
+                                  </span>
+                                ))}
                               </div>
                             </div>
                           ))}
