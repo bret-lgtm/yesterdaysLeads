@@ -1,0 +1,65 @@
+{
+  "name": "PricingTier",
+  "type": "object",
+  "properties": {
+    "lead_type": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "home",
+        "health",
+        "life",
+        "medicare",
+        "final_expense",
+        "veteran_life",
+        "retirement",
+        "annuity",
+        "recruiting"
+      ]
+    },
+    "age_range_min": {
+      "type": "number",
+      "description": "Minimum age in days"
+    },
+    "age_range_max": {
+      "type": "number",
+      "description": "Maximum age in days"
+    },
+    "base_price": {
+      "type": "number",
+      "description": "Price per lead"
+    },
+    "bulk_discount_threshold": {
+      "type": "number",
+      "description": "Quantity threshold for bulk discount"
+    },
+    "bulk_discount_percent": {
+      "type": "number",
+      "description": "Discount percentage for bulk purchases"
+    }
+  },
+  "required": [
+    "lead_type",
+    "age_range_min",
+    "age_range_max",
+    "base_price"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

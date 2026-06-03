@@ -1,0 +1,100 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "external_id": {
+      "type": "string",
+      "description": "Unique external identifier for the lead"
+    },
+    "lead_type": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "home",
+        "health",
+        "life",
+        "medicare",
+        "final_expense",
+        "veteran_life",
+        "retirement",
+        "annuity",
+        "recruiting"
+      ],
+      "description": "Insurance category"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string",
+      "description": "US state code"
+    },
+    "zip_code": {
+      "type": "string"
+    },
+    "utility_bill_amount": {
+      "type": "number",
+      "description": "Monthly utility bill amount"
+    },
+    "upload_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the lead was uploaded"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "sold",
+        "held"
+      ],
+      "default": "available"
+    }
+  },
+  "required": [
+    "external_id",
+    "lead_type",
+    "first_name",
+    "last_name",
+    "state",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.status": "available"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
