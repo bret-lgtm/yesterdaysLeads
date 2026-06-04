@@ -116,11 +116,6 @@ Deno.serve(async (req) => {
             ...coreFields,
             age_in_days,
             ...(custom_data || {}),
-            tier_1: tier_1_sold ? 'Sold' : '',
-            tier_2: tier_2_sold ? 'Sold' : '',
-            tier_3: tier_3_sold ? 'Sold' : '',
-            tier_4: tier_4_sold ? 'Sold' : '',
-            tier_5: tier_5_sold ? 'Sold' : '',
           };
         });
         allLeads = allLeads.concat(formatted);
