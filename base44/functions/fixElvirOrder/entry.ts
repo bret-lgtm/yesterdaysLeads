@@ -2,7 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const GOOGLE_API_KEY = Deno.env.get('GOOGLE_API_KEY');
 const GOOGLE_SHEET_ID = Deno.env.get('GOOGLE_SHEET_ID');
-const VET_SHEET_NAME = 'Veteran Life Leads'; // tab name for veteran_life
+const VET_SHEET_NAME = 'Veteran Life Leads';
 
 async function fetchAllVetLeadsFromSheet() {
   const range = `'${VET_SHEET_NAME}'!A:Z`;
@@ -10,7 +10,7 @@ async function fetchAllVetLeadsFromSheet() {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.values || data.values.length < 2) {
-    console.error('Sheet fetch error or empty:', JSON.stringify(data).substring(0, 300));
+    console.error('Sheet fetch error:', JSON.stringify(data).substring(0, 300));
     return [];
   }
   const headers = data.values[0].map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
@@ -22,7 +22,6 @@ async function fetchAllVetLeadsFromSheet() {
     headers.forEach((h, j) => { lead[h] = row[j] !== undefined ? row[j] : ''; });
     lead.lead_id = `veteran_life_${i + 1}`;
     lead.lead_type = 'veteran_life';
-    // Calculate age from external_id
     const extId = lead.external_id || '';
     const dateStr = extId.split('-')[0];
     if (dateStr && dateStr.length === 8) {
@@ -46,12 +45,14 @@ Deno.serve(async (req) => {
   }
 
   const ORDER1_ID = '6a15cb8c1998b43e58ed56d5'; // May 26 - sheet IDs
-  const ORDER2_ID = '6a245c4e490da085b743caa6'; // June 6 - Supabase UUIDs
+  const ORDER2_ID = '6a245c4e490da085b743caa6'; // June 6 - being fixed
 
-  const [order1Results, order2Results] = await Promise.all([
+  const [order1Results, order2Results, allSheetLeads] = await Promise.all([
     base44.asServiceRole.entities.Order.filter({ id: ORDER1_ID }),
-    base44.asServiceRole.entities.Order.filter({ id: ORDER2_ID })
+    base44.asServiceRole.entities.Order.filter({ id: ORDER2_ID }),
+    fetchAllVetLeadsFromSheet()
   ]);
+
   const order1 = order1Results[0];
   const order2 = order2Results[0];
 
@@ -59,20 +60,22 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Could not find orders' }, { status: 404 });
   }
 
-  // Fetch ALL vet life leads from sheet
-  const allSheetLeads = await fetchAllVetLeadsFromSheet();
   console.log(`Total sheet leads: ${allSheetLeads.length}`);
 
-  // Build lead_id -> lead map
-  const sheetLeadMap = {};
-  allSheetLeads.forEach(l => { sheetLeadMap[l.lead_id] = l; });
+  // Build sheet maps
+  const sheetById = {};
+  const sheetByExtId = {};
+  allSheetLeads.forEach(l => {
+    sheetById[l.lead_id] = l;
+    if (l.external_id) sheetByExtId[l.external_id.trim()] = l;
+  });
 
-  // Collect Order 1 emails/phones
+  // Build Order 1 email + phone sets from sheet data
   const order1Emails = new Set();
   const order1Phones = new Set();
   let matched = 0;
   for (const id of (order1.leads_purchased || [])) {
-    const lead = sheetLeadMap[id];
+    const lead = sheetById[id];
     if (lead) {
       matched++;
       if (lead.email) order1Emails.add(lead.email.trim().toLowerCase());
@@ -80,21 +83,34 @@ Deno.serve(async (req) => {
       if (phone.length >= 10) order1Phones.add(phone);
     }
   }
-  console.log(`Order 1 leads matched: ${matched}/${order1.leads_purchased?.length}, emails: ${order1Emails.size}`);
+  console.log(`Order 1 emails from sheet: ${order1Emails.size}, phones: ${order1Phones.size}, matched: ${matched}`);
 
-  // Find duplicates in Order 2 snapshot
+  // For each Order 2 snapshot lead, also look up its email from the sheet via external_id
+  // This catches cases where the snapshot email differs from the sheet email
   const order2Snapshot = order2.lead_data_snapshot || [];
   const duplicateLeads = [];
   const uniqueLeads = [];
 
-  for (const lead of order2Snapshot) {
-    const email = (lead.email || '').trim().toLowerCase();
-    const phone = (lead.phone || '').toString().replace(/\D/g, '').slice(-10);
-    const isDupe = (email && order1Emails.has(email)) || (phone && phone.length >= 10 && order1Phones.has(phone));
+  for (const snap of order2Snapshot) {
+    // Check snapshot email
+    const snapEmail = (snap.email || '').trim().toLowerCase();
+    const snapPhone = (snap.phone || '').toString().replace(/\D/g, '').slice(-10);
+
+    // Also look up the sheet's version of this lead by external_id
+    const sheetLead = sheetByExtId[snap.external_id?.trim()];
+    const sheetEmail = sheetLead ? (sheetLead.email || '').trim().toLowerCase() : '';
+    const sheetPhone = sheetLead ? (sheetLead.phone || '').toString().replace(/\D/g, '').slice(-10) : '';
+
+    const isDupe =
+      (snapEmail && order1Emails.has(snapEmail)) ||
+      (snapPhone && snapPhone.length >= 10 && order1Phones.has(snapPhone)) ||
+      (sheetEmail && order1Emails.has(sheetEmail)) ||
+      (sheetPhone && sheetPhone.length >= 10 && order1Phones.has(sheetPhone));
+
     if (isDupe) {
-      duplicateLeads.push(lead);
+      duplicateLeads.push(snap);
     } else {
-      uniqueLeads.push(lead);
+      uniqueLeads.push(snap);
     }
   }
 
@@ -113,12 +129,12 @@ Deno.serve(async (req) => {
   const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
   const suppressedIds = new Set(suppressionRecords.map(r => r.lead_id));
 
-  // All emails to avoid (both orders combined)
-  const order2Emails = new Set(order2Snapshot.map(l => (l.email || '').trim().toLowerCase()).filter(Boolean));
-  const allUsedEmails = new Set([...order1Emails, ...order2Emails]);
+  // All emails already in Order 2 (to avoid giving him another overlap)
+  const order2AllEmails = new Set(order2Snapshot.map(l => (l.email || '').trim().toLowerCase()).filter(Boolean));
+  const allUsedEmails = new Set([...order1Emails, ...order2AllEmails]);
   const order1IdSet = new Set(order1.leads_purchased || []);
 
-  // Find fresh replacements
+  // Find fresh replacements: not suppressed, not in order1, email not already used
   const freshCandidates = allSheetLeads.filter(lead => {
     if (suppressedIds.has(lead.lead_id)) return false;
     if (order1IdSet.has(lead.lead_id)) return false;
@@ -141,7 +157,7 @@ Deno.serve(async (req) => {
 
   const replacements = freshCandidates.slice(0, needed);
 
-  // Build new snapshot
+  // Build replacement snapshot entries
   const replacementSnapshots = replacements.map(l => ({
     external_id: l.external_id || l.lead_id,
     lead_type: 'veteran_life',
@@ -161,18 +177,18 @@ Deno.serve(async (req) => {
 
   const newSnapshot = [...uniqueLeads, ...replacementSnapshots];
 
-  // Remove dupe UUIDs from leads_purchased, add replacement sheet IDs
+  // Remove dupe UUIDs/IDs from leads_purchased, add replacement sheet IDs
   const dupeExternalIds = new Set(duplicateLeads.map(l => l.external_id));
-  const dupeUUIDs = new Set();
+  const dupeIds = new Set();
   order2Snapshot.forEach((snap, idx) => {
     if (dupeExternalIds.has(snap.external_id)) {
-      const uuid = order2.leads_purchased[idx];
-      if (uuid) dupeUUIDs.add(uuid);
+      const id = order2.leads_purchased[idx];
+      if (id) dupeIds.add(id);
     }
   });
 
   const newLeadsPurchased = [
-    ...order2.leads_purchased.filter(id => !dupeUUIDs.has(id)),
+    ...order2.leads_purchased.filter(id => !dupeIds.has(id)),
     ...replacements.map(l => l.lead_id)
   ];
 
@@ -183,7 +199,7 @@ Deno.serve(async (req) => {
     lead_count: newSnapshot.length
   });
 
-  // Create suppression records
+  // Create suppression records for replacements
   for (const lead of replacements) {
     await base44.asServiceRole.entities.LeadSuppression.create({
       lead_id: lead.lead_id,
