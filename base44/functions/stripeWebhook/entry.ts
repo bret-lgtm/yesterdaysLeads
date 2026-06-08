@@ -153,6 +153,28 @@ Deno.serve(async (req) => {
         cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !dupeIds.has(i.lead_id)));
       }
 
+      // Tier-based suppression check: remove any leads whose current-age tier is already sold to another customer
+      function getTierNumFromAge(days) {
+        if (days >= 1 && days <= 3) return 1;
+        if (days >= 4 && days <= 14) return 2;
+        if (days >= 15 && days <= 30) return 3;
+        if (days >= 31 && days <= 90) return 4;
+        return 5;
+      }
+      const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
+      // Build a set of "lead_id:tier" combinations that are already sold
+      const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
+      const tierDupes = cartItems.filter(item => {
+        const tierNum = getTierNumFromAge(item.age_in_days || 91);
+        const tierKey = `${item.lead_id}:tier${tierNum}`;
+        return soldTierKeys.has(tierKey);
+      });
+      if (tierDupes.length > 0) {
+        console.warn(`Tier-sold duplicates detected: ${tierDupes.map(i => `${i.lead_id}(tier${getTierNumFromAge(i.age_in_days||91)})`).join(', ')} — removing from order`);
+        const tierDupeIds = new Set(tierDupes.map(i => i.lead_id));
+        cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !tierDupeIds.has(i.lead_id)));
+      }
+
       // If ALL leads were stripped as duplicates, refund and abort
       if (cartItems.length === 0 && session.payment_intent) {
         console.warn(`All ${crossOrderDupes.length} leads were cross-order duplicates for ${customerEmail}. Auto-refunding.`);

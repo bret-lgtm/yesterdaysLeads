@@ -57,6 +57,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Tier-based suppression check: remove leads whose current-age tier is already sold to someone else
+    function getTierNumFromAge(days) {
+      if (days >= 1 && days <= 3) return 1;
+      if (days >= 4 && days <= 14) return 2;
+      if (days >= 15 && days <= 30) return 3;
+      if (days >= 31 && days <= 90) return 4;
+      return 5;
+    }
+    const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
+    const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
+    const tierAlreadySold = filteredCartItems.filter(item => {
+      const tierNum = getTierNumFromAge(item.age_in_days || 91);
+      return soldTierKeys.has(`${item.lead_id}:tier${tierNum}`);
+    });
+    if (tierAlreadySold.length > 0) {
+      console.warn(`Checkout suppression: removing ${tierAlreadySold.length} already-tier-sold leads for ${emailForSuppression}`);
+      const tierSoldIds = new Set(tierAlreadySold.map(i => i.lead_id));
+      filteredCartItems = filteredCartItems.filter(item => !tierSoldIds.has(item.lead_id));
+      if (filteredCartItems.length === 0) {
+        return Response.json({ error: 'All leads in your cart have already been sold. Please browse for new leads.' }, { status: 400 });
+      }
+    }
+
     // Group cart items by lead_type + price to create consolidated line items (Stripe has a 100 line item limit)
     const lineItemMap = {};
     for (const item of filteredCartItems) {

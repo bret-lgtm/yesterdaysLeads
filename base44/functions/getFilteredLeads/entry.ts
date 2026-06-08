@@ -103,9 +103,18 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Determine tier availability — a lead is "browsable" if at least one tier is still unsold
-        const anyTierAvailable = !lead.tier_1_sold || !lead.tier_2_sold || !lead.tier_3_sold || !lead.tier_4_sold || !lead.tier_5_sold;
-        if (!anyTierAvailable) return null;
+        // Determine tier availability — only show lead if its CURRENT age-based tier is still unsold
+        // This prevents selling the same tier of a lead to a second customer
+        function getTierNumFromAge(days) {
+          if (days >= 1 && days <= 3) return 1;
+          if (days >= 4 && days <= 14) return 2;
+          if (days >= 15 && days <= 30) return 3;
+          if (days >= 31 && days <= 90) return 4;
+          return 5;
+        }
+        const currentTier = getTierNumFromAge(age_in_days);
+        const currentTierSold = lead[`tier_${currentTier}_sold`];
+        if (currentTierSold) return null;
 
         // Obscure last name for browsing
         const last_name_initial = lead.last_name ? String(lead.last_name).charAt(0).toUpperCase() : '';
