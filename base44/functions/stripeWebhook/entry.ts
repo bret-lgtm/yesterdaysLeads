@@ -141,12 +141,20 @@ Deno.serve(async (req) => {
         status: 'completed'
       });
       const priorLeadIds = new Set();
+      const priorExternalIds = new Set();
       for (const priorOrder of priorOrders) {
+        // Legacy row-based IDs
         for (const lid of (priorOrder.leads_purchased || [])) {
           priorLeadIds.add(lid);
         }
+        // Stable external_ids from snapshot
+        for (const snap of (priorOrder.lead_data_snapshot || [])) {
+          if (snap.external_id) priorExternalIds.add(snap.external_id);
+        }
       }
-      const crossOrderDupes = cartItems.filter(item => priorLeadIds.has(item.lead_id));
+      const crossOrderDupes = cartItems.filter(item => 
+        priorLeadIds.has(item.lead_id) || priorExternalIds.has(item.external_id)
+      );
       if (crossOrderDupes.length > 0) {
         console.warn(`Cross-order duplicates detected for ${customerEmail}: ${crossOrderDupes.map(i => i.lead_id).join(', ')} — removing from order`);
         const dupeIds = new Set(crossOrderDupes.map(i => i.lead_id));

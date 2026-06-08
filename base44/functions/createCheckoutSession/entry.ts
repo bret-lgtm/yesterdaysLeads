@@ -44,10 +44,20 @@ Deno.serve(async (req) => {
       const existingCustomers = await base44.asServiceRole.entities.Customer.filter({ email: emailForSuppression });
       const existingCustomer = existingCustomers[0];
       const suppressionSet = new Set(existingCustomer?.suppression_list || []);
-      console.log(`Suppression check for ${emailForSuppression}: ${suppressionSet.size} suppressed leads, cart has ${cartItems.length} items`);
-      if (suppressionSet.size > 0) {
-        const suppressed = cartItems.filter(item => suppressionSet.has(item.lead_id));
-        filteredCartItems = cartItems.filter(item => !suppressionSet.has(item.lead_id));
+
+      // Also build external_id suppression set from all completed orders
+      const priorOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: emailForSuppression, status: 'completed' });
+      const suppressedExternalIds = new Set();
+      for (const order of priorOrders) {
+        for (const snap of (order.lead_data_snapshot || [])) {
+          if (snap.external_id) suppressedExternalIds.add(snap.external_id);
+        }
+      }
+
+      console.log(`Suppression check for ${emailForSuppression}: ${suppressionSet.size} suppressed lead IDs, ${suppressedExternalIds.size} suppressed external IDs, cart has ${cartItems.length} items`);
+      if (suppressionSet.size > 0 || suppressedExternalIds.size > 0) {
+        const suppressed = cartItems.filter(item => suppressionSet.has(item.lead_id) || suppressedExternalIds.has(item.external_id));
+        filteredCartItems = cartItems.filter(item => !suppressionSet.has(item.lead_id) && !suppressedExternalIds.has(item.external_id));
         if (suppressed.length > 0) {
           console.warn(`Suppression check removed ${suppressed.length} already-purchased leads for ${emailForSuppression}: ${suppressed.map(i => i.lead_id).join(', ')}`);
         }

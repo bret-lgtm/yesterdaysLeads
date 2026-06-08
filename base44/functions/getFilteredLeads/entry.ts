@@ -78,15 +78,20 @@ Deno.serve(async (req) => {
 
       const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: user_email, status: 'completed' });
       for (const order of customerOrders) {
+        // Add row-based lead IDs (legacy)
         for (const lid of (order.leads_purchased || [])) {
           soldLeadIds.add(lid);
+        }
+        // Also suppress by external_id from snapshot (stable identifier)
+        for (const snap of (order.lead_data_snapshot || [])) {
+          if (snap.external_id) soldLeadIds.add(snap.external_id);
         }
       }
     }
 
     // Process and filter leads
     let filtered = leads
-      .filter(lead => !soldLeadIds.has(lead.id))
+      .filter(lead => !soldLeadIds.has(lead.id) && !soldLeadIds.has(lead.external_id))
       .map(lead => {
         // Calculate age_in_days from external_id (format: YYYYMMDD-...)
         let age_in_days = 0;
