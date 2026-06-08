@@ -35,55 +35,70 @@ Deno.serve(async (req) => {
   const order1 = o1r[0];
   const order2 = o2r[0];
 
-  // Build sheet map by lead_id
+  // Build maps
   const sheetById = {};
-  sheetLeads.forEach(l => { sheetById[l.lead_id] = l; });
-
-  // Build sheet map by external_id
   const sheetByExtId = {};
-  sheetLeads.forEach(l => { if (l.external_id) sheetByExtId[l.external_id.trim()] = l; });
+  sheetLeads.forEach(l => {
+    sheetById[l.lead_id] = l;
+    if (l.external_id) sheetByExtId[l.external_id.trim()] = l;
+  });
 
-  // Build Order 1 email set from sheet
-  const order1Emails = new Set();
+  // Build Order 1 email set AND snapshot email set from its own snapshot
+  const order1SheetEmails = new Set();
+  const order1SnapshotEmails = new Set();
+
   for (const id of (order1.leads_purchased || [])) {
     const lead = sheetById[id];
-    if (lead?.email) order1Emails.add(lead.email.trim().toLowerCase());
+    if (lead?.email) order1SheetEmails.add(lead.email.trim().toLowerCase());
+  }
+  for (const snap of (order1.lead_data_snapshot || [])) {
+    if (snap?.email) order1SnapshotEmails.add(snap.email.trim().toLowerCase());
   }
 
-  // Find the 66 "unique" snapshot leads in Order 2 that weren't flagged as dupes
+  console.log(`Order1 sheet emails: ${order1SheetEmails.size}, snapshot emails: ${order1SnapshotEmails.size}`);
+
+  // Combine both for the most thorough check
+  const allOrder1Emails = new Set([...order1SheetEmails, ...order1SnapshotEmails]);
+
   const order2Snapshot = order2.lead_data_snapshot || [];
-  const results = [];
+  const dupes = [];
+  const clean = [];
 
   for (const snap of order2Snapshot) {
     const snapEmail = (snap.email || '').trim().toLowerCase();
-    const isInOrder1ByEmail = snapEmail && order1Emails.has(snapEmail);
-
-    // Find the sheet lead for this snapshot by external_id
     const sheetLead = sheetByExtId[snap.external_id?.trim()] || null;
-    const sheetEmail = sheetLead ? (sheetLead.email || '').trim().toLowerCase() : null;
-    const sheetEmailInOrder1 = sheetEmail && order1Emails.has(sheetEmail);
+    const sheetEmail = sheetLead ? (sheetLead.email || '').trim().toLowerCase() : '';
 
-    if (!isInOrder1ByEmail) {
-      results.push({
-        external_id: snap.external_id,
-        snapshot_email: snap.email,
-        sheet_email: sheetLead?.email || 'NOT FOUND IN SHEET',
-        emails_match: snapEmail === sheetEmail,
-        sheet_email_in_order1: sheetEmailInOrder1,
-        blank_email: !snap.email
-      });
-    }
+    // Check both snapshot email AND current sheet email against both order1 email sets
+    const isDupe =
+      (snapEmail && allOrder1Emails.has(snapEmail)) ||
+      (sheetEmail && allOrder1Emails.has(sheetEmail));
+
+    const entry = {
+      external_id: snap.external_id,
+      first_name: snap.first_name,
+      last_name: snap.last_name,
+      snapshot_email: snap.email,
+      sheet_email: sheetLead?.email || 'NOT IN SHEET',
+      in_order1_by_snapshot_email: snapEmail ? allOrder1Emails.has(snapEmail) : false,
+      in_order1_by_sheet_email: sheetEmail ? allOrder1Emails.has(sheetEmail) : false,
+      is_dupe: isDupe
+    };
+
+    if (isDupe) dupes.push(entry);
+    else clean.push(entry);
   }
 
-  const blankCount = results.filter(r => r.blank_email).length;
-  const mismatchCount = results.filter(r => !r.emails_match && !r.blank_email).length;
-  const sheetEmailInOrder1Count = results.filter(r => r.sheet_email_in_order1).length;
+  console.log(`Dupes: ${dupes.length}, Clean: ${clean.length}`);
 
   return Response.json({
-    total_not_matched: results.length,
-    blank_email_count: blankCount,
-    email_mismatch_count: mismatchCount,
-    sheet_email_also_in_order1: sheetEmailInOrder1Count,
-    sample: results.slice(0, 20)
+    order1_sheet_emails: order1SheetEmails.size,
+    order1_snapshot_emails: order1SnapshotEmails.size,
+    order1_combined_emails: allOrder1Emails.size,
+    order2_total: order2Snapshot.length,
+    dupes_found: dupes.length,
+    clean_count: clean.length,
+    all_dupes: dupes,
+    sample_clean: clean.slice(0, 10)
   });
 });
