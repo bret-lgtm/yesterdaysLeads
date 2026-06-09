@@ -200,6 +200,16 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="orders">
+            <div className="flex justify-end mb-4">
+              <Button
+                variant="outline"
+                className="rounded-xl gap-2"
+                onClick={() => queryClient.invalidateQueries({ queryKey: ['allOrders'] })}
+              >
+                <RefreshCw className="w-4 h-4" />
+                Refresh Orders
+              </Button>
+            </div>
             {ordersLoading ? (
               <div className="space-y-4">
                 {[...Array(5)].map((_, i) => (
