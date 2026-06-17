@@ -314,6 +314,15 @@ export default function Home() {
                 After completing your purchase, you'll be redirected to a confirmation page where you can immediately download your leads in CSV format. You can also access all your past orders anytime from the "My Orders" page in your account.
               </AccordionContent>
             </AccordionItem>
+
+            <AccordionItem value="item-8" className="bg-white rounded-2xl border border-slate-200/60 px-6 shadow-sm">
+              <AccordionTrigger className="text-lg font-semibold text-slate-900 hover:no-underline py-5">
+                Do you offer replacements or refunds on leads?
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-5">
+                All leads are sold "as-is" and all sales are final. We do not offer replacements or refunds on purchased leads. Each lead is phone-verified at the time of entry and priced accordingly based on age. We recommend reviewing available lead details carefully before purchasing.
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
       </section>
