@@ -1,4 +1,7 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 Deno.serve(async (req) => {
   try {
@@ -13,50 +16,44 @@ Deno.serve(async (req) => {
     const order = orders[0];
 
     const snapshot = order.lead_data_snapshot || [];
-    const leadType = (overrideType || snapshot[0]?.lead_type || 'final_expense').toLowerCase();
+    const leadType = (overrideType || snapshot[0]?.lead_type || 'final_expense').toLowerCase().replace(/_/g, ' ');
     const existingIds = new Set(order.leads_purchased || []);
 
-    // Get suppression list
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldIds = new Set(suppressionRecords.map(r => r.lead_id));
 
-    // Fetch sheet
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlesheets');
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
+    // Fetch from aged_leads table in Supabase, paginating like getFilteredLeads
+    const PAGE_SIZE = 1000;
+    let allLeads = [];
+    let offset = 0;
+    while (true) {
+      const params = new URLSearchParams();
+      params.append('select', '*');
+      params.append('lead_type', `ilike.${leadType}`);
+      params.append('limit', String(PAGE_SIZE));
+      params.append('offset', String(offset));
 
-    const sheetIds = {
-      auto: '44023422', home: '1745292620', health: '1305861843',
-      life: '113648240', medicare: '757044649', final_expense: '387991684',
-      veteran_life: '1401332567', retirement: '712013125', annuity: '409761548', recruiting: '1894668336'
-    };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/aged_leads?${params.toString()}`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        }
+      });
 
-    const sheetMap = {
-      '44023422': 'Auto Leads',
-      '113648240': 'Life Leads',
-      '387991684': 'Final Expense Leads',
-      '409761548': 'Annuity Leads',
-      '712013125': 'Retirement Leads',
-      '757044649': 'Medicare Leads',
-      '1305861843': 'Health Leads',
-      '1401332567': 'Veteran Life Leads',
-      '1745292620': 'Home Leads',
-      '1894668336': 'Recruiting Leads'
-    };
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Supabase error: ${res.status} ${text}`);
+      }
 
-    const sheetName = sheetMap[sheetIds[leadType]];
-    if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
+      const page = await res.json();
+      allLeads = allLeads.concat(page);
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
 
-    const range = `'${sheetName}'!A1:Z50000`;
-    const sheetRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const sheetData = await sheetRes.json();
-    const rows = sheetData.values || [];
-    if (rows.length < 2) return Response.json({ error: 'No data in sheet' }, { status: 400 });
-
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
+    console.log(`Fetched ${allLeads.length} ${leadType} leads from aged_leads`);
 
     const getTier = (days) => {
       if (days <= 3) return 'tier1';
@@ -66,12 +63,9 @@ Deno.serve(async (req) => {
       return 'tier5';
     };
 
-    const candidates = dataRows.map((row, index) => {
-      const lead = {};
-      headers.forEach((h, i) => { lead[h.trim().toLowerCase().replace(/\s+/g, '_')] = row[i] || ''; });
-      lead.id = `${leadType}_${index}`;
-      lead.lead_type = leadType;
-
+    const candidates = allLeads.map((lead, index) => {
+      // Calculate age_in_days from external_id (format: YYYYMMDD-...)
+      let age_in_days = 0;
       if (lead.external_id) {
         const dateStr = String(lead.external_id).split('-')[0];
         if (dateStr.length === 8) {
@@ -80,27 +74,26 @@ Deno.serve(async (req) => {
           const day = parseInt(dateStr.substring(6, 8));
           const uploadDate = new Date(year, month, day);
           if (!isNaN(uploadDate.getTime())) {
-            lead.age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+            age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
           }
         }
       }
 
-      const statusVal = String(lead.status || '').trim().toLowerCase();
-      const available = !soldIds.has(lead.id) && !existingIds.has(lead.id) &&
-        (!statusVal || statusVal === 'available' || statusVal === 'undefined');
-      const ageOk = lead.age_in_days >= age_min && lead.age_in_days <= age_max;
+      const leadId = lead.id || `${leadType}_${index}`;
+      const available = !soldIds.has(leadId) && !soldIds.has(lead.external_id) && !existingIds.has(leadId) && !existingIds.has(lead.external_id);
+      const ageOk = age_in_days >= age_min && age_in_days <= age_max;
       const stateOk = allowed_states.length === 0 || allowed_states.includes(lead.state);
-      lead._available = available && ageOk && stateOk;
-      return lead;
+
+      return { ...lead, _id: leadId, age_in_days, _available: available && ageOk && stateOk };
     }).filter(l => l._available);
 
-    console.log(`Found ${candidates.length} candidates (age ${age_min}-${age_max} days, states: ${allowed_states.join(',')})`);
+    console.log(`Found ${candidates.length} candidates (age ${age_min}-${age_max}, states: ${allowed_states.join(',') || 'all'})`);
 
     const needed = count || candidates.length;
     if (candidates.length < needed) {
       return Response.json({
         error: `Not enough leads. Need ${needed}, found ${candidates.length}`,
-        available_preview: candidates.slice(0, 10).map(l => ({ id: l.id, state: l.state, age_in_days: l.age_in_days }))
+        available_preview: candidates.slice(0, 10).map(l => ({ id: l._id, external_id: l.external_id, state: l.state, age_in_days: l.age_in_days }))
       }, { status: 400 });
     }
 
@@ -110,17 +103,17 @@ Deno.serve(async (req) => {
       return Response.json({
         dry_run: true,
         found: candidates.length,
-        would_add: additions.map(l => ({ id: l.id, name: l.first_name, state: l.state, age_in_days: l.age_in_days }))
+        would_add: additions.map(l => ({ id: l._id, external_id: l.external_id, name: l.first_name, state: l.state, age_in_days: l.age_in_days }))
       });
     }
 
     // Build new lists
-    const newLeadIds = [...(order.leads_purchased || []), ...additions.map(l => l.id)];
+    const newLeadIds = [...(order.leads_purchased || []), ...additions.map(l => l._id)];
     const newSnapshot = [...snapshot];
     for (const lead of additions) {
       const snap = { ...lead };
       delete snap._available;
-      snap.lead_id = lead.id;
+      snap.lead_id = lead._id;
       newSnapshot.push(snap);
     }
 
@@ -132,7 +125,7 @@ Deno.serve(async (req) => {
 
     for (const lead of additions) {
       await base44.asServiceRole.entities.LeadSuppression.create({
-        lead_id: lead.id,
+        lead_id: lead._id,
         tier: getTier(lead.age_in_days || 1),
         order_id,
         sale_date: new Date().toISOString()
@@ -142,7 +135,7 @@ Deno.serve(async (req) => {
     return Response.json({
       success: true,
       added_count: additions.length,
-      added_leads: additions.map(l => ({ id: l.id, name: l.first_name, state: l.state, age_in_days: l.age_in_days })),
+      added_leads: additions.map(l => ({ id: l._id, external_id: l.external_id, name: l.first_name, state: l.state, age_in_days: l.age_in_days })),
       total_leads: newLeadIds.length
     });
 
