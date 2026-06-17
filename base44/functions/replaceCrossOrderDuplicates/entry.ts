@@ -1,55 +1,48 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    // duplicate_leads: array of { lead_id, state, age_in_days } to replace
     const { order_id, duplicate_leads, dry_run = true } = await req.json();
-
     if (!order_id || !duplicate_leads?.length) {
       return Response.json({ error: 'order_id and duplicate_leads required' }, { status: 400 });
     }
 
-    // Load order
     const orders = await base44.asServiceRole.entities.Order.filter({ id: order_id });
     if (!orders.length) return Response.json({ error: 'Order not found' }, { status: 404 });
     const order = orders[0];
 
     const duplicateIds = new Set(duplicate_leads.map(d => d.lead_id));
-
-    // Determine lead type from snapshot
     const snapshot = order.lead_data_snapshot || [];
     const leadType = snapshot[0]?.lead_type || 'final_expense';
-    console.log(`Lead type: ${leadType}, replacing ${duplicate_leads.length} leads`);
 
-    // Build a map of dup lead_id -> its age_in_days (from the order snapshot)
+    // Build age map for duplicates
     const dupAgeMap = {};
     for (const s of snapshot) {
       const id = s.lead_id || s.id;
       if (duplicateIds.has(id)) dupAgeMap[id] = s.age_in_days || 0;
     }
-    // Also accept age_in_days passed directly in duplicate_leads
     for (const d of duplicate_leads) {
       if (d.age_in_days != null) dupAgeMap[d.lead_id] = d.age_in_days;
     }
 
-    // Group needed replacements by state
+    // Group needed by state
     const neededByState = {};
     for (const d of duplicate_leads) {
       neededByState[d.state] = (neededByState[d.state] || 0) + 1;
     }
-    console.log('Needed by state:', JSON.stringify(neededByState));
 
     // Get suppression list
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldIds = new Set(suppressionRecords.map(r => r.lead_id));
 
-    // Exclude leads from ALL of this customer's orders (not just the current one)
+    // Exclude all of this customer's leads
     const allCustomerOrders = await base44.asServiceRole.entities.Order.filter({ customer_id: order.customer_id });
     const allCustomerLeadIds = new Set();
     for (const o of allCustomerOrders) {
@@ -57,39 +50,32 @@ Deno.serve(async (req) => {
         if (!duplicateIds.has(lid)) allCustomerLeadIds.add(lid);
       }
     }
-    const keepIds = allCustomerLeadIds;
 
-    // Fetch sheet data using API key
-    const apiKey = Deno.env.get('GOOGLE_API_KEY');
-    const spreadsheetId = Deno.env.get('GOOGLE_SHEET_ID');
-    if (!apiKey) return Response.json({ error: 'GOOGLE_API_KEY not configured' }, { status: 500 });
+    // Fetch from aged_leads in Supabase
+    const PAGE_SIZE = 1000;
+    let allLeads = [];
+    let offset = 0;
+    while (true) {
+      const params = new URLSearchParams();
+      params.append('select', '*');
+      params.append('lead_type', `ilike.${leadType}`);
+      params.append('limit', String(PAGE_SIZE));
+      params.append('offset', String(offset));
 
-    const sheetIds = {
-      auto: '44023422', home: '1745292620', health: '1305861843',
-      life: '113648240', medicare: '757044649', final_expense: '387991684',
-      veteran_life: '1401332567', retirement: '712013125', annuity: '409761548', recruiting: '1894668336'
-    };
-
-    const sheetMap = {
-      '44023422': 'Auto Leads', '113648240': 'Life Leads', '387991684': 'Final Expense Leads',
-      '409761548': 'Annuity Leads', '712013125': 'Retirement Leads', '757044649': 'Medicare Leads',
-      '1305861843': 'Health Leads', '1401332567': 'Veteran Life Leads', '1745292620': 'Home Leads',
-      '1894668336': 'Recruiting Leads'
-    };
-
-    const sheetName = sheetMap[sheetIds[leadType]];
-    if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
-
-    const range = `'${sheetName}'!A1:Z50000`;
-    const sheetRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(range)}?valueRenderOption=UNFORMATTED_VALUE&key=${apiKey}`
-    );
-    const sheetData = await sheetRes.json();
-    const rows = sheetData.values || [];
-    if (rows.length < 2) return Response.json({ error: 'No data in sheet' }, { status: 400 });
-
-    const headers = rows[0];
-    const dataRows = rows.slice(1);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/aged_leads?${params.toString()}`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        }
+      });
+      if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+      const page = await res.json();
+      allLeads = allLeads.concat(page);
+      if (page.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
+    }
 
     const getTier = (days) => {
       if (days <= 3) return 'tier1';
@@ -99,13 +85,9 @@ Deno.serve(async (req) => {
       return 'tier5';
     };
 
-    // Parse all available candidates
-    const candidates = dataRows.map((row, index) => {
-      const lead = {};
-      headers.forEach((h, i) => { lead[h.trim().toLowerCase().replace(/\s+/g, '_')] = row[i] || ''; });
-      lead.id = `${leadType}_${index}`;
-      lead.lead_type = leadType;
-
+    // Parse candidates
+    const candidates = allLeads.map((lead, index) => {
+      let age_in_days = 0;
       if (lead.external_id) {
         const dateStr = String(lead.external_id).split('-')[0];
         if (dateStr.length === 8) {
@@ -114,47 +96,23 @@ Deno.serve(async (req) => {
           const day = parseInt(dateStr.substring(6, 8));
           const uploadDate = new Date(year, month, day);
           if (!isNaN(uploadDate.getTime())) {
-            lead.age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
+            age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
           }
         }
       }
-
-      const statusVal = String(lead.status || '').trim().toLowerCase();
-      lead._available = !soldIds.has(lead.id) && !keepIds.has(lead.id) && !duplicateIds.has(lead.id) &&
-        (!statusVal || statusVal === 'available' || statusVal === 'undefined');
+      lead.age_in_days = age_in_days;
+      lead._id = lead.id;
+      lead._available = !soldIds.has(lead.id) && !soldIds.has(lead.external_id) && !allCustomerLeadIds.has(lead.id) && !duplicateIds.has(lead.id);
       return lead;
     }).filter(l => l._available);
 
-    // Debug: log NJ leads found and their ages
-    const njAll = dataRows.map((row, index) => {
-      const lead = {};
-      headers.forEach((h, i) => { lead[h.trim().toLowerCase().replace(/\s+/g, '_')] = row[i] || ''; });
-      lead.id = `${leadType}_${index}`;
-      if (lead.external_id) {
-        const dateStr = String(lead.external_id).split('-')[0];
-        if (dateStr.length === 8) {
-          const year = parseInt(dateStr.substring(0, 4));
-          const month = parseInt(dateStr.substring(4, 6)) - 1;
-          const day = parseInt(dateStr.substring(6, 8));
-          const uploadDate = new Date(year, month, day);
-          if (!isNaN(uploadDate.getTime())) lead.age_in_days = Math.floor((new Date() - uploadDate) / (1000 * 60 * 60 * 24));
-        }
-      }
-      return lead;
-    }).filter(l => l.state === 'NJ');
-    console.log(`Total NJ rows in sheet: ${njAll.length}`);
-    const njUnsold = njAll.filter(l => !soldIds.has(l.id) && !keepIds.has(l.id) && !duplicateIds.has(l.id));
-    console.log(`NJ unsold/unowned: ${njUnsold.length}`);
-    njUnsold.forEach(l => console.log(`  NJ lead ${l.id}: age=${l.age_in_days}, status=${l.status}`));
-
-    // Group candidates by state
+    // Group by state
     const candidatesByState = {};
     for (const c of candidates) {
       if (!candidatesByState[c.state]) candidatesByState[c.state] = [];
       candidatesByState[c.state].push(c);
     }
 
-    // Pick replacements: match each duplicate's state AND age tier
     const usedCandidateIds = new Set();
     const replacements = [];
     const errors = [];
@@ -163,22 +121,20 @@ Deno.serve(async (req) => {
       const dupAge = dupAgeMap[dup.lead_id] || 0;
       const dupTier = getTier(dupAge);
       const pool = (candidatesByState[dup.state] || []).filter(c => {
-        if (usedCandidateIds.has(c.id)) return false;
+        if (usedCandidateIds.has(c._id)) return false;
         return getTier(c.age_in_days || 0) === dupTier;
       });
 
       if (pool.length === 0) {
-        // Fallback: same state, any age
-        const fallback = (candidatesByState[dup.state] || []).find(c => !usedCandidateIds.has(c.id));
+        const fallback = (candidatesByState[dup.state] || []).find(c => !usedCandidateIds.has(c._id));
         if (!fallback) {
           errors.push(`No replacement found for ${dup.lead_id} (state:${dup.state}, tier:${dupTier})`);
           continue;
         }
-        console.warn(`Tier fallback for ${dup.lead_id}: using age=${fallback.age_in_days} instead of tier ${dupTier}`);
-        usedCandidateIds.add(fallback.id);
+        usedCandidateIds.add(fallback._id);
         replacements.push({ ...fallback, _replacing: dup.lead_id });
       } else {
-        usedCandidateIds.add(pool[0].id);
+        usedCandidateIds.add(pool[0]._id);
         replacements.push({ ...pool[0], _replacing: dup.lead_id });
       }
     }
@@ -191,31 +147,29 @@ Deno.serve(async (req) => {
       return Response.json({
         dry_run: true,
         removing: duplicate_leads,
-        adding: replacements.map(l => ({ id: l.id, name: l.first_name, state: l.state, age_in_days: l.age_in_days })),
+        adding: replacements.map(l => ({ id: l._id, name: l.first_name, state: l.state, age_in_days: l.age_in_days })),
         total_replacing: replacements.length
       });
     }
 
-    // Build new leads_purchased and snapshot
     const newLeadIds = (order.leads_purchased || []).filter(id => !duplicateIds.has(id));
     const newSnapshot = snapshot.filter(s => !duplicateIds.has(s.lead_id || s.id));
 
     for (const lead of replacements) {
       const snap = { ...lead };
       delete snap._available;
-      snap.lead_id = lead.id;
-      newLeadIds.push(lead.id);
+      delete snap._id;
+      snap.lead_id = lead._id;
+      newLeadIds.push(lead._id);
       newSnapshot.push(snap);
     }
 
-    // Update order
     await base44.asServiceRole.entities.Order.update(order_id, {
       leads_purchased: newLeadIds,
       lead_data_snapshot: newSnapshot,
       lead_count: newLeadIds.length
     });
 
-    // Remove old suppression records for the duplicates
     for (const dup of duplicate_leads) {
       const existing = await base44.asServiceRole.entities.LeadSuppression.filter({ lead_id: dup.lead_id, order_id });
       for (const rec of existing) {
@@ -223,25 +177,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Add new suppression records
     for (const lead of replacements) {
       await base44.asServiceRole.entities.LeadSuppression.create({
-        lead_id: lead.id,
+        lead_id: lead._id,
         tier: getTier(lead.age_in_days || 0),
         order_id,
         sale_date: new Date().toISOString()
       });
     }
 
-    console.log(`Successfully replaced ${duplicate_leads.length} cross-order duplicate leads`);
-
     return Response.json({
       success: true,
       replaced_count: duplicate_leads.length,
-      new_leads: replacements.map(l => ({ id: l.id, name: l.first_name, state: l.state })),
+      new_leads: replacements.map(l => ({ id: l._id, name: l.first_name, state: l.state })),
       total_leads: newLeadIds.length
     });
-
   } catch (error) {
     console.error('replaceCrossOrderDuplicates error:', error);
     return Response.json({ error: error.message }, { status: 500 });
