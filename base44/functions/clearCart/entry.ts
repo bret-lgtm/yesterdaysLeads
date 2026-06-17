@@ -12,14 +12,24 @@ Deno.serve(async (req) => {
     // Fetch all cart items for this user
     const items = await base44.asServiceRole.entities.CartItem.filter({ user_email: user.email });
 
-    // Delete in parallel batches of 20 to avoid overwhelming the API
-    const BATCH_SIZE = 20;
-    for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      const batch = items.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map(item => base44.asServiceRole.entities.CartItem.delete(item.id)));
+    // Delete sequentially to avoid rate limiting
+    let deleted = 0;
+    let failed = 0;
+    for (const item of items) {
+      try {
+        await base44.asServiceRole.entities.CartItem.delete(item.id);
+        deleted++;
+      } catch (err) {
+        failed++;
+        console.error(`Failed to delete cart item ${item.id}:`, err.message);
+      }
+      // Small delay between deletes to stay under rate limits
+      if (deleted % 5 === 0) {
+        await new Promise(r => setTimeout(r, 200));
+      }
     }
 
-    return Response.json({ success: true, deleted: items.length });
+    return Response.json({ success: true, deleted, failed });
   } catch (error) {
     console.error('Error clearing cart:', error);
     return Response.json({ error: error.message }, { status: 500 });
