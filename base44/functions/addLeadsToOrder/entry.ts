@@ -6,14 +6,14 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    const { order_id, count, allowed_states = [], age_min = 1, age_max = 3, dry_run = true } = await req.json();
+    const { order_id, count, allowed_states = [], age_min = 1, age_max = 3, dry_run = true, lead_type: overrideType } = await req.json();
 
     const orders = await base44.asServiceRole.entities.Order.filter({ id: order_id });
     if (!orders.length) return Response.json({ error: 'Order not found' }, { status: 404 });
     const order = orders[0];
 
     const snapshot = order.lead_data_snapshot || [];
-    const leadType = (snapshot[0]?.lead_type || 'final_expense').toLowerCase();
+    const leadType = (overrideType || snapshot[0]?.lead_type || 'final_expense').toLowerCase();
     const existingIds = new Set(order.leads_purchased || []);
 
     // Get suppression list
