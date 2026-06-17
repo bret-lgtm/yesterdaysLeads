@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     const order = orders[0];
 
     const snapshot = order.lead_data_snapshot || [];
-    const leadType = snapshot[0]?.lead_type || 'final_expense';
+    const leadType = (snapshot[0]?.lead_type || 'final_expense').toLowerCase();
     const existingIds = new Set(order.leads_purchased || []);
 
     // Get suppression list
@@ -30,13 +30,18 @@ Deno.serve(async (req) => {
       veteran_life: '1401332567', retirement: '712013125', annuity: '409761548', recruiting: '1894668336'
     };
 
-    const sheetMetaRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const sheetMeta = await sheetMetaRes.json();
-    const sheetMap = {};
-    sheetMeta.sheets?.forEach(s => { sheetMap[s.properties.sheetId.toString()] = s.properties.title; });
+    const sheetMap = {
+      '44023422': 'Auto Leads',
+      '113648240': 'Life Leads',
+      '387991684': 'Final Expense Leads',
+      '409761548': 'Annuity Leads',
+      '712013125': 'Retirement Leads',
+      '757044649': 'Medicare Leads',
+      '1305861843': 'Health Leads',
+      '1401332567': 'Veteran Life Leads',
+      '1745292620': 'Home Leads',
+      '1894668336': 'Recruiting Leads'
+    };
 
     const sheetName = sheetMap[sheetIds[leadType]];
     if (!sheetName) return Response.json({ error: `Sheet not found for ${leadType}` }, { status: 400 });
