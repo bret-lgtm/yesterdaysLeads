@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Temp order not found', tempOrderId }, { status: 404 });
       }
 
-      const userEmail = tempOrder.customer_email;
+      const userEmail = tempOrder.customer_email || session.customer_details?.email || session.customer_email;
       const cartItemData = tempOrder.lead_data_snapshot;
 
       console.log('User email:', userEmail);
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       }
 
       // Cross-order duplicate check: remove leads the customer already owns in prior orders
-      const customerEmail = tempOrder.customer_email;
+      const customerEmail = userEmail;
       const priorOrders = await base44.asServiceRole.entities.Order.filter({
         customer_email: customerEmail,
         status: 'completed'
