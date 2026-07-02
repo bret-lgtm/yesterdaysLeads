@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
       let completeLeadData = [];
 
       try {
-        const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { 
+        const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { 
           lead_ids: leadIds
         });
         completeLeadData = sheetsResponse.data.leads || [];
@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
 
         // Update Supabase tier status
         try {
-          const sheetUpdateResponse = await base44.asServiceRole.functions.invoke('updateSheetTierStatus', {
+          const sheetUpdateResponse = await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', {
             lead_id: cartItem.lead_id,
             tier: tier
           });

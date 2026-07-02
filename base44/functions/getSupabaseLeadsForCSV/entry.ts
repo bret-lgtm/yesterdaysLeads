@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       total: allLeads.length
     });
   } catch (error) {
-    console.error('getLeadsFromSheetsForCSV error:', error);
+    console.error('getSupabaseLeadsForCSV error:', error);
     return Response.json({ success: false, error: error.message, leads: [] }, { status: 500 });
   }
 });

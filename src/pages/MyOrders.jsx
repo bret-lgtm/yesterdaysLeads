@@ -59,7 +59,7 @@ export default function MyOrders() {
       }
 
       try {
-        const response = await base44.functions.invoke('getLeadsFromSheetsForCSV', {
+        const response = await base44.functions.invoke('getSupabaseLeadsForCSV', {
           lead_ids: order.leads_purchased
         });
         leadData = response.data.leads;

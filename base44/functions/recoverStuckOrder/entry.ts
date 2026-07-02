@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // Fetch complete lead data
     const leadIds = cartItems.map(item => item.lead_id);
-    const sheetsResponse = await base44.asServiceRole.functions.invoke('getLeadsFromSheetsForCSV', { lead_ids: leadIds });
+    const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { lead_ids: leadIds });
     let completeLeadData = (sheetsResponse.data.leads || []).map(lead => {
       const filtered = {};
       Object.entries(lead).forEach(([key, value]) => {
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
         sale_date: new Date().toISOString()
       });
       try {
-        await base44.asServiceRole.functions.invoke('updateSheetTierStatus', { lead_id: cartItem.lead_id, tier });
+        await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', { lead_id: cartItem.lead_id, tier });
       } catch (_) {}
     }
 

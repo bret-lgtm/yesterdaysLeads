@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
 
     return Response.json({ success: true, leads, total: leads.length });
   } catch (error) {
-    console.error('getLeadsFromSheets error:', error);
+    console.error('getSupabaseLeads error:', error);
     return Response.json({ success: false, error: error.message, leads: [] }, { status: 500 });
   }
 });
