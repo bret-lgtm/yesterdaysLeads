@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (user?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
-    const { order_id, duplicate_leads, target_state, dry_run = true } = await req.json();
+    const { order_id, duplicate_leads, target_state, excluded_states, dry_run = true } = await req.json();
     if (!order_id || !duplicate_leads?.length) {
       return Response.json({ error: 'order_id and duplicate_leads required' }, { status: 400 });
     }
@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
       lead._id = lead.id;
       lead._available = !soldIds.has(lead.id) && !soldIds.has(lead.external_id) && !allCustomerLeadIds.has(lead.id) && !duplicateIds.has(lead.id);
       return lead;
-    }).filter(l => l._available);
+    }).filter(l => l._available)
+      .filter(l => !(excluded_states || []).map(s => String(s).toLowerCase()).includes(String(l.state || '').toLowerCase()));
 
     // Group by state
     const candidatesByState = {};
@@ -118,18 +119,20 @@ Deno.serve(async (req) => {
     const errors = [];
 
     const lookupState = target_state || null;
+    const useAnyState = !lookupState && (excluded_states || []).length > 0;
 
     for (const dup of duplicate_leads) {
       const dupAge = dupAgeMap[dup.lead_id] || 0;
       const dupTier = getTier(dupAge);
       const searchState = lookupState || dup.state;
-      const pool = (candidatesByState[searchState] || []).filter(c => {
+      const basePool = useAnyState ? candidates : (candidatesByState[searchState] || []);
+      const pool = basePool.filter(c => {
         if (usedCandidateIds.has(c._id)) return false;
         return getTier(c.age_in_days || 0) === dupTier;
       });
 
       if (pool.length === 0) {
-        const fallback = (candidatesByState[searchState] || []).find(c => !usedCandidateIds.has(c._id));
+        const fallback = basePool.find(c => !usedCandidateIds.has(c._id));
         if (!fallback) {
           errors.push(`No replacement found for ${dup.lead_id} (state:${searchState}, tier:${dupTier})`);
           continue;
