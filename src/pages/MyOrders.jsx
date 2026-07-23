@@ -9,16 +9,20 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { 
   Package, 
   Download, 
   Calendar, 
   FileText,
   ArrowRight,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 
 export default function MyOrders() {
+  const [downloadingOrderId, setDownloadingOrderId] = React.useState(null);
+
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
     queryFn: async () => {
@@ -44,6 +48,7 @@ export default function MyOrders() {
   });
 
   const downloadCSV = async (order) => {
+    setDownloadingOrderId(order.id);
     let leadData = order.lead_data_snapshot;
 
     // Check if snapshot has corrupted Excel serial dates — if so, force re-fetch from Sheets
@@ -54,7 +59,8 @@ export default function MyOrders() {
     // If no snapshot data, corrupted dates, or snapshot is incomplete, fetch fresh from Supabase
     if (!leadData || leadData.length === 0 || hasCorruptedDates || leadData.length < (order.leads_purchased?.length || 0)) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
-        console.error('No lead IDs available for order:', order.id);
+        toast.error('This order has no leads to download.');
+        setDownloadingOrderId(null);
         return;
       }
 
@@ -62,14 +68,17 @@ export default function MyOrders() {
         const response = await base44.functions.invoke('getSupabaseLeadsForCSV', {
           lead_ids: order.leads_purchased
         });
-        leadData = response.data.leads;
+        leadData = response.data?.leads;
 
         if (!leadData || leadData.length === 0) {
-          console.error('Failed to fetch lead data for order:', order.id);
+          toast.error('Could not retrieve lead data for this order. Please try again or contact support.');
+          setDownloadingOrderId(null);
           return;
         }
       } catch (error) {
         console.error('Error fetching lead data:', error);
+        toast.error('Failed to download CSV. Please try again or contact support.');
+        setDownloadingOrderId(null);
         return;
       }
     }
@@ -140,6 +149,11 @@ export default function MyOrders() {
         setTimeout(() => window.URL.revokeObjectURL(url), 100);
       }, index * 1000);
     });
+
+    // Reset loading state after all staggered downloads have fired
+    const totalDelay = entries.length * 1000 + 500;
+    setTimeout(() => setDownloadingOrderId(null), totalDelay);
+    toast.success(`Downloading ${leadData.length} leads as CSV...`);
   };
 
   return (
@@ -228,11 +242,20 @@ export default function MyOrders() {
                       </div>
                       <Button
                         onClick={() => downloadCSV(order)}
-                        disabled={order.status !== 'completed'}
+                        disabled={order.status !== 'completed' || downloadingOrderId === order.id}
                         className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
                       >
-                        <Download className="w-4 h-4 mr-2" />
-                        CSV
+                        {downloadingOrderId === order.id ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Preparing...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            CSV
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
