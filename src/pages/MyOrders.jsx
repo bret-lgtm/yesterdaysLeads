@@ -51,8 +51,8 @@ export default function MyOrders() {
       typeof lead.date_of_birth === 'number' && lead.date_of_birth > 10000
     );
 
-    // If no snapshot data, or snapshot has corrupted dates, fetch fresh from Google Sheets
-    if (!leadData || leadData.length === 0 || hasCorruptedDates) {
+    // If no snapshot data, corrupted dates, or snapshot is incomplete, fetch fresh from Supabase
+    if (!leadData || leadData.length === 0 || hasCorruptedDates || leadData.length < (order.leads_purchased?.length || 0)) {
       if (!order.leads_purchased || order.leads_purchased.length === 0) {
         console.error('No lead IDs available for order:', order.id);
         return;
