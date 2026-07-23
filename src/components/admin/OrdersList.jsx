@@ -57,10 +57,10 @@ export default function OrdersList({ orders, customers }) {
       }
 
       try {
-        const response = await base44.functions.invoke('getLeadsFromSheetsForCSV', {
+        const response = await base44.functions.invoke('getSupabaseLeadsForCSV', {
           lead_ids: order.leads_purchased
         });
-        leadData = response.data.leads;
+        leadData = response.data?.leads;
 
         if (!leadData || leadData.length === 0) {
           console.error('Failed to fetch lead data for order:', order.id);
