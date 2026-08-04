@@ -15,8 +15,7 @@
         "tier4",
         "tier5",
         "tier6",
-        "tier7",
-        "tier8"
+        "tier7"
       ],
       "description": "The age tier when the lead was sold"
     },

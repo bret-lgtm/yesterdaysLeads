@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
 
     // Map tier name to Supabase column
     // Accepts: 'tier1', 'tier_1', 'tier 1'
-    const tierNum = String(tier).replace(/[^1-8]/g, '');
+    const tierNum = String(tier).replace(/[^1-7]/g, '');
     if (!tierNum) {
       return Response.json({ error: `Invalid tier: ${tier}` }, { status: 400 });
     }

@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const globalSoldLeadIds = new Set(
       suppressionRecords
-        .filter(r => parseInt(String(r.tier).replace('tier', '')) <= 5)
+        .filter(r => parseInt(String(r.tier).replace('tier', '')) <= 4)
         .map(r => r.lead_id)
     );
 
@@ -117,14 +117,14 @@ Deno.serve(async (req) => {
           if (days >= 4 && days <= 14) return 2;
           if (days >= 15 && days <= 30) return 3;
           if (days >= 31 && days <= 90) return 4;
-          if (days >= 91 && days <= 180) return 6;
-          if (days >= 181 && days <= 365) return 7;
-          if (days >= 366) return 8;
-          return 6;
+          if (days >= 91 && days <= 180) return 5;
+          if (days >= 181 && days <= 365) return 6;
+          if (days >= 366) return 7;
+          return 5;
         }
         const _tier = _getTierNum(_age);
         // Tier 6+ leads can be sold unlimited times — only check customer's own purchases
-        if (_tier >= 6) {
+        if (_tier >= 5) {
           return !customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id);
         }
         // Tier 1-5: check global + customer suppression
@@ -154,14 +154,14 @@ Deno.serve(async (req) => {
           if (days >= 4 && days <= 14) return 2;
           if (days >= 15 && days <= 30) return 3;
           if (days >= 31 && days <= 90) return 4;
-          if (days >= 91 && days <= 180) return 6;
-          if (days >= 181 && days <= 365) return 7;
-          if (days >= 366) return 8;
-          return 6;
+          if (days >= 91 && days <= 180) return 5;
+          if (days >= 181 && days <= 365) return 6;
+          if (days >= 366) return 7;
+          return 5;
         }
         const currentTier = getTierNumFromAge(age_in_days);
         // Tier 6+ leads can be sold unlimited times — skip tier-based suppression
-        if (currentTier <= 5) {
+        if (currentTier <= 4) {
           const currentTierSold = lead[`tier_${currentTier}_sold`];
           if (currentTierSold) return null;
         }
@@ -191,7 +191,6 @@ Deno.serve(async (req) => {
           tier_5_sold: lead.tier_5_sold,
           tier_6_sold: lead.tier_6_sold,
           tier_7_sold: lead.tier_7_sold,
-          tier_8_sold: lead.tier_8_sold,
         };
       })
       .filter(Boolean);

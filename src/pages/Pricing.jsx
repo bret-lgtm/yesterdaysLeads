@@ -30,9 +30,9 @@ const tierColumns = [
   { key: 'tier2', label: '4-14 days', min: 4, max: 14, ageParam: '4-14' },
   { key: 'tier3', label: '15-30 days', min: 15, max: 30, ageParam: '15-30' },
   { key: 'tier4', label: '31-90 days', min: 31, max: 90, ageParam: '31-90' },
-  { key: 'tier6', label: '91-180 days', min: 91, max: 180, ageParam: '91-180' },
-  { key: 'tier7', label: '181-365 days', min: 181, max: 365, ageParam: '181-365' },
-  { key: 'tier8', label: '365+ days', min: 366, max: 36500, ageParam: '366%2B' },
+  { key: 'tier5', label: '91-180 days', min: 91, max: 180, ageParam: '91-180' },
+  { key: 'tier6', label: '181-365 days', min: 181, max: 365, ageParam: '181-365' },
+  { key: 'tier7', label: '365+ days', min: 366, max: 36500, ageParam: '366%2B' },
 ];
 
 export default function Pricing() {
