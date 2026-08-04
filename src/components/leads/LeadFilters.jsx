@@ -35,7 +35,9 @@ const AGE_RANGES = [
   { value: "4-14", label: "4-14 Days" },
   { value: "15-30", label: "15-30 Days" },
   { value: "31-90", label: "31-90 Days" },
-  { value: "91+", label: "91+ Days" }
+  { value: "91-180", label: "91-180 Days" },
+  { value: "181-365", label: "181-365 Days" },
+  { value: "366+", label: "366+ Days" }
 ];
 
 export default function LeadFilters({ filters, onChange, onSearch, onReset }) {

@@ -115,7 +115,10 @@ Deno.serve(async (req) => {
           if (days >= 4 && days <= 14) return 2;
           if (days >= 15 && days <= 30) return 3;
           if (days >= 31 && days <= 90) return 4;
-          return 5;
+          if (days >= 91 && days <= 180) return 6;
+          if (days >= 181 && days <= 365) return 7;
+          if (days >= 366) return 8;
+          return 6;
         }
         const currentTier = getTierNumFromAge(age_in_days);
         const currentTierSold = lead[`tier_${currentTier}_sold`];
@@ -144,6 +147,9 @@ Deno.serve(async (req) => {
           tier_3_sold: lead.tier_3_sold,
           tier_4_sold: lead.tier_4_sold,
           tier_5_sold: lead.tier_5_sold,
+          tier_6_sold: lead.tier_6_sold,
+          tier_7_sold: lead.tier_7_sold,
+          tier_8_sold: lead.tier_8_sold,
         };
       })
       .filter(Boolean);
@@ -159,6 +165,9 @@ Deno.serve(async (req) => {
         if (filters.age_range === '15-30') return age >= 15 && age <= 30;
         if (filters.age_range === '31-90') return age >= 31 && age <= 90;
         if (filters.age_range === '91+') return age >= 91;
+        if (filters.age_range === '91-180') return age >= 91 && age <= 180;
+        if (filters.age_range === '181-365') return age >= 181 && age <= 365;
+        if (filters.age_range === '366+') return age >= 366;
         return true;
       });
     }

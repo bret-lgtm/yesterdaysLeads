@@ -167,7 +167,10 @@ Deno.serve(async (req) => {
         if (days >= 4 && days <= 14) return 2;
         if (days >= 15 && days <= 30) return 3;
         if (days >= 31 && days <= 90) return 4;
-        return 5;
+        if (days >= 91 && days <= 180) return 6;
+        if (days >= 181 && days <= 365) return 7;
+        if (days >= 366) return 8;
+        return 6;
       }
       const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
       // Build a set of "lead_id:tier" combinations that are already sold
@@ -320,7 +323,9 @@ Deno.serve(async (req) => {
         if (ageInDays >= 4 && ageInDays <= 14) return 'tier2';
         if (ageInDays >= 15 && ageInDays <= 30) return 'tier3';
         if (ageInDays >= 31 && ageInDays <= 90) return 'tier4';
-        if (ageInDays >= 91) return 'tier5';
+        if (ageInDays >= 91 && ageInDays <= 180) return 'tier6';
+        if (ageInDays >= 181 && ageInDays <= 365) return 'tier7';
+        if (ageInDays >= 366) return 'tier8';
         return 'tier1';
       }
 

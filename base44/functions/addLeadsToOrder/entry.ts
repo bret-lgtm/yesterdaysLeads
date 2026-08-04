@@ -60,7 +60,9 @@ Deno.serve(async (req) => {
       if (days <= 14) return 'tier2';
       if (days <= 30) return 'tier3';
       if (days <= 90) return 'tier4';
-      return 'tier5';
+      if (days <= 180) return 'tier6';
+      if (days <= 365) return 'tier7';
+      return 'tier8';
     };
 
     const candidates = allLeads.map((lead, index) => {
