@@ -64,9 +64,17 @@ Deno.serve(async (req) => {
     }
     console.log(`Fetched ${leads.length} leads from Supabase`);
 
-    // Build suppression set (already-sold lead IDs globally + customer's own purchases)
+    // Build suppression sets
+    // Global: leads sold at tiers 1-5 only (tier 6+ can be sold unlimited times across customers)
     const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
-    const soldLeadIds = new Set(suppressionRecords.map(r => r.lead_id));
+    const globalSoldLeadIds = new Set(
+      suppressionRecords
+        .filter(r => parseInt(String(r.tier).replace('tier', '')) <= 5)
+        .map(r => r.lead_id)
+    );
+
+    // Per-customer: leads this customer already purchased (all tiers — prevents duplicate buys)
+    const customerSoldLeadIds = new Set();
 
     if (user_email) {
       const customers = await base44.asServiceRole.entities.Customer.filter({ email: user_email });
@@ -78,20 +86,51 @@ Deno.serve(async (req) => {
 
       const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: user_email, status: 'completed' });
       for (const order of customerOrders) {
-        // Add row-based lead IDs (legacy)
         for (const lid of (order.leads_purchased || [])) {
-          soldLeadIds.add(lid);
+          customerSoldLeadIds.add(lid);
         }
-        // Also suppress by external_id from snapshot (stable identifier)
         for (const snap of (order.lead_data_snapshot || [])) {
-          if (snap.external_id) soldLeadIds.add(snap.external_id);
+          if (snap.external_id) customerSoldLeadIds.add(snap.external_id);
         }
       }
     }
 
     // Process and filter leads
     let filtered = leads
-      .filter(lead => !soldLeadIds.has(lead.id) && !soldLeadIds.has(lead.external_id))
+      .filter(lead => {
+        // Calculate age to determine current tier
+        let _age = 0;
+        if (lead.external_id) {
+          const dateStr = lead.external_id.split('-')[0];
+          if (dateStr.length === 8) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            const uploadDate = new Date(year, month, day);
+            if (!isNaN(uploadDate.getTime())) {
+              _age = Math.floor((Date.now() - uploadDate) / (1000 * 60 * 60 * 24));
+            }
+          }
+        }
+        function _getTierNum(days) {
+          if (days >= 1 && days <= 3) return 1;
+          if (days >= 4 && days <= 14) return 2;
+          if (days >= 15 && days <= 30) return 3;
+          if (days >= 31 && days <= 90) return 4;
+          if (days >= 91 && days <= 180) return 6;
+          if (days >= 181 && days <= 365) return 7;
+          if (days >= 366) return 8;
+          return 6;
+        }
+        const _tier = _getTierNum(_age);
+        // Tier 6+ leads can be sold unlimited times — only check customer's own purchases
+        if (_tier >= 6) {
+          return !customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id);
+        }
+        // Tier 1-5: check global + customer suppression
+        return (!globalSoldLeadIds.has(lead.id) && !globalSoldLeadIds.has(lead.external_id))
+          && (!customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id));
+      })
       .map(lead => {
         // Calculate age_in_days from external_id (format: YYYYMMDD-...)
         let age_in_days = 0;
@@ -121,8 +160,11 @@ Deno.serve(async (req) => {
           return 6;
         }
         const currentTier = getTierNumFromAge(age_in_days);
-        const currentTierSold = lead[`tier_${currentTier}_sold`];
-        if (currentTierSold) return null;
+        // Tier 6+ leads can be sold unlimited times — skip tier-based suppression
+        if (currentTier <= 5) {
+          const currentTierSold = lead[`tier_${currentTier}_sold`];
+          if (currentTierSold) return null;
+        }
 
         // Obscure last name for browsing
         const last_name_initial = lead.last_name ? String(lead.last_name).charAt(0).toUpperCase() : '';

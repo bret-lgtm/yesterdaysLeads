@@ -177,6 +177,7 @@ Deno.serve(async (req) => {
       const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
       const tierDupes = cartItems.filter(item => {
         const tierNum = getTierNumFromAge(item.age_in_days || 91);
+        if (tierNum >= 6) return false; // Tier 6+ can be sold unlimited times
         const tierKey = `${item.lead_id}:tier${tierNum}`;
         return soldTierKeys.has(tierKey);
       });
