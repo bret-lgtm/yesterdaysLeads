@@ -36,9 +36,16 @@ Deno.serve(async (req) => {
           }
         }
       }
-      const { custom_data, tier_1_sold, tier_2_sold, tier_3_sold, tier_4_sold, tier_5_sold, created_at, ...coreFields } = lead;
+      const { custom_data, created_at, ...coreFields } = lead;
+      // Strip all tier_*_sold fields so pricing tiers never reach the CSV
+      const cleanedCore = {};
+      for (const [key, value] of Object.entries(coreFields)) {
+        if (!/^tier_\d+_sold$/.test(key)) {
+          cleanedCore[key] = value;
+        }
+      }
       return {
-        ...coreFields,
+        ...cleanedCore,
         age_in_days,
         ...(custom_data || {}),
       };
