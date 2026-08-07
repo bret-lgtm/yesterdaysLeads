@@ -49,6 +49,21 @@ export default function CheckoutSuccess() {
           order_id: latestOrder.id
         });
       }
+      if (window.gtag) {
+        window.gtag('event', 'purchase', {
+          transaction_id: latestOrder.id,
+          value: latestOrder.total_price,
+          currency: 'USD',
+          items: [
+            {
+              item_id: latestOrder.id,
+              item_name: 'Lead Order',
+              quantity: latestOrder.lead_count,
+              price: latestOrder.lead_count > 0 ? latestOrder.total_price / latestOrder.lead_count : latestOrder.total_price
+            }
+          ]
+        });
+      }
       setPixelFired(true);
       return;
     }
