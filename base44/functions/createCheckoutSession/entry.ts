@@ -320,6 +320,9 @@ Deno.serve(async (req) => {
       success_url: successUrl,
       cancel_url: cancelUrl,
       customer_email: user?.email || customerEmail,
+      phone_number_collection: {
+        enabled: true
+      },
       client_reference_id: tempOrder.id,
       metadata: {
         base44_app_id: Deno.env.get("BASE44_APP_ID"),
