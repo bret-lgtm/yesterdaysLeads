@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
 
     // Extract customer info from order
     const email = orderData.customer_email;
+    const phone = orderData.customer_phone || null;
     const leadCount = orderData.lead_count;
 
     // Step 1: Get or create contact in HubSpot by email
@@ -34,9 +35,32 @@ Deno.serve(async (req) => {
       const contactData = await searchResponse.json();
       contactId = contactData.id;
       console.log('Found existing contact:', contactId);
+
+      // Update existing contact's phone number if we have one
+      if (phone) {
+        console.log('Updating contact phone:', phone);
+        const updateResponse = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/${contactId}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            properties: { phone }
+          })
+        });
+        if (!updateResponse.ok) {
+          const errorData = await updateResponse.json();
+          console.error('Contact phone update failed:', errorData);
+        } else {
+          console.log('Contact phone updated');
+        }
+      }
     } else if (searchResponse.status === 404) {
       // Create new contact
       console.log('Creating new contact');
+      const createProperties = { email };
+      if (phone) createProperties.phone = phone;
       const createResponse = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
         method: 'POST',
         headers: {
@@ -44,7 +68,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          properties: { email }
+          properties: createProperties
         })
       });
 

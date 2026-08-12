@@ -9,6 +9,10 @@
     "customer_email": {
       "type": "string"
     },
+    "customer_phone": {
+      "type": "string",
+      "description": "Phone number collected at Stripe checkout"
+    },
     "total_price": {
       "type": "number"
     },

@@ -267,6 +267,7 @@ Deno.serve(async (req) => {
       const order = await base44.asServiceRole.entities.Order.create({
         customer_id: customer.id,
         customer_email: userEmail,
+        customer_phone: session.customer_details?.phone || null,
         total_price: session.amount_total / 100, // Convert from cents
         lead_count: cartItems.length,
         stripe_transaction_id: session.payment_intent,
