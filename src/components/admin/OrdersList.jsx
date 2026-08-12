@@ -6,12 +6,33 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { format } from 'date-fns';
 import { motion } from "framer-motion";
-import { FileText, Download, Calendar, Search, ChevronDown, ChevronUp, Shield } from "lucide-react";
+import { FileText, Download, Calendar, Search, ChevronDown, ChevronUp, Shield, XCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function OrdersList({ orders, customers }) {
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [showPending, setShowPending] = useState(false);
   const [expandedDownloads, setExpandedDownloads] = useState({});
+  const [cancellingOrderId, setCancellingOrderId] = useState(null);
+
+  const cancelPendingOrder = async (order) => {
+    if (!confirm(`Cancel pending order #${order.id?.slice(0, 8)} for ${order.customer_email}? This removes it from the customer's account. No charge will occur.`)) {
+      return;
+    }
+    setCancellingOrderId(order.id);
+    try {
+      await base44.functions.invoke('cancelPendingOrder', { order_id: order.id });
+      toast.success('Pending order cancelled.');
+      queryClient.invalidateQueries({ queryKey: ['allOrders'] });
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error(error.data?.error || error.message || 'Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
 
   const customerMap = {};
   customers.forEach(customer => {
@@ -203,7 +224,9 @@ export default function OrdersList({ orders, customers }) {
                     <Badge className={
                       order.status === 'completed' 
                         ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-                        : 'bg-slate-100 text-slate-700 border-slate-200'
+                        : order.status === 'pending' 
+                          ? 'bg-amber-100 text-amber-700 border-amber-200' 
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
                     }>
                       {order.status}
                     </Badge>
@@ -246,14 +269,29 @@ export default function OrdersList({ orders, customers }) {
                     <p className="text-xs text-slate-400 mt-1">Never downloaded</p>
                   )}
                 </div>
-                <Button
-                  onClick={() => downloadCSV(order)}
-                  disabled={order.status !== 'completed'}
-                  className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  CSV
-                </Button>
+                {order.status === 'completed' ? (
+                  <Button
+                    onClick={() => downloadCSV(order)}
+                    className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    CSV
+                  </Button>
+                ) : order.status === 'pending' ? (
+                  <Button
+                    onClick={() => cancelPendingOrder(order)}
+                    disabled={cancellingOrderId === order.id}
+                    variant="outline"
+                    className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  >
+                    {cancellingOrderId === order.id ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <XCircle className="w-4 h-4 mr-2" />
+                    )}
+                    Cancel
+                  </Button>
+                ) : null}
               </div>
             </div>
 

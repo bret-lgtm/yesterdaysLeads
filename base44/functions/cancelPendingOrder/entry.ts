@@ -22,8 +22,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    // Only the order owner can cancel their own pending order
-    if (order.customer_email !== user.email) {
+    // Only the order owner can cancel their own pending order, unless they're an admin
+    const isAdmin = user.role === 'admin';
+    if (order.customer_email !== user.email && !isAdmin) {
       return Response.json({ error: 'You can only cancel your own orders' }, { status: 403 });
     }
 
