@@ -1,6 +1,6 @@
 import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { Card } from "@/components/ui/card";
@@ -17,11 +17,32 @@ import {
   FileText,
   ArrowRight,
   Info,
-  Loader2
+  Loader2,
+  XCircle,
+  Clock
 } from "lucide-react";
 
 export default function MyOrders() {
+  const queryClient = useQueryClient();
   const [downloadingOrderId, setDownloadingOrderId] = React.useState(null);
+  const [cancellingOrderId, setCancellingOrderId] = React.useState(null);
+
+  const cancelPendingOrder = async (order) => {
+    if (!confirm('Cancel this pending order? This will remove it from your account. You will not be charged.')) {
+      return;
+    }
+    setCancellingOrderId(order.id);
+    try {
+      await base44.functions.invoke('cancelPendingOrder', { order_id: order.id });
+      toast.success('Pending order cancelled. You will not be charged.');
+      queryClient.invalidateQueries({ queryKey: ['orders', user?.email] });
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      toast.error(error.data?.error || error.message || 'Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -216,7 +237,9 @@ export default function MyOrders() {
                           <Badge className={
                             order.status === 'completed' 
                               ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                              : order.status === 'pending' 
+                                ? 'bg-amber-100 text-amber-700 border-amber-200' 
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
                           }>
                             {order.status}
                           </Badge>
@@ -228,6 +251,12 @@ export default function MyOrders() {
                           <Calendar className="w-3.5 h-3.5" />
                           {format(new Date(order.created_date), 'MMM d, yyyy • h:mm a')}
                         </div>
+                        {order.status === 'pending' && (
+                          <p className="flex items-center gap-1 text-xs text-amber-600 mt-2">
+                            <Clock className="w-3 h-3" />
+                            Checkout was not completed — you will not be charged.
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -237,26 +266,47 @@ export default function MyOrders() {
                           ${order.total_price?.toFixed(2)}
                         </p>
                         <p className="text-xs text-slate-500">
-                          ${(order.total_price / order.lead_count).toFixed(2)} per lead
+                          {order.lead_count > 0 ? `$${(order.total_price / order.lead_count).toFixed(2)} per lead` : ''}
                         </p>
                       </div>
-                      <Button
-                        onClick={() => downloadCSV(order)}
-                        disabled={order.status !== 'completed' || downloadingOrderId === order.id}
-                        className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
-                      >
-                        {downloadingOrderId === order.id ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Preparing...
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-4 h-4 mr-2" />
-                            CSV
-                          </>
-                        )}
-                      </Button>
+                      {order.status === 'completed' ? (
+                        <Button
+                          onClick={() => downloadCSV(order)}
+                          disabled={downloadingOrderId === order.id}
+                          className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 shadow-md shadow-emerald-500/20 disabled:opacity-50"
+                        >
+                          {downloadingOrderId === order.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Preparing...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              CSV
+                            </>
+                          )}
+                        </Button>
+                      ) : order.status === 'pending' ? (
+                        <Button
+                          onClick={() => cancelPendingOrder(order)}
+                          disabled={cancellingOrderId === order.id}
+                          variant="outline"
+                          className="rounded-xl border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          {cancellingOrderId === order.id ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Cancel
+                            </>
+                          )}
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </Card>
