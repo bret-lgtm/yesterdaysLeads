@@ -94,6 +94,58 @@ Deno.serve(async (req) => {
       }
     }
 
+    // === SERVER-SIDE PRICE RECALCULATION ===
+    // Recalculate every cart item's price from DB PricingTier so checkout always charges
+    // the current pricing-table price, regardless of what was stored in the cart at add-time.
+    const allPricingTiers = await base44.asServiceRole.entities.PricingTier.list('', 100);
+    const DEFAULT_PRICING = {
+      final_expense: [15, 10, 7.5, 5, 2.5, 1.25, 0.75],
+      life: [21, 14, 10, 7, 3.5, 1.75, 1],
+      veteran_life: [14, 9, 7, 5, 2, 1, 0.5],
+      retirement: [29, 19, 14, 9, 4.5, 2.25, 1.25],
+      home: [16, 11, 8, 5.5, 3, 1.5, 0.75],
+      auto: [16, 11, 8, 5.5, 3, 1.5, 0.75],
+      medicare: [15, 10, 7.5, 5, 2.5, 1.25, 0.75],
+      health: [16, 11, 8, 5.5, 3, 1.5, 0.75],
+      annuity: [150, 100, 75, 50, 25, 12.5, 6.25],
+      recruiting: [18, 12, 9, 6, 3, 1.5, 0.75]
+    };
+    function getTierPriceIndex(ageInDays) {
+      if (ageInDays <= 3) return 0;
+      if (ageInDays <= 14) return 1;
+      if (ageInDays <= 30) return 2;
+      if (ageInDays <= 90) return 3;
+      if (ageInDays <= 180) return 4;
+      if (ageInDays <= 365) return 5;
+      return 6;
+    }
+    let priceCorrections = 0;
+    filteredCartItems = filteredCartItems.map(item => {
+      const ageInDays = Math.max(1, item.age_in_days || 1);
+      const customTier = allPricingTiers.find(t =>
+        t.lead_type === item.lead_type &&
+        ageInDays >= t.age_range_min &&
+        ageInDays <= t.age_range_max
+      );
+      let basePrice;
+      if (customTier) {
+        basePrice = customTier.base_price;
+      } else {
+        const typePrices = DEFAULT_PRICING[item.lead_type] || DEFAULT_PRICING.auto;
+        basePrice = typePrices[getTierPriceIndex(ageInDays)];
+      }
+      const isUnknown = String(item.state || '').toLowerCase() === 'unknown';
+      const correctPrice = isUnknown ? Math.round(basePrice * 0.5 * 100) / 100 : basePrice;
+      if (Math.abs((item.price || 0) - correctPrice) > 0.01) {
+        console.warn(`Price correction: ${item.external_id} ${item.lead_type} age=${ageInDays} state=${item.state} cart=$${item.price} -> correct=$${correctPrice}`);
+        priceCorrections++;
+      }
+      return { ...item, price: correctPrice };
+    });
+    if (priceCorrections > 0) {
+      console.warn(`Server-side price recalculation corrected ${priceCorrections} item(s)`);
+    }
+
     // Group cart items by lead_type + price to create consolidated line items (Stripe has a 100 line item limit)
     const lineItemMap = {};
     for (const item of filteredCartItems) {
