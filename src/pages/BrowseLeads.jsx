@@ -162,7 +162,7 @@ export default function BrowseLeads() {
 
   // Bulk add to cart
   const handleBulkAddToCart = async () => {
-    const leadsToAdd = selectedLeads.filter(lead => !cartLeadIds.includes(lead.id));
+    const leadsToAdd = selectedLeads.filter(lead => !cartLeadIds.includes(lead.id) && !addedLeadIdsRef.current.has(lead.id));
     
     console.log('Selected leads:', selectedLeads.length);
     console.log('Leads to add (not in cart):', leadsToAdd.length);
@@ -175,6 +175,7 @@ export default function BrowseLeads() {
     if (user) {
       // Create items one by one for authenticated users (RLS compatibility)
       for (const lead of leadsToAdd) {
+        addedLeadIdsRef.current.add(lead.id);
         await base44.entities.CartItem.create({
           user_email: user.email,
           lead_id: lead.id,
@@ -251,7 +252,7 @@ export default function BrowseLeads() {
       return;
     }
 
-    const availableLeads = sortedLeads.filter(lead => !cartLeadIds.includes(lead.id));
+    const availableLeads = sortedLeads.filter(lead => !cartLeadIds.includes(lead.id) && !addedLeadIdsRef.current.has(lead.id));
     const leadsToAdd = availableLeads.slice(0, qty);
 
     if (leadsToAdd.length === 0) {
@@ -263,6 +264,7 @@ export default function BrowseLeads() {
     try {
       const items = leadsToAdd.map(lead => {
         const age = computeAgeInDays(lead);
+        addedLeadIdsRef.current.add(lead.id);
         return {
           lead_id: lead.id,
           external_id: lead.external_id,
