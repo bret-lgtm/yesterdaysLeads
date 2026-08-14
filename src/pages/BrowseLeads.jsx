@@ -242,6 +242,7 @@ export default function BrowseLeads() {
   };
 
   const [quantityLoading, setQuantityLoading] = useState(false);
+  const addedLeadIdsRef = React.useRef(new Set());
 
   const handleQuantityAddToCart = async () => {
     const qty = parseInt(quantity);

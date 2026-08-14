@@ -93,6 +93,12 @@ Deno.serve(async (req) => {
           if (snap.external_id) customerSoldLeadIds.add(snap.external_id);
         }
       }
+      // Also check Customer.suppression_list — keeps browse filtering in sync with checkout suppression
+      if (customer?.suppression_list) {
+        for (const lid of customer.suppression_list) {
+          customerSoldLeadIds.add(lid);
+        }
+      }
     }
 
     // Process and filter leads
