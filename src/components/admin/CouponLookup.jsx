@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Ticket, RefreshCw, Percent, DollarSign } from "lucide-react";
+import { Search, Ticket, RefreshCw, Percent, DollarSign, Users, ChevronDown, ChevronRight, Mail, Phone, Package } from "lucide-react";
 
 export default function CouponLookup() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [expandedRedemptions, setExpandedRedemptions] = useState(new Set());
 
   // Debounce search input
   React.useEffect(() => {
@@ -45,6 +46,15 @@ export default function CouponLookup() {
     if (coupon.duration === 'repeating') return `For ${coupon.duration_in_months || 1} months`;
     if (coupon.duration === 'forever') return 'Forever';
     return coupon.duration || '—';
+  };
+
+  const toggleRedemptions = (id) => {
+    setExpandedRedemptions(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   return (
@@ -137,6 +147,64 @@ export default function CouponLookup() {
                       </div>
                     </div>
                   </div>
+
+                  {r.redemptions && r.redemptions.length > 0 && (
+                    <div className="mt-3 border-t border-slate-100 pt-3">
+                      <button
+                        onClick={() => toggleRedemptions(r.id)}
+                        className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-emerald-600 transition-colors"
+                      >
+                        {expandedRedemptions.has(r.id) ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        {r.redemptions.length} Redemption{r.redemptions.length !== 1 ? 's' : ''}
+                      </button>
+
+                      {expandedRedemptions.has(r.id) && (
+                        <div className="mt-3 space-y-2">
+                          {r.redemptions.map((red, idx) => (
+                            <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 rounded-xl p-3 text-sm">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium text-slate-900">
+                                    {red.customer_name || 'Unknown'}
+                                  </span>
+                                  {red.customer_email && (
+                                    <span className="flex items-center gap-1 text-slate-500 text-xs">
+                                      <Mail className="w-3 h-3" />
+                                      {red.customer_email}
+                                    </span>
+                                  )}
+                                  {red.customer_phone && (
+                                    <span className="flex items-center gap-1 text-slate-500 text-xs">
+                                      <Phone className="w-3 h-3" />
+                                      {red.customer_phone}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                                  <span>{new Date(red.created).toLocaleDateString()}</span>
+                                  <span className="capitalize">Status: {red.payment_status}</span>
+                                  {red.amount_total != null && (
+                                    <span>${(red.amount_total / 100).toFixed(2)} {red.currency?.toUpperCase()}</span>
+                                  )}
+                                  {red.order_id && (
+                                    <span className="flex items-center gap-1 text-emerald-600">
+                                      <Package className="w-3 h-3" />
+                                      Order: {red.order_id.slice(0, 8)}...
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </Card>
               );
             })}

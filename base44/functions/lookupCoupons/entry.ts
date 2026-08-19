@@ -50,7 +50,91 @@ Deno.serve(async (req) => {
     const couponMap = new Map<string, any>();
     for (const c of allCoupons) couponMap.set(c.id, c);
 
-    // Build promo code records with linked coupon info
+    // Fetch our Order records to cross-reference redemptions with internal orders
+    const orders: any[] = [];
+    try {
+      let hasMoreOrders = true;
+      let skip = 0;
+      while (hasMoreOrders && skip < 500) {
+        const batch = await base44.entities.Order.list('-created_date', 100);
+        orders.push(...batch);
+        hasMoreOrders = batch.length === 100;
+        skip += 100;
+      }
+    } catch (e) {
+      console.error('Error fetching orders for cross-reference:', e.message);
+    }
+    // Map by stripe_transaction_id (checkout session id or payment intent)
+    const orderByTxn = new Map<string, any>();
+    for (const o of orders) {
+      if (o.stripe_transaction_id) orderByTxn.set(o.stripe_transaction_id, o);
+    }
+
+    // For each Order with a payment intent, look up the checkout session by payment_intent
+    // to find which promotion code was used and who redeemed it
+    const redemptionMap = new Map<string, any[]>();
+    try {
+      // Get payment intent IDs from orders (stripe_transaction_id is typically pi_xxx)
+      const paymentIntentIds = orders
+        .map(o => o.stripe_transaction_id)
+        .filter(id => id && id.startsWith('pi_'));
+
+      // Look up checkout sessions by payment_intent in parallel
+      const sessionResults = await Promise.all(
+        paymentIntentIds.slice(0, 200).map(async (piId) => {
+          try {
+            const res = await stripe.checkout.sessions.list({
+              payment_intent: piId,
+              limit: 1,
+              expand: ['data.discounts'],
+            });
+            return res.data[0] || null;
+          } catch (e) {
+            return null;
+          }
+        })
+      );
+
+      // Build a set of redeemed promo IDs for quick lookup
+      const redeemedPromoIds = new Set(allPromos.filter(p => p.times_redeemed > 0).map(p => p.id));
+
+      for (const s of sessionResults) {
+        if (!s) continue;
+        const discounts = s.discounts || [];
+        let promoCodeId: string | null = null;
+
+        if (Array.isArray(discounts)) {
+          for (const d of discounts) {
+            if (d?.promotion_code) {
+              promoCodeId = d.promotion_code;
+              break;
+            }
+          }
+        }
+
+        if (promoCodeId && redeemedPromoIds.has(promoCodeId)) {
+          if (!redemptionMap.has(promoCodeId)) redemptionMap.set(promoCodeId, []);
+          const matchedOrder = orderByTxn.get(s.payment_intent);
+          redemptionMap.get(promoCodeId)!.push({
+            session_id: s.id,
+            customer_email: s.customer_email || s.customer_details?.email || null,
+            customer_name: s.customer_details?.name || null,
+            customer_phone: s.customer_details?.phone || null,
+            amount_total: s.amount_total,
+            currency: s.currency,
+            created: new Date(s.created * 1000).toISOString(),
+            payment_status: s.payment_status,
+            order_id: matchedOrder?.id || null,
+            order_status: matchedOrder?.status || null,
+            lead_count: matchedOrder?.lead_count || null,
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching checkout sessions for redemptions:', e.message);
+    }
+
+    // Build promo code records with linked coupon info and redemptions
     let promoRecords = allPromos.map((p) => {
       const coupon = couponMap.get(p.coupon?.id || p.coupon) || p.coupon;
       return {
@@ -63,6 +147,7 @@ Deno.serve(async (req) => {
         max_redemptions: p.max_redemptions,
         expires_at: p.expires_at ? new Date(p.expires_at * 1000).toISOString() : null,
         customer: p.customer,
+        redemptions: redemptionMap.get(p.id) || [],
         coupon: coupon ? {
           id: coupon.id,
           name: coupon.name,
