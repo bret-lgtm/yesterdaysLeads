@@ -9,6 +9,7 @@ import CSVUploader from '../components/admin/CSVUploader';
 import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
 import OrdersList from '../components/admin/OrdersList';
 import RecoverOrder from '../components/admin/RecoverOrder';
+import CouponLookup from '../components/admin/CouponLookup';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,7 +23,8 @@ import {
   DollarSign,
   Users,
   ShoppingBag,
-  Wrench
+  Wrench,
+  Ticket
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -158,6 +160,10 @@ export default function AdminDashboard() {
               <Wrench className="w-4 h-4 mr-2" />
               Recover
             </TabsTrigger>
+            <TabsTrigger value="coupons" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+              <Ticket className="w-4 h-4 mr-2" />
+              Coupons
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="space-y-6">
@@ -223,6 +229,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="recover">
             <RecoverOrder />
+          </TabsContent>
+
+          <TabsContent value="coupons">
+            <CouponLookup />
           </TabsContent>
         </Tabs>
       </div>
