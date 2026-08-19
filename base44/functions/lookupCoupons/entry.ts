@@ -70,35 +70,44 @@ Deno.serve(async (req) => {
       if (o.stripe_transaction_id) orderByTxn.set(o.stripe_transaction_id, o);
     }
 
-    // For each Order with a payment intent, look up the checkout session by payment_intent
-    // to find which promotion code was used and who redeemed it
+    // List all checkout sessions (without expand for speed), then only expand the ones with discounts
     const redemptionMap = new Map<string, any[]>();
     try {
-      // Get payment intent IDs from orders (stripe_transaction_id is typically pi_xxx)
-      const paymentIntentIds = orders
-        .map(o => o.stripe_transaction_id)
-        .filter(id => id && id.startsWith('pi_'));
+      // Build a set of redeemed promo IDs for quick lookup
+      const redeemedPromoIds = new Set(allPromos.filter(p => p.times_redeemed > 0).map(p => p.id));
 
-      // Look up checkout sessions by payment_intent in parallel
-      const sessionResults = await Promise.all(
-        paymentIntentIds.slice(0, 200).map(async (piId) => {
+      // List sessions without expand (fast), collect those with non-empty discounts
+      let hasMoreSessions = true;
+      let startingAfterSession: string | undefined;
+      const sessionsWithDiscounts: any[] = [];
+      let totalFetched = 0;
+
+      while (hasMoreSessions && totalFetched < 2000) {
+        const params: any = { limit: 100 };
+        if (startingAfterSession) params.starting_after = startingAfterSession;
+        const batch = await stripe.checkout.sessions.list(params);
+        for (const s of batch.data) {
+          if (s.discounts && s.discounts.length > 0) {
+            sessionsWithDiscounts.push(s);
+          }
+        }
+        totalFetched += batch.data.length;
+        hasMoreSessions = batch.has_more;
+        startingAfterSession = batch.data[batch.data.length - 1]?.id;
+      }
+
+      // For sessions with discounts, retrieve with expanded discounts to get promotion_code
+      const expandedSessions = await Promise.all(
+        sessionsWithDiscounts.map(async (s) => {
           try {
-            const res = await stripe.checkout.sessions.list({
-              payment_intent: piId,
-              limit: 1,
-              expand: ['data.discounts'],
-            });
-            return res.data[0] || null;
+            return await stripe.checkout.sessions.retrieve(s.id, { expand: ['discounts'] });
           } catch (e) {
             return null;
           }
         })
       );
 
-      // Build a set of redeemed promo IDs for quick lookup
-      const redeemedPromoIds = new Set(allPromos.filter(p => p.times_redeemed > 0).map(p => p.id));
-
-      for (const s of sessionResults) {
+      for (const s of expandedSessions) {
         if (!s) continue;
         const discounts = s.discounts || [];
         let promoCodeId: string | null = null;
@@ -114,7 +123,7 @@ Deno.serve(async (req) => {
 
         if (promoCodeId && redeemedPromoIds.has(promoCodeId)) {
           if (!redemptionMap.has(promoCodeId)) redemptionMap.set(promoCodeId, []);
-          const matchedOrder = orderByTxn.get(s.payment_intent);
+          const matchedOrder = orderByTxn.get(s.id) || orderByTxn.get(s.payment_intent);
           redemptionMap.get(promoCodeId)!.push({
             session_id: s.id,
             customer_email: s.customer_email || s.customer_details?.email || null,

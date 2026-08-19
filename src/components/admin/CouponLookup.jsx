@@ -66,7 +66,7 @@ export default function CouponLookup() {
             Coupon & Promo Code Lookup
           </h2>
           <p className="text-sm text-slate-500 mt-1">
-            Search Stripe coupons and promotion codes by code, name, or ID.
+            Search Stripe coupons and promotion codes by code, name, or ID. Loads all checkout sessions to find redemptions — may take 30-40 seconds.
           </p>
         </div>
         <Button
