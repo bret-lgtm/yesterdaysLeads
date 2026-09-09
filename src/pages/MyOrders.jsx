@@ -128,10 +128,8 @@ export default function MyOrders() {
           Object.keys(lead).forEach(key => allKeys.add(key));
         });
 
-        // Pin external_id first as the visible reference ID, then all other fields
-        const excludedKeys = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5'];
-        const remainingHeaders = Array.from(allKeys).filter(key => !excludedKeys.includes(key) && key !== 'external_id');
-        const headers = allKeys.has('external_id') ? ['external_id', ...remainingHeaders] : remainingHeaders;
+        const excludedKeys = ['id', 'created_date', 'updated_date', 'created_by', 'created_by_id', 'is_sample', 'external_id', 'tier_1', 'tier_2', 'tier_3', 'tier_4', 'tier_5'];
+        const headers = Array.from(allKeys).filter(key => !excludedKeys.includes(key));
 
         // Convert Excel serial date numbers to YYYY-MM-DD strings
         const excelSerialToDate = (serial) => {
