@@ -19,6 +19,10 @@
     "notes": {
       "type": "string"
     },
+    "hubspot_owner_id": {
+      "type": "string",
+      "description": "HubSpot owner ID used to assign deals created from this rep's referrals"
+    },
     "active": {
       "type": "boolean",
       "default": true

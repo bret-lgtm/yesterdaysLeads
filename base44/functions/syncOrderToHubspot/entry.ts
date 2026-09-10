@@ -90,24 +90,60 @@ Deno.serve(async (req) => {
     const pipelineId = '1076939';
     const closedWonStageId = '1076940';
 
+    // If a referral code is present, look up the sales rep to assign the HubSpot deal owner
+    let hubspotOwnerId = null;
+    if (orderData.referred_by) {
+      try {
+        const reps = await base44.asServiceRole.entities.SalesRep.filter({ referral_code: orderData.referred_by });
+        if (reps.length > 0 && reps[0].hubspot_owner_id) {
+          hubspotOwnerId = reps[0].hubspot_owner_id;
+          console.log('Assigning deal owner from referral code:', orderData.referred_by, 'owner:', hubspotOwnerId);
+        } else {
+          console.log('No HubSpot owner ID on sales rep for referral code:', orderData.referred_by);
+        }
+      } catch (err) {
+        console.warn('SalesRep lookup failed:', err.message);
+      }
+    }
+
     // Step 2: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
     console.log('Creating deal:', dealName);
-    const dealResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
+    const dealProperties = {
+      dealname: dealName,
+      amount: orderData.total_price,
+      dealstage: closedWonStageId,
+      pipeline: pipelineId
+    };
+    if (hubspotOwnerId) {
+      dealProperties.hubspot_owner_id = hubspotOwnerId;
+    }
+    let dealResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        properties: {
-          dealname: dealName,
-          amount: orderData.total_price,
-          dealstage: closedWonStageId,
-          pipeline: pipelineId
-        }
-      })
+      body: JSON.stringify({ properties: dealProperties })
     });
+
+    // If the owner ID is invalid, retry without it so the deal is still created (unassigned)
+    if (!dealResponse.ok && hubspotOwnerId) {
+      let errorBody = await dealResponse.json();
+      const invalidOwner = JSON.stringify(errorBody).includes('INVALID_OWNER_ID');
+      if (invalidOwner) {
+        console.warn('Invalid HubSpot owner ID', hubspotOwnerId, '— retrying deal creation without owner');
+        delete dealProperties.hubspot_owner_id;
+        dealResponse = await fetch('https://api.hubapi.com/crm/v3/objects/deals', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ properties: dealProperties })
+        });
+      }
+    }
 
     if (!dealResponse.ok) {
       const errorData = await dealResponse.json();

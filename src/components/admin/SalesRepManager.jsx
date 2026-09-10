@@ -38,7 +38,7 @@ export default function SalesRepManager({ orders = [] }) {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', email: '', referral_code: '', phone: '', notes: '', active: true });
+  const [form, setForm] = useState({ name: '', email: '', referral_code: '', phone: '', notes: '', hubspot_owner_id: '', active: true });
 
   const { data: reps = [], isLoading } = useQuery({
     queryKey: ['salesReps'],
@@ -46,7 +46,7 @@ export default function SalesRepManager({ orders = [] }) {
   });
 
   const resetForm = () => {
-    setForm({ name: '', email: '', referral_code: '', phone: '', notes: '', active: true });
+    setForm({ name: '', email: '', referral_code: '', phone: '', notes: '', hubspot_owner_id: '', active: true });
     setEditing(null);
     setShowForm(false);
   };
@@ -59,6 +59,7 @@ export default function SalesRepManager({ orders = [] }) {
       referral_code: rep.referral_code || '',
       phone: rep.phone || '',
       notes: rep.notes || '',
+      hubspot_owner_id: rep.hubspot_owner_id || '',
       active: rep.active !== false,
     });
     setShowForm(true);
@@ -86,6 +87,7 @@ export default function SalesRepManager({ orders = [] }) {
         referral_code: code,
         phone: form.phone.trim() || null,
         notes: form.notes.trim() || null,
+        hubspot_owner_id: form.hubspot_owner_id.trim() || null,
         active: form.active,
       };
       if (editing) {
@@ -229,6 +231,16 @@ export default function SalesRepManager({ orders = [] }) {
                   placeholder="Agency, region, commission notes…"
                   className="rounded-xl"
                 />
+              </div>
+              <div className="md:col-span-2">
+                <Label className="mb-1.5">HubSpot Owner ID</Label>
+                <Input
+                  value={form.hubspot_owner_id}
+                  onChange={(e) => setForm({ ...form, hubspot_owner_id: e.target.value })}
+                  placeholder="e.g. 12345678"
+                  className="rounded-xl"
+                />
+                <p className="text-xs text-slate-400 mt-1">Find this in HubSpot under Settings → Users & Teams (the numeric ID). Deals from this rep's referrals are assigned to this owner.</p>
               </div>
             </div>
             <div className="flex gap-2">
