@@ -24,6 +24,8 @@ import {
   Pencil,
 } from 'lucide-react';
 
+const REFERRAL_BASE = 'https://yesterdaysleads.com';
+
 const slugify = (s) =>
   String(s || '')
     .toLowerCase()
@@ -112,7 +114,7 @@ export default function SalesRepManager({ orders = [] }) {
   };
 
   const copyLink = (code) => {
-    const link = `${window.location.origin}/?ref=${code}`;
+    const link = `${REFERRAL_BASE}/?ref=${code}`;
     navigator.clipboard.writeText(link).then(() => toast.success('Referral link copied'));
   };
 
@@ -199,7 +201,7 @@ export default function SalesRepManager({ orders = [] }) {
                   placeholder="john-smith"
                   className="rounded-xl"
                 />
-                <p className="text-xs text-slate-400 mt-1">Link: {window.location.origin}/?ref={slugify(form.referral_code) || 'code'}</p>
+                <p className="text-xs text-slate-400 mt-1">Link: {REFERRAL_BASE}/?ref={slugify(form.referral_code) || 'code'}</p>
               </div>
               <div>
                 <Label className="mb-1.5">Email</Label>
@@ -269,11 +271,11 @@ export default function SalesRepManager({ orders = [] }) {
                     <TableCell><code className="text-sm bg-slate-100 px-2 py-1 rounded">{rep.referral_code}</code></TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-500 truncate max-w-[220px]">{window.location.origin}/?ref={rep.referral_code}</span>
+                        <span className="text-xs text-slate-500 truncate max-w-[220px]">{REFERRAL_BASE}/?ref={rep.referral_code}</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyLink(rep.referral_code)}>
                           <Copy className="w-3.5 h-3.5" />
                         </Button>
-                        <a href={`${window.location.origin}/?ref=${rep.referral_code}`} target="_blank" rel="noreferrer">
+                        <a href={`${REFERRAL_BASE}/?ref=${rep.referral_code}`} target="_blank" rel="noreferrer">
                           <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                         </a>
                       </div>
