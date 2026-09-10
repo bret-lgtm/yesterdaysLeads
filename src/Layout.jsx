@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -31,6 +31,7 @@ import { Toaster } from '@/components/ui/sonner';
 
 export default function Layout({ children }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [localCartCount, setLocalCartCount] = React.useState(0);
   const [showCookieBanner, setShowCookieBanner] = React.useState(
@@ -42,10 +43,11 @@ export default function Layout({ children }) {
     setShowCookieBanner(false);
   };
 
-  // Capture referral code from URL (?ref=) for sales rep attribution
+  // Capture referral code from URL (?ref=) for sales rep attribution.
+  // Re-runs on every navigation so a ref link clicked from within the app still captures.
   React.useEffect(() => {
     captureReferral();
-  }, []);
+  }, [location.search]);
 
   // Facebook Pixel
   React.useEffect(() => {
