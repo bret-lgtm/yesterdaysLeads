@@ -1,0 +1,53 @@
+{
+  "name": "SalesRep",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Sales rep display name"
+    },
+    "email": {
+      "type": "string"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique slug used in ?ref= referral links"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "referral_code"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

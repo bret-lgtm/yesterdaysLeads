@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch(() => null);
 
-    const { cartItems: rawCartItems, customerEmail, couponCode } = await req.json();
+    const { cartItems: rawCartItems, customerEmail, couponCode, referralCode } = await req.json();
 
     if (!rawCartItems || rawCartItems.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
@@ -271,6 +271,7 @@ Deno.serve(async (req) => {
         leads_purchased: leadIds,
         lead_data_snapshot: completeLeadData,
         coupon_code: couponCode || null,
+        referred_by: referralCode || null,
         status: 'completed'
       });
       console.log('Free order created:', freeOrder.id);
@@ -362,6 +363,7 @@ Deno.serve(async (req) => {
       stripe_transaction_id: 'pending',
       leads_purchased: filteredCartItems.map(item => item.lead_id),
       lead_data_snapshot: filteredCartItems,
+      referred_by: referralCode || null,
       status: 'pending'
     });
 

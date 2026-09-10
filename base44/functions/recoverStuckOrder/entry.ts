@@ -134,6 +134,7 @@ Deno.serve(async (req) => {
       leads_purchased: cartItems.map(item => item.lead_id),
       lead_data_snapshot: completeLeadData,
       coupon_code: usedCouponCode,
+      referred_by: tempOrder.referred_by || null,
       status: 'completed',
       download_log: [{ timestamp: new Date().toISOString(), ip: 'server-recovery', user_agent: 'recoverStuckOrder' }]
     });

@@ -10,6 +10,7 @@ import BulkStatusUpdate from '../components/admin/BulkStatusUpdate';
 import OrdersList from '../components/admin/OrdersList';
 import RecoverOrder from '../components/admin/RecoverOrder';
 import CouponLookup from '../components/admin/CouponLookup';
+import SalesRepManager from '../components/admin/SalesRepManager';
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,7 +25,8 @@ import {
   Users,
   ShoppingBag,
   Wrench,
-  Ticket
+  Ticket,
+  UserCheck
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -164,6 +166,10 @@ export default function AdminDashboard() {
               <Ticket className="w-4 h-4 mr-2" />
               Coupons
             </TabsTrigger>
+            <TabsTrigger value="reps" className="rounded-lg data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+              <UserCheck className="w-4 h-4 mr-2" />
+              Sales Reps
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inventory" className="space-y-6">
@@ -233,6 +239,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="coupons">
             <CouponLookup />
+          </TabsContent>
+
+          <TabsContent value="reps">
+            <SalesRepManager orders={orders} />
           </TabsContent>
         </Tabs>
       </div>

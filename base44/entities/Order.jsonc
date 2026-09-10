@@ -40,6 +40,10 @@
       "type": "string",
       "description": "Coupon code used on this order"
     },
+    "referred_by": {
+      "type": "string",
+      "description": "Referral code of the sales rep attributed to this order"
+    },
     "status": {
       "type": "string",
       "enum": [

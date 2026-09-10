@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { useCart } from '../components/useCart';
 import { migrateLocalCartToDatabase } from '../components/cartMigration';
+import { getReferralCode } from '../lib/referralTracking';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +91,8 @@ export default function Checkout() {
     try {
       const response = await base44.functions.invoke('createCheckoutSession', {
         cartItems,
-        customerEmail: user?.email
+        customerEmail: user?.email,
+        referralCode: getReferralCode()
       });
 
       if (response.data.freeOrder) {

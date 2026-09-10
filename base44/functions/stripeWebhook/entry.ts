@@ -107,6 +107,7 @@ Deno.serve(async (req) => {
 
       const userEmail = tempOrder.customer_email || session.customer_details?.email || session.customer_email;
       const cartItemData = tempOrder.lead_data_snapshot;
+      const referredBy = tempOrder.referred_by || null;
 
       console.log('User email:', userEmail);
       console.log('Cart items count:', cartItemData.length);
@@ -274,6 +275,7 @@ Deno.serve(async (req) => {
         leads_purchased: cartItems.map(item => item.lead_id),
         lead_data_snapshot: completeLeadData,
         coupon_code: usedCouponCode,
+        referred_by: referredBy,
         status: 'completed',
         download_log: [{
           timestamp: new Date().toISOString(),

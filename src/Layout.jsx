@@ -25,6 +25,7 @@ import {
   DollarSign
 } from "lucide-react";
 import { migrateLocalCartToDatabase } from './components/cartMigration';
+import { captureReferral } from './lib/referralTracking';
 import ChatWidget from './components/chat/ChatWidget';
 import { Toaster } from '@/components/ui/sonner';
 
@@ -40,6 +41,11 @@ export default function Layout({ children }) {
     localStorage.setItem('cookie_consent', 'accepted');
     setShowCookieBanner(false);
   };
+
+  // Capture referral code from URL (?ref=) for sales rep attribution
+  React.useEffect(() => {
+    captureReferral();
+  }, []);
 
   // Facebook Pixel
   React.useEffect(() => {
