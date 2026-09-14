@@ -216,6 +216,15 @@ Deno.serve(async (req) => {
           full_name: session.customer_details?.name || userEmail,
           suppression_list: []
         });
+      } else {
+        // Keep the customer's name in sync with the latest Stripe checkout name
+        const sessionName = session.customer_details?.name;
+        if (sessionName && sessionName !== customer.full_name) {
+          const oldName = customer.full_name;
+          await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: sessionName });
+          customer.full_name = sessionName;
+          console.log(`Updated customer name from "${oldName}" to "${sessionName}" for ${userEmail}`);
+        }
       }
 
       // Fetch complete lead data from Supabase for CSV snapshot
