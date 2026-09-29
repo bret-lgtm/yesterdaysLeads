@@ -65,17 +65,67 @@ export default function LeadFilters({ filters, onChange, onSearch, onReset }) {
 
         <div className="space-y-2">
           <Label className="text-xs font-medium text-slate-500 uppercase tracking-wide">Lead Age</Label>
-          <Select value={filters.age_range || "all"} onValueChange={(v) => handleChange('age_range', v)}>
-            <SelectTrigger className="h-11 rounded-xl border-slate-200">
-              <SelectValue placeholder="All Ages" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Ages</SelectItem>
-              {AGE_RANGES.map(a => (
-                <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-11 w-full rounded-xl border-slate-200 justify-start font-normal">
+                {filters.age_ranges?.length > 0 ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm">{filters.age_ranges.length} selected</span>
+                    {filters.age_ranges.slice(0, 2).map(ar => {
+                      const label = AGE_RANGES.find(a => a.value === ar)?.label || ar;
+                      return (
+                        <Badge key={ar} variant="secondary" className="text-xs">
+                          {label}
+                        </Badge>
+                      );
+                    })}
+                    {filters.age_ranges.length > 2 && (
+                      <span className="text-xs text-slate-500">+{filters.age_ranges.length - 2}</span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-slate-500">All Ages</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="p-3 border-b">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm">Select Age Ranges</span>
+                  {filters.age_ranges?.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange('age_ranges', [])}
+                      className="h-7 text-xs"
+                    >
+                      Clear all
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="p-3 max-h-64 overflow-y-auto">
+                <div className="space-y-1">
+                  {AGE_RANGES.map(a => (
+                    <label key={a.value} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                      <Checkbox
+                        checked={(filters.age_ranges || []).includes(a.value)}
+                        onCheckedChange={(checked) => {
+                          const selected = filters.age_ranges || [];
+                          if (checked) {
+                            handleChange('age_ranges', [...selected, a.value]);
+                          } else {
+                            handleChange('age_ranges', selected.filter(r => r !== a.value));
+                          }
+                        }}
+                      />
+                      <span className="text-sm">{a.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-2">

@@ -203,19 +203,25 @@ Deno.serve(async (req) => {
 
     console.log(`After suppression filter: ${filtered.length}`);
 
-    // Age range filter
-    if (filters.age_range && filters.age_range !== 'all') {
+    // Age range filter (supports multiple selections)
+    const matchesAgeRange = (age, range) => {
+      if (range === 'yesterday') return age >= 1 && age <= 3;
+      if (range === '4-14') return age >= 4 && age <= 14;
+      if (range === '15-30') return age >= 15 && age <= 30;
+      if (range === '31-90') return age >= 31 && age <= 90;
+      if (range === '91+') return age >= 91;
+      if (range === '91-180') return age >= 91 && age <= 180;
+      if (range === '181-365') return age >= 181 && age <= 365;
+      if (range === '366+') return age >= 366;
+      return false;
+    };
+    const ageRanges = filters.age_ranges && filters.age_ranges.length > 0
+      ? filters.age_ranges
+      : (filters.age_range && filters.age_range !== 'all' ? [filters.age_range] : []);
+    if (ageRanges.length > 0) {
       filtered = filtered.filter(lead => {
         const age = lead.age_in_days || 0;
-        if (filters.age_range === 'yesterday') return age <= 3;
-        if (filters.age_range === '4-14') return age >= 4 && age <= 14;
-        if (filters.age_range === '15-30') return age >= 15 && age <= 30;
-        if (filters.age_range === '31-90') return age >= 31 && age <= 90;
-        if (filters.age_range === '91+') return age >= 91;
-        if (filters.age_range === '91-180') return age >= 91 && age <= 180;
-        if (filters.age_range === '181-365') return age >= 181 && age <= 365;
-        if (filters.age_range === '366+') return age >= 366;
-        return true;
+        return ageRanges.some(r => matchesAgeRange(age, r));
       });
     }
 
