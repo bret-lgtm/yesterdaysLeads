@@ -124,9 +124,8 @@ export const AuthProvider = ({ children }) => {
   };
 
 const navigateToLogin = () => {
-  // Use the environment variable for the auth host to avoid hardcoding.
-  const authHost = import.meta.env.VITE_BASE44_AUTH_URL || 'https://lead-flow-15e8500b.base44.app';
-  window.location.href = `${authHost}/login?from_url=${encodeURIComponent(window.location.origin)}`;
+  // Stay on the current domain (e.g. custom domain) so login doesn't bounce to base44.app
+  window.location.href = `${window.location.origin}/login?from_url=${encodeURIComponent(window.location.origin)}`;
 };
 
   return (
