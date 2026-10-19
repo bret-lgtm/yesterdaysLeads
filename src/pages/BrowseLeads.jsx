@@ -173,11 +173,11 @@ export default function BrowseLeads() {
     }
     
     if (user) {
-      // Create items one by one for authenticated users (RLS compatibility)
-      for (const lead of leadsToAdd) {
+      // Bulk create in batches of 500 with per-batch retry
+      const BATCH_SIZE = 500;
+      const items = leadsToAdd.map(lead => {
         addedLeadIdsRef.current.add(lead.id);
-        await base44.entities.CartItem.create({
-          user_email: user.email,
+        return {
           lead_id: lead.id,
           external_id: lead.external_id,
           lead_type: lead.lead_type,
@@ -186,10 +186,34 @@ export default function BrowseLeads() {
           zip_code: String(lead.zip_code || ''),
           age_in_days: computeAgeInDays(lead),
           price: calculateLeadPrice({...lead, age_in_days: computeAgeInDays(lead)}, pricingTiers)
-        });
+        };
+      });
+      let successCount = 0;
+      let failedCount = 0;
+      for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const batch = items.slice(i, i + BATCH_SIZE).map(item => ({ user_email: user.email, ...item }));
+        try {
+          await base44.entities.CartItem.bulkCreate(batch);
+          successCount += batch.length;
+        } catch (err) {
+          console.error('Bulk batch failed, retrying:', err);
+          await new Promise(r => setTimeout(r, 1000));
+          try {
+            await base44.entities.CartItem.bulkCreate(batch);
+            successCount += batch.length;
+          } catch {
+            failedCount += batch.length;
+            batch.forEach(item => addedLeadIdsRef.current.delete(item.lead_id));
+          }
+        }
+        if (i + BATCH_SIZE < items.length) await new Promise(r => setTimeout(r, 200));
       }
       queryClient.invalidateQueries({ queryKey: ['cart'] });
-      toast.success(`${leadsToAdd.length} leads added to cart`);
+      if (failedCount > 0) {
+        toast.error(`Added ${successCount} of ${items.length} leads. ${failedCount} failed — try adding those again.`);
+      } else {
+        toast.success(`${successCount} leads added to cart`);
+      }
     } else {
       // Batch add to localStorage for anonymous users
       const stored = localStorage.getItem('anonymous_cart');
@@ -278,21 +302,42 @@ export default function BrowseLeads() {
       });
 
       if (user) {
-        // Bulk create in batches of 50 to avoid timeouts
-        const BATCH_SIZE = 50;
+        // Bulk create in batches of 500 (SDK max) with per-batch retry
+        const BATCH_SIZE = 500;
+        let successCount = 0;
+        let failedCount = 0;
         for (let i = 0; i < items.length; i += BATCH_SIZE) {
           const batch = items.slice(i, i + BATCH_SIZE).map(item => ({ user_email: user.email, ...item }));
-          await base44.entities.CartItem.bulkCreate(batch);
+          try {
+            await base44.entities.CartItem.bulkCreate(batch);
+            successCount += batch.length;
+          } catch (err) {
+            console.error('Bulk batch failed, retrying:', err);
+            await new Promise(r => setTimeout(r, 1000));
+            try {
+              await base44.entities.CartItem.bulkCreate(batch);
+              successCount += batch.length;
+            } catch {
+              failedCount += batch.length;
+              batch.forEach(item => addedLeadIdsRef.current.delete(item.lead_id));
+            }
+          }
+          if (i + BATCH_SIZE < items.length) await new Promise(r => setTimeout(r, 200));
         }
         queryClient.invalidateQueries({ queryKey: ['cart'] });
+        if (failedCount > 0) {
+          toast.error(`Added ${successCount} of ${items.length} leads. ${failedCount} failed — try adding those again.`);
+        } else {
+          toast.success(`${successCount} leads added to cart`);
+        }
       } else {
         const stored = localStorage.getItem('anonymous_cart');
         const existingCart = stored ? JSON.parse(stored) : [];
         const newItems = items.map(item => ({ id: `local_${Date.now()}_${Math.random()}`, ...item }));
         localStorage.setItem('anonymous_cart', JSON.stringify([...existingCart, ...newItems]));
         window.dispatchEvent(new Event('cartUpdated'));
+        toast.success(`${leadsToAdd.length} leads added to cart`);
       }
-      toast.success(`${leadsToAdd.length} leads added to cart`);
       setQuantity('');
     } finally {
       setQuantityLoading(false);
