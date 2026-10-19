@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         const typePrices = DEFAULT_PRICING[item.lead_type] || DEFAULT_PRICING.auto;
         basePrice = typePrices[getTierPriceIndex(ageInDays)];
       }
-      const isUnknown = String(item.state || '').toLowerCase() === 'unknown';
+      const isUnknown = String(item.state || '').toLowerCase() === 'unknown' || String(item.city || '').toLowerCase() === 'unknown';
       const correctPrice = isUnknown ? Math.round(basePrice * 0.5 * 100) / 100 : basePrice;
       if (Math.abs((item.price || 0) - correctPrice) > 0.01) {
         console.warn(`Price correction: ${item.external_id} ${item.lead_type} age=${ageInDays} state=${item.state} cart=$${item.price} -> correct=$${correctPrice}`);

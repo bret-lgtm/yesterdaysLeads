@@ -20,6 +20,9 @@
     "lead_name": {
       "type": "string"
     },
+    "city": {
+      "type": "string"
+    },
     "state": {
       "type": "string"
     },

@@ -50,8 +50,8 @@ export function calculateLeadPrice(lead, pricingTiers = []) {
     basePrice = typePrices[getTierPriceIndex(ageInDays)];
   }
 
-  // Apply 50% discount for Unknown location
-  return hasUnknownLocation ? basePrice * 0.5 : basePrice;
+  // Apply 50% discount for Unknown location (rounded to match server-side checkout pricing)
+  return hasUnknownLocation ? Math.round(basePrice * 0.5 * 100) / 100 : basePrice;
 }
 
 export function calculateCartTotal(cartItems, pricingTiers = []) {

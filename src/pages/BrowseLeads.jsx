@@ -182,7 +182,7 @@ export default function BrowseLeads() {
           external_id: lead.external_id,
           lead_type: lead.lead_type,
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-          state: lead.state,
+          city: lead.city, state: lead.state,
           zip_code: String(lead.zip_code || ''),
           age_in_days: computeAgeInDays(lead),
           price: calculateLeadPrice({...lead, age_in_days: computeAgeInDays(lead)}, pricingTiers)
@@ -201,7 +201,7 @@ export default function BrowseLeads() {
         external_id: lead.external_id,
         lead_type: lead.lead_type,
         lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-        state: lead.state,
+        city: lead.city, state: lead.state,
         zip_code: String(lead.zip_code || ''),
         age_in_days: computeAgeInDays(lead),
         price: calculateLeadPrice({...lead, age_in_days: computeAgeInDays(lead)}, pricingTiers)
@@ -270,7 +270,7 @@ export default function BrowseLeads() {
           external_id: lead.external_id,
           lead_type: lead.lead_type,
           lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-          state: lead.state,
+          city: lead.city, state: lead.state,
           zip_code: String(lead.zip_code || ''),
           age_in_days: age,
           price: calculateLeadPrice({...lead, age_in_days: age}, pricingTiers)
@@ -439,7 +439,7 @@ export default function BrowseLeads() {
                       external_id: lead.external_id,
                       lead_type: lead.lead_type,
                       lead_name: `${lead.first_name} ${lead.last_name || lead.last_name_initial || 'Unknown'}.`,
-                      state: lead.state,
+                      city: lead.city, state: lead.state,
                       zip_code: String(lead.zip_code || ''),
                       age_in_days: age,
                       price: computedPrice
