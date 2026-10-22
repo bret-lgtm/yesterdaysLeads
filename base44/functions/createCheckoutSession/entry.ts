@@ -189,6 +189,24 @@ Deno.serve(async (req) => {
     // Calculate subtotal first
     const subtotal = filteredCartItems.reduce((sum, item) => sum + item.price, 0);
 
+    // Add the 3.5% processing fee as its own line item
+    const PROCESSING_FEE_RATE = 0.035;
+    const processingFee = Math.round(subtotal * PROCESSING_FEE_RATE * 100) / 100;
+    if (processingFee > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Processing Fee (3.5%)',
+            description: 'Payment processing fee (3.5%)'
+          },
+          unit_amount: Math.round(processingFee * 100)
+        },
+        quantity: 1
+      });
+      console.log(`Added processing fee line item: $${processingFee} (3.5% of $${subtotal})`);
+    }
+
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
     if (couponCode) {
@@ -224,8 +242,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Calculate final total
+    // Calculate final total (leads only, after discount) and grand total (leads + processing fee)
     const finalTotal = discountInfo ? Math.round((subtotal - discountInfo.amount) * 100) / 100 : subtotal;
+    const grandTotal = Math.round((finalTotal + processingFee) * 100) / 100;
 
     // If total is free, fulfill order directly without Stripe (mirrors webhook flow)
     if (finalTotal <= 0) {
@@ -322,7 +341,9 @@ Deno.serve(async (req) => {
         url: null,
         discountInfo,
         subtotal,
+        processingFee: 0,
         finalTotal,
+        grandTotal: 0,
         freeOrder: true,
         orderId: freeOrder.id
       });
@@ -400,6 +421,8 @@ Deno.serve(async (req) => {
         return Response.json({ 
           sessionId: session.id,
           url: session.url,
+          processingFee,
+          grandTotal,
           warning: 'Coupon code was invalid and was not applied'
         });
       }
@@ -411,7 +434,9 @@ Deno.serve(async (req) => {
       url: session.url,
       discountInfo,
       subtotal,
-      finalTotal
+      processingFee,
+      finalTotal,
+      grandTotal
     });
 
   } catch (error) {

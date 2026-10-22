@@ -66,6 +66,11 @@ export default function Checkout() {
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
 
+  // 3.5% payment processing fee, shown as its own line
+  const PROCESSING_FEE_RATE = 0.035;
+  const processingFee = Math.round(subtotal * PROCESSING_FEE_RATE * 100) / 100;
+  const orderTotal = Math.round((subtotal + processingFee) * 100) / 100;
+
   // Group by lead type, then by age
   const groupedItems = React.useMemo(() => {
     const groups = {};
@@ -311,11 +316,16 @@ export default function Checkout() {
                   <span className="text-slate-900">${subtotal.toFixed(2)}</span>
                 </div>
 
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Processing Fee (3.5%)</span>
+                  <span className="text-slate-900">${processingFee.toFixed(2)}</span>
+                </div>
+
                 <Separator />
 
                 <div className="flex justify-between">
                   <span className="font-medium text-slate-900">Total</span>
-                  <span className="text-2xl font-bold text-slate-900">${subtotal.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-slate-900">${orderTotal.toFixed(2)}</span>
                 </div>
               </div>
 
