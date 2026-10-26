@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
     }
 
     const clientId = Deno.env.get('GOOGLE_OAUTH_CLIENT_ID');
-    const clientSecret = Deno.env.get('GOOGLE_OAUTH_CLIENT_SECRET');
+    const clientSecret = Deno.env.get('google_oauth_client_secret');
     const redirectUri = 'https://yesterdaysleads.com/api/functions/googleAuthCallback';
 
     // Exchange code for tokens

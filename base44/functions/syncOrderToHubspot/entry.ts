@@ -1,11 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { isTrustedCaller } from '../../shared/internalAuth.ts';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
     // Parse request body
-    const { orderData } = await req.json();
+    const { orderData, internal_token } = await req.json();
+
+    // Only our own fulfilment flow (payment webhook / order recovery) or an
+    // admin may create HubSpot contacts and deals.
+    if (!(await isTrustedCaller(base44, { internal_token }))) {
+      console.warn('syncOrderToHubspot: rejected untrusted caller');
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     if (!orderData || !orderData.customer_email) {
       return Response.json({ error: 'Missing order data' }, { status: 400 });

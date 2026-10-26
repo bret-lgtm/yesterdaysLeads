@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { isInternalCaller } from '../../shared/internalAuth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -6,15 +7,42 @@ const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ success: false, error: 'Unauthorized', leads: [] }, { status: 401 });
+    const { lead_ids = [], internal_token } = await req.json().catch(() => ({}));
 
-    const { lead_ids = [] } = await req.json();
+    // Internal fulfilment calls (payment webhook, checkout, recovery) carry the
+    // internal token; admins use the dashboard; everyone else is a customer.
+    const internal = isInternalCaller({ internal_token });
+    const user = internal ? null : await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    if (!internal && !user) {
+      return Response.json({ success: false, error: 'Unauthorized', leads: [] }, { status: 401 });
+    }
+
     if (!lead_ids || lead_ids.length === 0) {
       return Response.json({ success: false, error: 'No lead IDs provided', leads: [] });
     }
 
-    const uniqueLeadIds = [...new Set(lead_ids)];
+    let uniqueLeadIds = [...new Set(lead_ids)];
+
+    // A customer may only pull the full records of leads they actually bought.
+    if (!internal && user.role !== 'admin') {
+      const ownOrders = await base44.entities.Order.filter({
+        customer_email: user.email,
+        status: { $in: ['completed', 'processing'] }
+      });
+      const owned = new Set();
+      for (const order of ownOrders) {
+        (order.leads_purchased || []).forEach(id => owned.add(id));
+        (order.lead_data_snapshot || []).forEach(snap => {
+          if (snap?.id) owned.add(snap.id);
+          if (snap?.external_id) owned.add(snap.external_id);
+        });
+      }
+      uniqueLeadIds = uniqueLeadIds.filter(id => owned.has(id));
+      if (uniqueLeadIds.length === 0) {
+        console.warn(`getSupabaseLeadsForCSV denied for ${user.email}: no matching purchases`);
+        return Response.json({ success: false, error: 'Forbidden', leads: [] }, { status: 403 });
+      }
+    }
 
     // Separate UUID IDs (query by id) from non-UUID IDs (query by external_id).
     // A single non-UUID in an id=in.(...) batch causes PostgREST to reject the entire query.

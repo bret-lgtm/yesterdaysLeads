@@ -209,6 +209,8 @@ Deno.serve(async (req) => {
 
     // Validate and get discount info if coupon code provided
     let discountInfo = null;
+    let promoRedemptions = 0;
+    let promoMaxRedemptions = null;
     if (couponCode) {
       try {
         // Look up promotion codes by coupon code name
@@ -221,6 +223,8 @@ Deno.serve(async (req) => {
         if (promos.data.length > 0) {
           const promo = promos.data[0];
           const coupon = promo.coupon;
+          promoRedemptions = promo.times_redeemed || 0;
+          promoMaxRedemptions = promo.max_redemptions || null;
           
           if (coupon.percent_off) {
             discountInfo = {
@@ -251,10 +255,24 @@ Deno.serve(async (req) => {
       const freeEmail = user?.email || customerEmail;
       const leadIds = filteredCartItems.map(item => item.lead_id);
 
+      // A fully discounted order never reaches Stripe, so Stripe records no
+      // redemption against the promotion code. Enforce its limits here, before
+      // any leads are handed over.
+      const couponKey = couponCode ? String(couponCode).toUpperCase() : null;
+      if (couponKey) {
+        const priorUses = await base44.asServiceRole.entities.Order.filter({ coupon_code: couponKey, status: 'completed' });
+        const usedBySameEmail = priorUses.some(o => (o.customer_email || '').toLowerCase() === String(freeEmail || '').toLowerCase());
+        const maxedOut = !!promoMaxRedemptions && promoRedemptions >= promoMaxRedemptions;
+        if (usedBySameEmail || maxedOut) {
+          console.warn(`Free order blocked: coupon ${couponKey} already used (email=${freeEmail}, prior orders=${priorUses.length}, redemptions=${promoRedemptions}/${promoMaxRedemptions})`);
+          return Response.json({ error: 'This coupon code has already been used.' }, { status: 400 });
+        }
+      }
+
       // Fetch full lead data from Supabase
       let completeLeadData = [];
       try {
-        const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { lead_ids: leadIds });
+        const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { lead_ids: leadIds, internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN') });
         completeLeadData = (sheetsResponse.data.leads || []).map(lead => {
           const filtered = {};
           Object.entries(lead).forEach(([key, value]) => {
@@ -289,7 +307,7 @@ Deno.serve(async (req) => {
         stripe_transaction_id: 'free_order',
         leads_purchased: leadIds,
         lead_data_snapshot: completeLeadData,
-        coupon_code: couponCode || null,
+        coupon_code: couponKey || null,
         referred_by: referralCode || null,
         status: 'completed'
       });
@@ -316,7 +334,8 @@ Deno.serve(async (req) => {
         try {
           await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', {
             lead_id: item.lead_id,
-            tier: getTierFromAge(item.age_in_days || 1)
+            tier: getTierFromAge(item.age_in_days || 1),
+            internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
           });
         } catch (err) {
           console.error(`Free order: sheet update failed for ${item.lead_id}:`, err.message);

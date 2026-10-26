@@ -4,7 +4,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,7 +23,18 @@ Deno.serve(async (req) => {
       || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
-    const order = await base44.asServiceRole.entities.Order.get(order_id);
+    const order = await base44.asServiceRole.entities.Order.get(order_id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
+    if (!order) {
+      return Response.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // Only the customer who owns the order (or an admin) may touch its download log.
+    const ownsOrder = (order.customer_email || '').toLowerCase() === (user.email || '').toLowerCase();
+    if (user.role !== 'admin' && !ownsOrder) {
+      console.warn(`logDownload denied for ${user.email} on order ${order_id}`);
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const existingLog = order.download_log || [];
 
     await base44.asServiceRole.entities.Order.update(order_id, {

@@ -233,7 +233,8 @@ Deno.serve(async (req) => {
 
       try {
         const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { 
-          lead_ids: leadIds
+          lead_ids: leadIds,
+          internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
         });
         completeLeadData = sheetsResponse.data.leads || [];
 
@@ -311,7 +312,8 @@ Deno.serve(async (req) => {
       // Sync to HubSpot
       try {
         await base44.asServiceRole.functions.invoke('syncOrderToHubspot', {
-          orderData: order
+          orderData: order,
+          internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
         });
       } catch (hubspotError) {
         console.error('Failed to sync to HubSpot:', hubspotError);
@@ -355,7 +357,8 @@ Deno.serve(async (req) => {
         try {
           const sheetUpdateResponse = await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', {
             lead_id: cartItem.lead_id,
-            tier: tier
+            tier: tier,
+            internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
           });
           console.log(`Tier update response for ${cartItem.lead_id} (${tier}):`, JSON.stringify(sheetUpdateResponse.data));
           if (!sheetUpdateResponse.data?.success) {

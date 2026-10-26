@@ -6,8 +6,13 @@ const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ success: false, error: 'Unauthorized', leads: [] }, { status: 401 });
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+
+    // Full lead records (contact details included) are internal only.
+    if (user?.role !== 'admin') {
+      console.warn(`getSupabaseLeads denied for ${user?.email || 'anonymous'}`);
+      return Response.json({ success: false, error: 'Forbidden', leads: [] }, { status: 403 });
+    }
 
     const { filters = {}, include_last_names = false } = await req.json();
 

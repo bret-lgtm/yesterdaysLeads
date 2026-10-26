@@ -1,13 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { isTrustedCaller } from '../../shared/internalAuth.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 Deno.serve(async (req) => {
   try {
-    createClientFromRequest(req); // auth context
+    const base44 = createClientFromRequest(req);
 
-    const { lead_id, tier } = await req.json();
+    const { lead_id, tier, internal_token } = await req.json();
+
+    // Only our own fulfilment flow (which sends the internal token) or an admin
+    // may mark inventory as sold.
+    if (!(await isTrustedCaller(base44, { internal_token }))) {
+      console.warn('[updateSupabaseTierStatus] Rejected untrusted caller');
+      return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
     console.log(`[updateSupabaseTierStatus] lead_id: ${lead_id}, tier: ${tier}`);
 

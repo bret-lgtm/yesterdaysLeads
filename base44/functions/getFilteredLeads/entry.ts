@@ -24,6 +24,8 @@ const supabase = async (path, options = {}) => {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
+    const isGuest = !user;
     const { filters = {}, user_email } = await req.json();
 
     // Build Supabase query params
@@ -175,21 +177,29 @@ Deno.serve(async (req) => {
         // Obscure last name for browsing
         const last_name_initial = lead.last_name ? String(lead.last_name).charAt(0).toUpperCase() : '';
 
+        // Lead contact details ARE the product. Anyone may browse, but the public
+        // feed never returns email, phone, date of birth or a postal address.
+        const customData = {};
+        for (const [key, value] of Object.entries(lead.custom_data || {})) {
+          const isContactField = /(address|street|dob|birth|ssn|email|phone|mobile)/i.test(key);
+          if (!isGuest || !isContactField) customData[key] = value;
+        }
+
         return {
           id: lead.id,
           external_id: lead.external_id,
           first_name: lead.first_name,
           last_name_initial,
-          email: lead.email,
-          phone: lead.phone,
-          date_of_birth: lead.date_of_birth,
+          email: isGuest ? null : lead.email,
+          phone: isGuest ? null : lead.phone,
+          date_of_birth: isGuest ? null : lead.date_of_birth,
           city: lead.city,
           state: lead.state,
           zip_code: lead.zip_code,
           lead_type: lead.lead_type?.toLowerCase().replace(/\s+/g, '_'),
           age_in_days,
           // Spread custom_data fields for UI compatibility
-          ...(lead.custom_data || {}),
+          ...customData,
           tier_1_sold: lead.tier_1_sold,
           tier_2_sold: lead.tier_2_sold,
           tier_3_sold: lead.tier_3_sold,

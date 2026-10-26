@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // Fetch complete lead data
     const leadIds = cartItems.map(item => item.lead_id);
-    const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { lead_ids: leadIds });
+    const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { lead_ids: leadIds, internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN') });
     let completeLeadData = (sheetsResponse.data.leads || []).map(lead => {
       const filtered = {};
       Object.entries(lead).forEach(([key, value]) => {
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
 
     // Sync to HubSpot
     try {
-      await base44.asServiceRole.functions.invoke('syncOrderToHubspot', { orderData: order });
+      await base44.asServiceRole.functions.invoke('syncOrderToHubspot', { orderData: order, internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN') });
     } catch (_) {}
 
     // Update customer suppression list
@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
         sale_date: new Date().toISOString()
       });
       try {
-        await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', { lead_id: cartItem.lead_id, tier });
+        await base44.asServiceRole.functions.invoke('updateSupabaseTierStatus', { lead_id: cartItem.lead_id, tier, internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN') });
       } catch (_) {}
     }
 
