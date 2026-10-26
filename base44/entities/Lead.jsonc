@@ -75,16 +75,9 @@
       }
     },
     "read": {
-      "$or": [
-        {
-          "data.status": "available"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
       "user_condition": {
