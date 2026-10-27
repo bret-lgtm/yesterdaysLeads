@@ -12,16 +12,33 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), { apiVersion: '2023-10-16' });
 
-    // Find the Stripe checkout session by client_reference_id
-    const sessions = await stripe.checkout.sessions.list({ limit: 100 });
-    const session = sessions.data.find(s => s.client_reference_id === order_id || s.metadata?.temp_order_id === order_id);
+    const tempOrder = await base44.asServiceRole.entities.Order.get(order_id).catch((e) => (e.status === 404 ? null : Promise.reject(e)));
+    if (!tempOrder) return Response.json({ error: 'Order not found' }, { status: 404 });
+
+    // Find the Stripe checkout session for this order. Stuck orders can be many days
+    // old, so they are nowhere near the most recent page of sessions: page through
+    // the window around the order's creation date instead.
+    const orderCreatedMs = new Date(tempOrder.created_date).getTime();
+    const createdRange = {
+      gte: Math.floor((orderCreatedMs - 60 * 60 * 1000) / 1000),
+      lte: Math.floor((orderCreatedMs + 48 * 60 * 60 * 1000) / 1000)
+    };
+    let session = null;
+    let startingAfter = null;
+    for (let page = 0; page < 10 && !session; page++) {
+      const listParams = { limit: 100, created: createdRange };
+      if (startingAfter) listParams.starting_after = startingAfter;
+      const batch = await stripe.checkout.sessions.list(listParams);
+      session = batch.data.find(s => s.client_reference_id === order_id || s.metadata?.temp_order_id === order_id) || null;
+      if (!batch.has_more || batch.data.length === 0) break;
+      startingAfter = batch.data[batch.data.length - 1].id;
+    }
     if (!session) return Response.json({ error: 'No Stripe session found for this order' }, { status: 404 });
 
     if (session.payment_status !== 'paid') {
       return Response.json({ error: `Session payment status is ${session.payment_status}, not paid` }, { status: 400 });
     }
 
-    const tempOrder = await base44.asServiceRole.entities.Order.get(order_id);
     const userEmail = tempOrder.customer_email || session.customer_details?.email || session.customer_email;
     if (!userEmail) return Response.json({ error: 'No customer email found in order or Stripe session' }, { status: 400 });
 
