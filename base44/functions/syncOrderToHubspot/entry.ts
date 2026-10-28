@@ -117,9 +117,16 @@ Deno.serve(async (req) => {
     // Step 2: Create a deal
     const dealName = `Yesterday's Leads - ${leadCount} Lead${leadCount !== 1 ? 's' : ''}`;
     console.log('Creating deal:', dealName);
+    // The order total includes the 3.5% card processing fee that checkout adds as its
+    // own line item. Back it out so the deal reflects lead revenue only.
+    const PROCESSING_FEE_RATE = 0.035;
+    const orderTotal = Number(orderData.total_price) || 0;
+    const dealAmount = Math.round((orderTotal / (1 + PROCESSING_FEE_RATE)) * 100) / 100;
+    console.log(`Deal amount excluding ${PROCESSING_FEE_RATE * 100}% fee: $${dealAmount} (order total $${orderTotal})`);
+
     const dealProperties = {
       dealname: dealName,
-      amount: orderData.total_price,
+      amount: dealAmount,
       dealstage: closedWonStageId,
       pipeline: pipelineId
     };
