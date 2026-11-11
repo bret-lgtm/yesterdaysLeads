@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
     const PROCESSING_FEE_RATE = 0.035;
     const orderTotal = Number(orderData.total_price) || 0;
     const dealAmount = Math.round((orderTotal / (1 + PROCESSING_FEE_RATE)) * 100) / 100;
-    console.log(`Deal amount excluding ${PROCESSING_FEE_RATE * 100}% fee: $${dealAmount} (order total $${orderTotal})`);
+    console.log(`syncOrderToHubspot v2: deal amount excluding ${PROCESSING_FEE_RATE * 100}% fee = $${dealAmount} (order total $${orderTotal})`);
 
     const dealProperties = {
       dealname: dealName,
