@@ -94,6 +94,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Inventory check: drop cart items whose lead no longer exists in live inventory.
+    // Stale carts (e.g. an old anonymous cart migrated in at sign-in) can reference leads
+    // that were sold or removed — those must never be charged for.
+    try {
+      const inventoryRes = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', {
+        lead_ids: filteredCartItems.map(i => i.lead_id),
+        internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
+      });
+      const foundIds = new Set((inventoryRes?.data?.leads || []).map(l => l.id).filter(Boolean));
+      if (foundIds.size > 0) {
+        const missing = filteredCartItems.filter(i => !foundIds.has(i.lead_id));
+        if (missing.length > 0) {
+          console.warn(`Inventory check removed ${missing.length} unavailable lead(s): ${missing.map(i => i.lead_id).join(', ')}`);
+          filteredCartItems = filteredCartItems.filter(i => foundIds.has(i.lead_id));
+        }
+      } else {
+        console.warn('Inventory check returned no matches — skipping filter');
+      }
+    } catch (err) {
+      console.warn('Inventory check failed, continuing with cart:', err.message);
+    }
+    if (filteredCartItems.length === 0) {
+      return Response.json({ error: 'The leads in your cart are no longer available. Please browse for new leads and try again.' }, { status: 400 });
+    }
+
     // === SERVER-SIDE PRICE RECALCULATION ===
     // Recalculate every cart item's price from DB PricingTier so checkout always charges
     // the current pricing-table price, regardless of what was stored in the cart at add-time.
