@@ -277,19 +277,26 @@ Deno.serve(async (req) => {
 
     // If total is free, fulfill order directly without Stripe (mirrors webhook flow)
     if (finalTotal <= 0) {
-      const freeEmail = user?.email || customerEmail;
+      // A fully discounted order never reaches Stripe, so no signed-in identity is
+      // verified there. Require a real session before any lead data is handed over,
+      // otherwise a caller could cycle through arbitrary email addresses.
+      if (!user?.email) {
+        return Response.json({ error: 'Please sign in to redeem this coupon code.' }, { status: 401 });
+      }
+      const freeEmail = user.email;
       const leadIds = filteredCartItems.map(item => item.lead_id);
 
-      // A fully discounted order never reaches Stripe, so Stripe records no
-      // redemption against the promotion code. Enforce its limits here, before
-      // any leads are handed over.
+      // Because the order never reaches Stripe, Stripe records no redemption against
+      // the promotion code and times_redeemed stays 0 forever. Enforce the limit from
+      // our own order data instead, counting every customer, so the free path cannot
+      // be replayed.
       const couponKey = couponCode ? String(couponCode).toUpperCase() : null;
       if (couponKey) {
         const priorUses = await base44.asServiceRole.entities.Order.filter({ coupon_code: couponKey, status: 'completed' });
-        const usedBySameEmail = priorUses.some(o => (o.customer_email || '').toLowerCase() === String(freeEmail || '').toLowerCase());
-        const maxedOut = !!promoMaxRedemptions && promoRedemptions >= promoMaxRedemptions;
-        if (usedBySameEmail || maxedOut) {
-          console.warn(`Free order blocked: coupon ${couponKey} already used (email=${freeEmail}, prior orders=${priorUses.length}, redemptions=${promoRedemptions}/${promoMaxRedemptions})`);
+        const allowedUses = promoMaxRedemptions || 1;
+        const usedBySameEmail = priorUses.some(o => (o.customer_email || '').toLowerCase() === String(freeEmail).toLowerCase());
+        if (usedBySameEmail || priorUses.length >= allowedUses) {
+          console.warn(`Free order blocked: coupon ${couponKey} limit reached (email=${freeEmail}, prior orders=${priorUses.length}, allowed=${allowedUses}, stripe redemptions=${promoRedemptions}/${promoMaxRedemptions})`);
           return Response.json({ error: 'This coupon code has already been used.' }, { status: 400 });
         }
       }

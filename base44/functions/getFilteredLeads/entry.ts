@@ -25,8 +25,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    const isGuest = !user;
     const { filters = {}, user_email } = await req.json();
+
+    // Suppression and block checks must use the verified session, never a
+    // caller-supplied address.
+    const viewerEmail = user?.email || user_email || null;
+    console.log(`Lead browse requested by ${user ? 'signed-in user' : 'guest'}`);
 
     // Build Supabase query params
     const params = new URLSearchParams();
@@ -78,15 +82,15 @@ Deno.serve(async (req) => {
     // Per-customer: leads this customer already purchased (all tiers — prevents duplicate buys)
     const customerSoldLeadIds = new Set();
 
-    if (user_email) {
-      const customers = await base44.asServiceRole.entities.Customer.filter({ email: user_email });
+    if (viewerEmail) {
+      const customers = await base44.asServiceRole.entities.Customer.filter({ email: viewerEmail });
       const customer = customers[0];
       if (customer?.is_blocked) {
-        console.warn(`Blocked customer attempted to browse leads: ${user_email}`);
+        console.warn(`Blocked customer attempted to browse leads: ${viewerEmail}`);
         return Response.json({ leads: [], total: 0, blocked: true });
       }
 
-      const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: user_email, status: 'completed' });
+      const customerOrders = await base44.asServiceRole.entities.Order.filter({ customer_email: viewerEmail, status: 'completed' });
       for (const order of customerOrders) {
         for (const lid of (order.leads_purchased || [])) {
           customerSoldLeadIds.add(lid);
@@ -177,12 +181,13 @@ Deno.serve(async (req) => {
         // Obscure last name for browsing
         const last_name_initial = lead.last_name ? String(lead.last_name).charAt(0).toUpperCase() : '';
 
-        // Lead contact details ARE the product. Anyone may browse, but the public
-        // feed never returns email, phone, date of birth or a postal address.
+        // Lead contact details ARE the product. Browsing never returns email, phone,
+        // date of birth or a postal address — signed in or not. Full contact data is
+        // only released through the purchase-scoped CSV export.
         const customData = {};
         for (const [key, value] of Object.entries(lead.custom_data || {})) {
           const isContactField = /(address|street|dob|birth|ssn|email|phone|mobile)/i.test(key);
-          if (!isGuest || !isContactField) customData[key] = value;
+          if (!isContactField) customData[key] = value;
         }
 
         return {
@@ -190,9 +195,9 @@ Deno.serve(async (req) => {
           external_id: lead.external_id,
           first_name: lead.first_name,
           last_name_initial,
-          email: isGuest ? null : lead.email,
-          phone: isGuest ? null : lead.phone,
-          date_of_birth: isGuest ? null : lead.date_of_birth,
+          email: null,
+          phone: null,
+          date_of_birth: null,
           city: lead.city,
           state: lead.state,
           zip_code: lead.zip_code,
