@@ -453,6 +453,7 @@ Deno.serve(async (req) => {
     };
 
     let session;
+    let couponWarning = null;
     try {
       session = await stripe.checkout.sessions.create(checkoutConfig);
     } catch (stripeError) {
@@ -461,16 +462,18 @@ Deno.serve(async (req) => {
         console.error('Coupon validation failed:', couponCode);
         delete checkoutConfig.discounts;
         session = await stripe.checkout.sessions.create(checkoutConfig);
-        // Return success but notify about invalid coupon
-        return Response.json({ 
-          sessionId: session.id,
-          url: session.url,
-          processingFee,
-          grandTotal,
-          warning: 'Coupon code was invalid and was not applied'
-        });
+        couponWarning = 'Coupon code was invalid and was not applied';
+      } else {
+        throw stripeError;
       }
-      throw stripeError;
+    }
+
+    // Store the session on the pending order so cancelling the order can expire the
+    // session, and a paid session can always be traced back to its order.
+    try {
+      await base44.asServiceRole.entities.Order.update(tempOrder.id, { stripe_session_id: session.id });
+    } catch (err) {
+      console.warn('Could not store session id on pending order:', err.message);
     }
 
     return Response.json({ 
@@ -480,7 +483,8 @@ Deno.serve(async (req) => {
       subtotal,
       processingFee,
       finalTotal,
-      grandTotal
+      grandTotal,
+      ...(couponWarning ? { warning: couponWarning } : {})
     });
 
   } catch (error) {

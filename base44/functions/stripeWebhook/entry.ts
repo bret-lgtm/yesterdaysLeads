@@ -101,8 +101,39 @@ Deno.serve(async (req) => {
         
       } catch (err) {
         console.error('Temp order not found:', tempOrderId, 'Error:', err.message);
-        console.log('Session data:', JSON.stringify(session, null, 2));
-        return Response.json({ error: 'Temp order not found', tempOrderId }, { status: 404 });
+
+        // The pending order can be removed while its Stripe session is still payable
+        // (for example the customer cancelled checkout and the session was never
+        // expired). The money has already been captured, so never drop the event:
+        // record a recovery order so the charge shows up in the admin dashboard
+        // instead of disappearing.
+        const recoveryEmail = session.customer_details?.email || session.customer_email || metadata.user_email;
+        try {
+          const existingCustomer = recoveryEmail
+            ? (await base44.asServiceRole.entities.Customer.filter({ email: recoveryEmail }))[0]
+            : null;
+          const recoveryOrder = await base44.asServiceRole.entities.Order.create({
+            customer_id: existingCustomer?.id || 'pending',
+            customer_email: recoveryEmail,
+            customer_phone: session.customer_details?.phone || null,
+            total_price: (session.amount_total || 0) / 100,
+            lead_count: Number(metadata.lead_count) || 0,
+            stripe_transaction_id: session.payment_intent,
+            leads_purchased: [],
+            lead_data_snapshot: [],
+            status: 'processing',
+            download_log: [{
+              timestamp: new Date().toISOString(),
+              ip: 'webhook-recovery',
+              user_agent: `paid session ${session.id} had no pending order ${tempOrderId}`
+            }]
+          });
+          console.error(`RECOVERY: paid session ${session.id} (${session.payment_intent}) had no pending order — created recovery order ${recoveryOrder.id} for ${recoveryEmail}`);
+          return Response.json({ received: true, recovery_order_id: recoveryOrder.id });
+        } catch (recoveryErr) {
+          console.error('Recovery order creation failed:', recoveryErr.message);
+          return Response.json({ error: 'Temp order missing and recovery failed', tempOrderId }, { status: 500 });
+        }
       }
 
       const userEmail = tempOrder.customer_email || session.customer_details?.email || session.customer_email;

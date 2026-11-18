@@ -22,6 +22,10 @@
     "stripe_transaction_id": {
       "type": "string"
     },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "Stripe Checkout session ID for pending orders, used to expire the session when the order is cancelled"
+    },
     "leads_purchased": {
       "type": "array",
       "items": {
@@ -51,6 +55,12 @@
         "processing",
         "completed",
         "refunded"
+      ],
+      "enumColors": [
+        "yellow",
+        "blue",
+        "green",
+        "red"
       ],
       "default": "completed"
     },
