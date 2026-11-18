@@ -22,34 +22,11 @@ export default function CSVUploader({ onUploadComplete }) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: csvFile });
       setProgress(30);
 
-      // Extract data
-      const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              external_id: { type: "string" },
-              lead_type: { type: "string" },
-              first_name: { type: "string" },
-              last_name: { type: "string" },
-              phone: { type: "string" },
-              email: { type: "string" },
-              state: { type: "string" },
-              zip_code: { type: "string" },
-              utility_bill_amount: { type: "number" }
-            }
-          }
-        }
-      });
+      // Extract data (server-side, admin-only)
+      const extracted = await base44.functions.invoke('importLeadsFromCsv', { file_url });
       setProgress(50);
 
-      if (extracted.status === 'error') {
-        throw new Error(extracted.details);
-      }
-
-      const records = extracted.output;
+      const records = extracted.data?.output || [];
       
       // Get existing leads to check for duplicates
       const existingLeads = await base44.entities.Lead.list();
@@ -86,7 +63,7 @@ export default function CSVUploader({ onUploadComplete }) {
     } catch (error) {
       setResults({
         success: false,
-        error: error.message
+        error: error?.response?.data?.error || error.message
       });
     } finally {
       setProcessing(false);

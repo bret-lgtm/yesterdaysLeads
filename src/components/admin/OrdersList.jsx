@@ -301,9 +301,9 @@ export default function OrdersList({ orders, customers }) {
                 <Shield className="w-3.5 h-3.5 text-slate-400" />
                 <span className="font-semibold text-slate-600">Audit:</span>
                 <span>
-                  {order.created_by === `service+5aba306e-5c21-4158-9eb8-db51b92bacbb@no-reply.base44.com`
+                  {order.stripe_transaction_id && order.stripe_transaction_id !== 'pending'
                     ? '✅ Created by system (customer self-checkout)'
-                    : `⚠️ Created by: ${order.created_by}`}
+                    : '⚠️ Created outside customer checkout'}
                 </span>
                 <span className="text-slate-400">•</span>
                 <span>{format(new Date(order.created_date), 'MMM d, yyyy h:mm a')}</span>

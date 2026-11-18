@@ -25,11 +25,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
-    const { filters = {}, user_email } = await req.json();
+    const { filters = {} } = await req.json();
 
-    // Suppression and block checks must use the verified session, never a
-    // caller-supplied address.
-    const viewerEmail = user?.email || user_email || null;
+    // Suppression and block checks use the verified session only. A caller-supplied
+    // address is never trusted: otherwise an anonymous caller could probe any
+    // customer's purchase history or blocked status by passing their email.
+    const viewerEmail = user?.email || null;
     console.log(`Lead browse requested by ${user ? 'signed-in user' : 'guest'}`);
 
     // Build Supabase query params
