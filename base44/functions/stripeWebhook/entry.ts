@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
 
       // Use cart item data directly from snapshot - deduplicate by lead_id
       const seenLeadIds = new Set();
-      const cartItems = cartItemData
+      let cartItems = cartItemData
         .map(item => ({
           id: item.id,
           lead_id: item.lead_id,
@@ -165,6 +165,41 @@ Deno.serve(async (req) => {
       if (cartItems.length !== cartItemData.length) {
         console.warn(`Deduped cart items: ${cartItemData.length} -> ${cartItems.length}`);
       }
+
+      // Authoritative lead records: age and type used for tier suppression come from live
+      // inventory, never from the stored snapshot.
+      let authoritativeLeads;
+      try {
+        const authRes = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', {
+          lead_ids: cartItems.map(i => i.lead_id),
+          internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
+        });
+        if (!authRes?.data?.success) throw new Error(authRes?.data?.error || 'Lead lookup failed');
+        authoritativeLeads = authRes.data.leads || [];
+      } catch (err) {
+        console.error('Webhook: authoritative lead lookup failed:', err.message);
+        throw new Error(`Failed to verify lead data: ${err.message}`);
+      }
+      const authById = new Map();
+      for (const lead of authoritativeLeads) {
+        if (lead.id) authById.set(lead.id, lead);
+        if (lead.external_id) authById.set(lead.external_id, lead);
+      }
+      cartItems = cartItems.map(item => {
+        const lead = authById.get(item.lead_id);
+        const authAge = lead ? Number(lead.age_in_days) : NaN;
+        if (!lead || !(authAge > 0)) {
+          console.warn(`Webhook: ${item.lead_id} not verified in live inventory — tier checks skipped for it`);
+          return { ...item, age_in_days: null };
+        }
+        return {
+          ...item,
+          lead_type: String(lead.lead_type || item.lead_type || '').toLowerCase().replace(/\s+/g, '_'),
+          state: lead.state || item.state,
+          zip_code: lead.zip_code || item.zip_code,
+          age_in_days: authAge
+        };
+      });
 
       // Cross-order duplicate check: remove leads the customer already owns in prior orders
       const customerEmail = userEmail;
@@ -202,19 +237,20 @@ Deno.serve(async (req) => {
         if (days >= 91 && days <= 180) return 5;
         if (days >= 181 && days <= 365) return 6;
         if (days >= 366) return 7;
-        return 5;
-      }
+        return 1;
+        }
       const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
       // Build a set of "lead_id:tier" combinations that are already sold
       const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
       const tierDupes = cartItems.filter(item => {
-        const tierNum = getTierNumFromAge(item.age_in_days || 91);
+        if (item.age_in_days == null) return false; // unverified lead — its tier cannot be evaluated
+        const tierNum = getTierNumFromAge(item.age_in_days);
         if (tierNum >= 5) return false; // Tier 5+ can be sold unlimited times
         const tierKey = `${item.lead_id}:tier${tierNum}`;
         return soldTierKeys.has(tierKey);
       });
       if (tierDupes.length > 0) {
-        console.warn(`Tier-sold duplicates detected: ${tierDupes.map(i => `${i.lead_id}(tier${getTierNumFromAge(i.age_in_days||91)})`).join(', ')} — removing from order`);
+        console.warn(`Tier-sold duplicates detected: ${tierDupes.map(i => `${i.lead_id}(tier${getTierNumFromAge(i.age_in_days)})`).join(', ')} — removing from order`);
         const tierDupeIds = new Set(tierDupes.map(i => i.lead_id));
         cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !tierDupeIds.has(i.lead_id)));
       }
@@ -258,19 +294,11 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Fetch complete lead data from Supabase for CSV snapshot
-      const leadIds = cartItems.map(item => item.lead_id);
-      let completeLeadData = [];
-
-      try {
-        const sheetsResponse = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', { 
-          lead_ids: leadIds,
-          internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
-        });
-        completeLeadData = sheetsResponse.data.leads || [];
-
-        // Filter out system fields before storing snapshot
-        completeLeadData = completeLeadData.map(lead => {
+      // Build the CSV snapshot from the authoritative records already fetched above
+      const finalLeadIds = new Set(cartItems.map(item => item.lead_id));
+      let completeLeadData = authoritativeLeads
+        .filter(lead => finalLeadIds.has(lead.id) || finalLeadIds.has(lead.external_id))
+        .map(lead => {
           const filtered = {};
           Object.entries(lead).forEach(([key, value]) => {
             // Exclude system/internal fields
@@ -281,12 +309,7 @@ Deno.serve(async (req) => {
           return filtered;
         });
 
-        console.log('Complete lead data fetched:', completeLeadData.length);
-        console.log('Sample lead data:', JSON.stringify(completeLeadData[0] || {}));
-      } catch (err) {
-        console.error('Failed to fetch complete lead data from sheets:', err.message);
-        throw new Error(`Failed to fetch lead data from sheets: ${err.message}`);
-      }
+      console.log('Complete lead data prepared:', completeLeadData.length);
 
       console.log('Session total:', session.amount_total / 100);
 
@@ -376,7 +399,11 @@ Deno.serve(async (req) => {
       }
 
       for (const cartItem of cartItems) {
-        const tier = getTierFromAge(cartItem.age_in_days || 1);
+        if (cartItem.age_in_days == null) {
+          console.warn(`Skipping suppression record for unverified lead ${cartItem.lead_id}`);
+          continue;
+        }
+        const tier = getTierFromAge(cartItem.age_in_days);
         await base44.asServiceRole.entities.LeadSuppression.create({
           lead_id: cartItem.lead_id,
           tier: tier,

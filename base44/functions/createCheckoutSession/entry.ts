@@ -67,6 +67,64 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Authoritative inventory: age, lead type and state come from the live lead record,
+    // never from the client's cart payload. A failed lookup stops checkout — leads are
+    // never priced or charged without being verified.
+    let authoritativeLeads;
+    try {
+      const inventoryRes = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', {
+        lead_ids: filteredCartItems.map(i => i.lead_id),
+        internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
+      });
+      if (!inventoryRes?.data?.success) {
+        throw new Error(inventoryRes?.data?.error || 'Lead lookup failed');
+      }
+      authoritativeLeads = inventoryRes.data.leads || [];
+    } catch (err) {
+      console.error('Checkout aborted: authoritative lead lookup failed:', err.message);
+      return Response.json({ error: 'We could not verify lead availability just now. Please try again.' }, { status: 503 });
+    }
+
+    const authoritativeById = new Map();
+    for (const lead of authoritativeLeads) {
+      if (lead.id) authoritativeById.set(lead.id, lead);
+      if (lead.external_id) authoritativeById.set(lead.external_id, lead);
+    }
+
+    const normalizeLeadType = (value) => String(value || '').toLowerCase().replace(/\s+/g, '_');
+    const verifiedItems = [];
+    const unverifiedIds = [];
+    for (const item of filteredCartItems) {
+      const lead = authoritativeById.get(item.lead_id)
+        || (item.external_id ? authoritativeById.get(item.external_id) : null);
+      const authAge = lead ? Number(lead.age_in_days) : NaN;
+      const authType = lead ? normalizeLeadType(lead.lead_type) : '';
+      // Stale carts can reference leads that were sold or removed — never charge for those.
+      if (!lead || !authType || !(authAge > 0)) {
+        unverifiedIds.push(item.lead_id);
+        continue;
+      }
+      if (normalizeLeadType(item.lead_type) !== authType || String(item.state || '') !== String(lead.state || '')) {
+        console.warn(`Cart metadata corrected for ${item.lead_id}: type=${item.lead_type} state=${item.state} -> type=${authType} state=${lead.state}`);
+      }
+      verifiedItems.push({
+        ...item,
+        external_id: lead.external_id || item.external_id,
+        lead_type: authType,
+        city: lead.city || '',
+        state: lead.state || '',
+        zip_code: lead.zip_code || '',
+        age_in_days: authAge
+      });
+    }
+    if (unverifiedIds.length > 0) {
+      console.warn(`Removed ${unverifiedIds.length} cart item(s) that could not be verified in live inventory: ${unverifiedIds.join(', ')}`);
+    }
+    filteredCartItems = verifiedItems;
+    if (filteredCartItems.length === 0) {
+      return Response.json({ error: 'The leads in your cart are no longer available. Please browse for new leads and try again.' }, { status: 400 });
+    }
+
     // Tier-based suppression check: remove leads whose current-age tier is already sold to someone else
     function getTierNumFromAge(days) {
       if (days >= 1 && days <= 3) return 1;
@@ -76,12 +134,12 @@ Deno.serve(async (req) => {
       if (days >= 91 && days <= 180) return 5;
       if (days >= 181 && days <= 365) return 6;
       if (days >= 366) return 7;
-      return 5;
+      return 1;
     }
     const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
     const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
     const tierAlreadySold = filteredCartItems.filter(item => {
-      const tierNum = getTierNumFromAge(item.age_in_days || 91);
+      const tierNum = getTierNumFromAge(item.age_in_days);
       if (tierNum >= 5) return false; // Tier 5+ can be sold unlimited times
       return soldTierKeys.has(`${item.lead_id}:tier${tierNum}`);
     });
@@ -94,30 +152,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Inventory check: drop cart items whose lead no longer exists in live inventory.
-    // Stale carts (e.g. an old anonymous cart migrated in at sign-in) can reference leads
-    // that were sold or removed — those must never be charged for.
-    try {
-      const inventoryRes = await base44.asServiceRole.functions.invoke('getSupabaseLeadsForCSV', {
-        lead_ids: filteredCartItems.map(i => i.lead_id),
-        internal_token: Deno.env.get('INTERNAL_FUNCTION_TOKEN')
-      });
-      const foundIds = new Set((inventoryRes?.data?.leads || []).map(l => l.id).filter(Boolean));
-      if (foundIds.size > 0) {
-        const missing = filteredCartItems.filter(i => !foundIds.has(i.lead_id));
-        if (missing.length > 0) {
-          console.warn(`Inventory check removed ${missing.length} unavailable lead(s): ${missing.map(i => i.lead_id).join(', ')}`);
-          filteredCartItems = filteredCartItems.filter(i => foundIds.has(i.lead_id));
-        }
-      } else {
-        console.warn('Inventory check returned no matches — skipping filter');
-      }
-    } catch (err) {
-      console.warn('Inventory check failed, continuing with cart:', err.message);
-    }
-    if (filteredCartItems.length === 0) {
-      return Response.json({ error: 'The leads in your cart are no longer available. Please browse for new leads and try again.' }, { status: 400 });
-    }
+
 
     // === SERVER-SIDE PRICE RECALCULATION ===
     // Recalculate every cart item's price from DB PricingTier so checkout always charges
