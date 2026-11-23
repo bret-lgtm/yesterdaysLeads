@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import Stripe from 'npm:stripe';
+import { getTierNumFromAge, getSoldTierKeys } from '../../shared/tierSuppression.ts';
 
 Deno.serve(async (req) => {
   const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY"), {
@@ -228,20 +229,13 @@ Deno.serve(async (req) => {
         cartItems.splice(0, cartItems.length, ...cartItems.filter(i => !dupeIds.has(i.lead_id)));
       }
 
-      // Tier-based suppression check: remove any leads whose current-age tier is already sold to another customer
-      function getTierNumFromAge(days) {
-        if (days >= 1 && days <= 3) return 1;
-        if (days >= 4 && days <= 14) return 2;
-        if (days >= 15 && days <= 30) return 3;
-        if (days >= 31 && days <= 90) return 4;
-        if (days >= 91 && days <= 180) return 5;
-        if (days >= 181 && days <= 365) return 6;
-        if (days >= 366) return 7;
-        return 1;
-        }
-      const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
-      // Build a set of "lead_id:tier" combinations that are already sold
-      const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
+      // Tier-based suppression check: remove any leads whose current-age tier is already sold to another customer.
+      // Only this order's leads are looked up (in batches) so every sale record is checked — a plain
+      // list() silently caps at 5,000 rows, far below the suppression table's size.
+      const tierLimitedLeadIds = cartItems
+        .filter(item => item.age_in_days != null && getTierNumFromAge(item.age_in_days) <= 4)
+        .map(item => item.lead_id);
+      const soldTierKeys = await getSoldTierKeys(base44.asServiceRole.entities, tierLimitedLeadIds);
       const tierDupes = cartItems.filter(item => {
         if (item.age_in_days == null) return false; // unverified lead — its tier cannot be evaluated
         const tierNum = getTierNumFromAge(item.age_in_days);

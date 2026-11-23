@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import Stripe from 'npm:stripe';
+import { getTierNumFromAge, getSoldTierKeys } from '../../shared/tierSuppression.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -125,19 +126,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'The leads in your cart are no longer available. Please browse for new leads and try again.' }, { status: 400 });
     }
 
-    // Tier-based suppression check: remove leads whose current-age tier is already sold to someone else
-    function getTierNumFromAge(days) {
-      if (days >= 1 && days <= 3) return 1;
-      if (days >= 4 && days <= 14) return 2;
-      if (days >= 15 && days <= 30) return 3;
-      if (days >= 31 && days <= 90) return 4;
-      if (days >= 91 && days <= 180) return 5;
-      if (days >= 181 && days <= 365) return 6;
-      if (days >= 366) return 7;
-      return 1;
-    }
-    const allSuppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
-    const soldTierKeys = new Set(allSuppressionRecords.map(r => `${r.lead_id}:${r.tier}`));
+    // Tier-based suppression check: remove leads whose current-age tier is already sold to someone else.
+    // Only this cart's leads are looked up (in batches) so every sale record is checked — a plain
+    // list() silently caps at 5,000 rows, far below the suppression table's size.
+    const tierLimitedLeadIds = filteredCartItems
+      .filter(item => getTierNumFromAge(item.age_in_days) <= 4)
+      .map(item => item.lead_id);
+    const soldTierKeys = await getSoldTierKeys(base44.asServiceRole.entities, tierLimitedLeadIds);
     const tierAlreadySold = filteredCartItems.filter(item => {
       const tierNum = getTierNumFromAge(item.age_in_days);
       if (tierNum >= 5) return false; // Tier 5+ can be sold unlimited times
