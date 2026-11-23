@@ -93,7 +93,23 @@ export function useCart(user) {
       toast.error('This lead is already in your cart');
       return;
     }
-    
+
+    // A lead already sold in its current age tier can never be purchased — keep it out of the cart.
+    try {
+      const check = await base44.functions.invoke('checkLeadAvailability', { lead_id: item.lead_id });
+      const blocked = (check.data?.unavailable || []).find(u => u.lead_id === item.lead_id);
+      if (blocked) {
+        toast.error(blocked.reason === 'sold'
+          ? 'This lead has already been sold.'
+          : 'This lead is no longer available.');
+        return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not verify this lead right now. Please try again.');
+      return;
+    }
+
     if (user) {
       await addToDbCartMutation.mutateAsync(item);
     } else {

@@ -160,6 +160,16 @@ export default function BrowseLeads() {
     currentPage * ITEMS_PER_PAGE
   );
 
+  // Leads already sold in their current age tier can never be purchased — never add them.
+  const splitSellableLeads = async (leads) => {
+    const check = await base44.functions.invoke('checkLeadAvailability', { lead_ids: leads.map(l => l.id) });
+    const unavailableIds = new Set((check.data?.unavailable || []).map(u => u.lead_id));
+    return {
+      sellable: leads.filter(l => !unavailableIds.has(l.id)),
+      blockedCount: leads.filter(l => unavailableIds.has(l.id)).length
+    };
+  };
+
   // Bulk add to cart
   const handleBulkAddToCart = async () => {
     const leadsToAdd = selectedLeads.filter(lead => !cartLeadIds.includes(lead.id) && !addedLeadIdsRef.current.has(lead.id));
@@ -171,11 +181,28 @@ export default function BrowseLeads() {
       toast.info('All selected leads are already in cart');
       return;
     }
+
+    let sellable = leadsToAdd;
+    try {
+      const checked = await splitSellableLeads(leadsToAdd);
+      if (checked.blockedCount > 0) {
+        sellable = checked.sellable;
+        toast.error(`${checked.blockedCount} selected lead${checked.blockedCount > 1 ? 's have' : ' has'} already been sold and ${checked.blockedCount > 1 ? 'were' : 'was'} not added.`);
+        if (sellable.length === 0) {
+          setSelectedLeads([]);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not verify lead availability. Please try again.');
+      return;
+    }
     
     if (user) {
       // Bulk create in batches of 500 with per-batch retry
       const BATCH_SIZE = 500;
-      const items = leadsToAdd.map(lead => {
+      const items = sellable.map(lead => {
         addedLeadIdsRef.current.add(lead.id);
         return {
           lead_id: lead.id,
@@ -219,7 +246,7 @@ export default function BrowseLeads() {
       const stored = localStorage.getItem('anonymous_cart');
       const existingCart = stored ? JSON.parse(stored) : [];
       
-      const newItems = leadsToAdd.map(lead => ({
+      const newItems = sellable.map(lead => ({
         id: `local_${Date.now()}_${Math.random()}`,
         lead_id: lead.id,
         external_id: lead.external_id,
@@ -234,7 +261,7 @@ export default function BrowseLeads() {
       const updatedCart = [...existingCart, ...newItems];
       localStorage.setItem('anonymous_cart', JSON.stringify(updatedCart));
       window.dispatchEvent(new Event('cartUpdated'));
-      toast.success(`${leadsToAdd.length} leads added to cart`);
+      toast.success(`${sellable.length} leads added to cart`);
     }
     
     setSelectedLeads([]);
@@ -284,9 +311,23 @@ export default function BrowseLeads() {
       return;
     }
 
+    let sellableLeads = leadsToAdd;
+    try {
+      const checked = await splitSellableLeads(leadsToAdd);
+      sellableLeads = checked.sellable;
+      if (checked.blockedCount > 0) {
+        toast.error(`${checked.blockedCount} lead${checked.blockedCount > 1 ? 's have' : ' has'} already been sold and ${checked.blockedCount > 1 ? 'were' : 'was'} skipped.`);
+        if (sellableLeads.length === 0) return;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not verify lead availability. Please try again.');
+      return;
+    }
+
     setQuantityLoading(true);
     try {
-      const items = leadsToAdd.map(lead => {
+      const items = sellableLeads.map(lead => {
         const age = computeAgeInDays(lead);
         addedLeadIdsRef.current.add(lead.id);
         return {
@@ -336,7 +377,7 @@ export default function BrowseLeads() {
         const newItems = items.map(item => ({ id: `local_${Date.now()}_${Math.random()}`, ...item }));
         localStorage.setItem('anonymous_cart', JSON.stringify([...existingCart, ...newItems]));
         window.dispatchEvent(new Event('cartUpdated'));
-        toast.success(`${leadsToAdd.length} leads added to cart`);
+        toast.success(`${items.length} leads added to cart`);
       }
       setQuantity('');
     } finally {
