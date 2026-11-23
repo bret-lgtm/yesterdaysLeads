@@ -120,7 +120,11 @@ export default function Checkout() {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
-      toast.error('Failed to start checkout. Please try again.');
+      // Show the server's actual reason (e.g. leads already sold) instead of a generic message
+      const serverMessage = error?.response?.data?.error || error?.data?.error;
+      toast.error(serverMessage || 'Failed to start checkout. Please try again.', {
+        duration: serverMessage ? 8000 : 4000
+      });
       console.error(error);
       setProcessing(false);
     }
