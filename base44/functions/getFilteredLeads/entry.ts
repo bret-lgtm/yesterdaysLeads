@@ -71,15 +71,9 @@ Deno.serve(async (req) => {
     }
     console.log(`Fetched ${leads.length} leads from Supabase`);
 
-    // Build suppression sets
-    // Global: leads sold at tiers 1-5 only (tier 6+ can be sold unlimited times across customers)
-    const suppressionRecords = await base44.asServiceRole.entities.LeadSuppression.list('', 50000);
-    const globalSoldLeadIds = new Set(
-      suppressionRecords
-        .filter(r => parseInt(String(r.tier).replace('tier', '')) <= 4)
-        .map(r => r.lead_id)
-    );
-
+    // Global tier suppression comes from the tier_N_sold flags on each inventory row, which are
+    // set on every sale. Reading them costs nothing extra and never truncates — a list() of the
+    // suppression table silently caps at 5,000 of its 80,000+ rows and would let sold leads show.
     // Per-customer: leads this customer already purchased (all tiers — prevents duplicate buys)
     const customerSoldLeadIds = new Set();
 
@@ -133,16 +127,13 @@ Deno.serve(async (req) => {
           if (days >= 91 && days <= 180) return 5;
           if (days >= 181 && days <= 365) return 6;
           if (days >= 366) return 7;
-          return 5;
+          return 1; // brand-new leads (0 days) belong to tier 1, matching checkout
         }
         const _tier = _getTierNum(_age);
-        // Tier 6+ leads can be sold unlimited times — only check customer's own purchases
-        if (_tier >= 5) {
-          return !customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id);
-        }
-        // Tier 1-5: check global + customer suppression
-        return (!globalSoldLeadIds.has(lead.id) && !globalSoldLeadIds.has(lead.external_id))
-          && (!customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id));
+        // A lead already sold in its current tier (1-4) cannot be sold again in that tier.
+        // Tier 5+ leads can be resold unlimited times.
+        if (_tier <= 4 && lead[`tier_${_tier}_sold`]) return false;
+        return !customerSoldLeadIds.has(lead.id) && !customerSoldLeadIds.has(lead.external_id);
       })
       .map(lead => {
         // Calculate age_in_days from external_id (format: YYYYMMDD-...)
@@ -170,7 +161,7 @@ Deno.serve(async (req) => {
           if (days >= 91 && days <= 180) return 5;
           if (days >= 181 && days <= 365) return 6;
           if (days >= 366) return 7;
-          return 5;
+          return 1; // brand-new leads (0 days) belong to tier 1, matching checkout
         }
         const currentTier = getTierNumFromAge(age_in_days);
         // Tier 6+ leads can be sold unlimited times — skip tier-based suppression

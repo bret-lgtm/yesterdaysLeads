@@ -101,7 +101,8 @@ Deno.serve(async (req) => {
       const authAge = lead ? Number(lead.age_in_days) : NaN;
       const authType = lead ? normalizeLeadType(lead.lead_type) : '';
       // Stale carts can reference leads that were sold or removed — never charge for those.
-      if (!lead || !authType || !(authAge > 0)) {
+      // Age 0 is a legitimate brand-new lead (uploaded today) — it prices and suppresses as tier 1.
+      if (!lead || !authType || !Number.isFinite(authAge) || authAge < 0) {
         unverifiedIds.push(item.lead_id);
         continue;
       }
@@ -115,7 +116,7 @@ Deno.serve(async (req) => {
         city: lead.city || '',
         state: lead.state || '',
         zip_code: lead.zip_code || '',
-        age_in_days: authAge
+        age_in_days: Math.max(0, authAge)
       });
     }
     if (unverifiedIds.length > 0) {

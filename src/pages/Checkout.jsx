@@ -46,6 +46,7 @@ export default function Checkout() {
   // Use cart hook
   const { cartItems, removeFromCart, clearLocalCart } = useCart(user);
 
+
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!userLoading && !user) {
@@ -94,8 +95,28 @@ export default function Checkout() {
     setProcessing(true);
 
     try {
+      // Leads can be sold to another customer between adding them and paying. Drop those
+      // from the cart first so one stale lead never blocks the whole purchase.
+      let itemsToBuy = cartItems;
+      const availability = await base44.functions.invoke('checkLeadAvailability', {
+        lead_ids: cartItems.map(item => item.lead_id)
+      });
+      const unavailableIds = new Set((availability.data?.unavailable || []).map(u => u.lead_id));
+      if (unavailableIds.size > 0) {
+        const removedCount = cartItems.filter(item => unavailableIds.has(item.lead_id)).length;
+        itemsToBuy = cartItems.filter(item => !unavailableIds.has(item.lead_id));
+        for (const item of cartItems.filter(i => unavailableIds.has(i.lead_id))) {
+          removeFromCart(item.id);
+        }
+        toast.error(`${removedCount} lead${removedCount > 1 ? 's were' : ' was'} already sold to another customer and removed from your cart.`);
+        if (itemsToBuy.length === 0) {
+          setProcessing(false);
+          return;
+        }
+      }
+
       const response = await base44.functions.invoke('createCheckoutSession', {
-        cartItems,
+        cartItems: itemsToBuy,
         customerEmail: user?.email,
         referralCode: getReferralCode()
       });
@@ -104,9 +125,9 @@ export default function Checkout() {
         // Free order - skip Stripe and go straight to success
         setCompletedOrder({
           id: response.data.orderId,
-          lead_count: cartItems.length,
+          lead_count: itemsToBuy.length,
           total_price: 0,
-          lead_data_snapshot: cartItems
+          lead_data_snapshot: itemsToBuy
         });
         setOrderComplete(true);
         if (user?.email) {

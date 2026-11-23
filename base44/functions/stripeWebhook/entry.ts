@@ -189,7 +189,8 @@ Deno.serve(async (req) => {
       cartItems = cartItems.map(item => {
         const lead = authById.get(item.lead_id);
         const authAge = lead ? Number(lead.age_in_days) : NaN;
-        if (!lead || !(authAge > 0)) {
+        // Age 0 is a legitimate brand-new lead (uploaded today) — it prices and suppresses as tier 1.
+        if (!lead || !Number.isFinite(authAge) || authAge < 0) {
           console.warn(`Webhook: ${item.lead_id} not verified in live inventory — tier checks skipped for it`);
           return { ...item, age_in_days: null };
         }
@@ -198,7 +199,7 @@ Deno.serve(async (req) => {
           lead_type: String(lead.lead_type || item.lead_type || '').toLowerCase().replace(/\s+/g, '_'),
           state: lead.state || item.state,
           zip_code: lead.zip_code || item.zip_code,
-          age_in_days: authAge
+          age_in_days: Math.max(0, authAge)
         };
       });
 
